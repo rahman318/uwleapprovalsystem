@@ -22,7 +22,7 @@ const RegisterUserForm = () => {
     e.preventDefault();
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/auth/register",
+        "https://backenduwleapprovalsystem.onrender.com/api/auth/register",
         formData
       );
      Swal.fire({
