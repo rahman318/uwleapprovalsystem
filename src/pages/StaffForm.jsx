@@ -36,8 +36,8 @@ const StaffForm = () => {
     const fetchData = async () => {
       try {
         const [staffRes, approverRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/users/staff"),
-          axios.get("http://localhost:5000/api/users/approvers"),
+          axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/staff"),
+          axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers"),
         ]);
         setStaffList(staffRes.data || []);
         setApprovers(approverRes.data || []);
@@ -95,7 +95,7 @@ const StaffForm = () => {
   if (file) submissionData.append("file", file);
 
   try {
-    await axios.post("http://localhost:5000/api/requests", submissionData, {
+    await axios.post("https://backenduwleapprovalsystem.onrender.com//api/requests", submissionData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
