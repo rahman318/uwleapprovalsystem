@@ -95,7 +95,7 @@ const StaffForm = () => {
   if (file) submissionData.append("file", file);
 
   try {
-    await axios.post("https://backenduwleapprovalsystem.onrender.com//api/requests", submissionData, {
+    await axios.post("https://backenduwleapprovalsystem.onrender.com/api/requests", submissionData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
