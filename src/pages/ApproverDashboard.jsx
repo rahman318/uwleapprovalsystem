@@ -238,7 +238,7 @@ const ApproverDashboard = () => {
 
                   try {
                     await axios.put(
-                      `http://localhost:5000/api/requests/approve/${selectedRequest._id}`,
+                      `https://backenduwleapprovalsystem.onrender.com/api/requests/approve/${selectedRequest._id}`,
                       {
                         status: "Approved",
                         signatureApprover,
