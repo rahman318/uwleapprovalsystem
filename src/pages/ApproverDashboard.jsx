@@ -30,7 +30,7 @@ const ApproverDashboard = () => {
 
   const fetchRequests = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/requests", {
+      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/requests", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRequests(res.data.filter((r) => r.status === "Pending"));
@@ -51,7 +51,7 @@ const ApproverDashboard = () => {
   const handleAction = async (id, action) => {
     try {
       await axios.patch(
-        `http://localhost:5000/api/requests/${id}`,
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}`,
         { status: action },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -71,7 +71,7 @@ const ApproverDashboard = () => {
   const handleViewPDF = async (id) => {
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/requests/${id}/pdf`,
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}/pdf`,
         {
           headers: { Authorization: `Bearer ${token}` },
           responseType: "blob",
