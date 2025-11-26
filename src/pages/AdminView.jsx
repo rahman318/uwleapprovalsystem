@@ -9,7 +9,7 @@ const AdminView = () => {
   // Fetch senarai user
   const fetchUsers = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/users");
+      const response = await fetch("https://backenduwleapprovalsystem.onrender.com/api/users");
       const data = await response.json();
       setUsers(data);
     } catch (error) {
@@ -34,7 +34,7 @@ const AdminView = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await fetch(`http://localhost:3000/api/users/${id}`, {
+          await fetch(`https://backenduwleapprovalsystem.onrender.com/api/users/${id}`, {
             method: "DELETE",
           });
           Swal.fire("Berjaya", "Pengguna dipadam", "success");
