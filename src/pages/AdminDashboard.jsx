@@ -29,7 +29,7 @@ const AdminDashboard = () => {
 
   const fetchCurrentUser = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/users/me", {
+      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/me", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       setCurrentUser(res.data);
@@ -40,7 +40,7 @@ const AdminDashboard = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/users", {
+      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/users", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       setUsers(res.data);
@@ -51,7 +51,7 @@ const AdminDashboard = () => {
 
 const handleViewPDF = async (requestId) => {
   try {
-    const res = await axios.get(`http://localhost:5000/api/requests/${requestId}/pdf`, {
+    const res = await axios.get(`https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/pdf`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       responseType: 'blob' // penting untuk PDF
     });
@@ -71,7 +71,7 @@ const handleViewPDF = async (requestId) => {
 
   const fetchRequests = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/requests", {
+      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/requests", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       setStaffRequests(res.data);
@@ -101,7 +101,7 @@ const handleViewPDF = async (requestId) => {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/users/register",
+        "https://backenduwleapprovalsystem.onrender.com/api/users/register",
         formData,
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
@@ -151,7 +151,7 @@ const handleViewPDF = async (requestId) => {
 
     if (confirm.isConfirmed) {
       try {
-        await axios.delete(`http://localhost:5000/api/requests/${id}`, {
+        await axios.delete(`https://backenduwleapprovalsystem.onrender.com/api/requests/${id}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         Swal.fire({
@@ -183,7 +183,7 @@ const handleViewPDF = async (requestId) => {
 
     if (confirm.isConfirmed) {
       try {
-        await axios.delete(`http://localhost:5000/api/users/${id}`, {
+        await axios.delete(`https://backenduwleapprovalsystem.onrender.com/api/users/${id}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
