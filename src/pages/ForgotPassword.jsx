@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { useNavigate } from "react-router-dom"; // ✅ tambah ni untuk redirect
+import { useNavigate } from "react-router-dom";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
-  const navigate = useNavigate(); // ✅ hook redirect
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,25 +16,33 @@ const ForgotPassword = () => {
     }
 
     try {
-      const res = await axios.post("https://backenduwleapprovalsystem.onrender.com/api/auth/forgot-password", { email });
+      // POST ke backend, backend yang hantar email via Brevo
+      const res = await axios.post(
+        "https://backenduwleapprovalsystem.onrender.com/api/auth/forgot-password",
+        { email }
+      );
+
       Swal.fire({
         icon: "success",
         title: "Berjaya!",
-        text: res.data.message || "Sila semak emel anda untuk pautan reset kata laluan.",
+        text:
+          res.data.message ||
+          "Sila semak emel anda untuk pautan reset kata laluan.",
         timer: 2000,
         showConfirmButton: false,
       });
+
       setEmail("");
 
-      // ✅ Auto redirect ke login selepas 2 saat
+      // Auto redirect ke login selepas 2 saat
       setTimeout(() => {
         navigate("/login");
       }, 2000);
-      
     } catch (err) {
       Swal.fire(
         "Ralat!",
-        err.response?.data?.message || "Gagal menghantar pautan reset. Sila cuba semula.",
+        err.response?.data?.message ||
+          "Gagal menghantar pautan reset. Sila cuba semula.",
         "error"
       );
     }
@@ -43,9 +51,13 @@ const ForgotPassword = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
-        <h2 className="text-2xl font-semibold text-center mb-6">Lupa Kata Laluan</h2>
+        <h2 className="text-2xl font-semibold text-center mb-6">
+          Lupa Kata Laluan
+        </h2>
         <form onSubmit={handleSubmit}>
-          <label className="block mb-2 text-sm font-medium text-gray-700">Alamat Emel</label>
+          <label className="block mb-2 text-sm font-medium text-gray-700">
+            Alamat Emel
+          </label>
           <input
             type="email"
             className="w-full border rounded-lg px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
