@@ -5,7 +5,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import StaffForm from "./pages/StaffForm";
 import ApproverDashboard from "./pages/ApproverDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword"
+import ResetPassword from "./pages/ResetPassword";
 
 const AppRoutes = () => {
   const navigate = useNavigate();
@@ -14,9 +14,15 @@ const AppRoutes = () => {
     return userStr ? JSON.parse(userStr) : null;
   });
 
-  // Auto redirect on page load
+  // Auto redirect on page load, kecuali reset password / forgot / login
   useEffect(() => {
-    if (user) {
+    const currentPath = window.location.pathname;
+    if (
+      user &&
+      !currentPath.startsWith("/reset-password") &&
+      !currentPath.startsWith("/forgot-password") &&
+      !currentPath.startsWith("/login")
+    ) {
       switch (user.role) {
         case "admin": navigate("/admin"); break;
         case "approver": navigate("/approver"); break;
@@ -24,7 +30,7 @@ const AppRoutes = () => {
         default: navigate("/login");
       }
     }
-  }, [user]);
+  }, [user, navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -51,6 +57,8 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login setUser={setUser} />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         <Route
           path="/staff"
@@ -65,11 +73,8 @@ const AppRoutes = () => {
           element={user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />}
         />
 
+        {/* Wildcard route, paling last */}
         <Route path="*" element={<Navigate to="/login" />} />
-
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
-
       </Routes>
     </>
   );
