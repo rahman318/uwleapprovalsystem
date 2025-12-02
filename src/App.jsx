@@ -16,6 +16,10 @@ const AppRoutes = () => {
 
   // Auto redirect on page load, kecuali reset password / forgot / login
   useEffect(() => {
+  const skipPaths = ["/login", "/forgot-password"];
+  const isResetPassword = window.location.pathname.startsWith("/reset-password");
+  const shouldRedirect = user && !skipPaths.includes(window.location.pathname) && !isResetPassword;
+    
     const currentPath = window.location.pathname;
     if (
       user &&
@@ -59,6 +63,7 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login setUser={setUser} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token?" element={<ResetPassword />} />
+        <Route path="*" element={<Navigate to="/login" />} />
 
         <Route
           path="/staff"
