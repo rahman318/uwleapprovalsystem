@@ -9,6 +9,18 @@ const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+    // ✅ Letak check token paling awal
+  if (!token) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md text-center">
+          <h2 className="text-xl font-semibold mb-4">Token Tidak Ditemui</h2>
+          <p>Sila klik link reset password yang diterima melalui email.</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
