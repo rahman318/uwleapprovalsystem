@@ -1,40 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const ResetPassword = () => {
-  const { token } = useParams(); // ambil token dari URL
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [tokenValid, setTokenValid] = useState(true); // 🔹 fallback token invalid
-
-  // 🔹 Debug token
-  useEffect(() => {
-    console.log("Token dari URL:", token);
-
-    if (!token) {
-      setTokenValid(false);
-    }
-  }, [token]);
-
-  if (!tokenValid) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md text-center">
-          <h2 className="text-xl font-semibold mb-4">Token Tidak Ditemui / Tidak Sah</h2>
-          <p>Sila klik link reset password yang diterima melalui email atau minta reset baru.</p>
-          <button
-            onClick={() => navigate("/forgot-password")}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Reset Semula Kata Laluan
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,8 +22,9 @@ const ResetPassword = () => {
     }
 
     try {
+      // 🔹 Endpoint sementara tanpa token
       const res = await axios.post(
-        `https://backenduwleapprovalsystem.onrender.com/api/auth/reset-password/${token}`,
+        `https://backenduwleapprovalsystem.onrender.com/api/auth/reset-password-no-token`,
         { password }
       );
 
@@ -63,7 +36,6 @@ const ResetPassword = () => {
         showConfirmButton: false,
       });
 
-      // 🔹 Auto redirect ke login selepas 2 saat
       setTimeout(() => {
         navigate("/login");
       }, 2000);
@@ -73,14 +45,9 @@ const ResetPassword = () => {
 
       Swal.fire(
         "Ralat!",
-        err.response?.data?.message || "Token tidak sah atau telah tamat tempoh.",
+        err.response?.data?.message || "Reset gagal.",
         "error"
       );
-
-      // 🔹 Redirect ke forgot-password selepas token invalid
-      setTimeout(() => {
-        navigate("/forgot-password");
-      }, 3000);
     }
   };
 
