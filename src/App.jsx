@@ -77,7 +77,7 @@ const AppRoutes = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* ✅ Reset password - wajib exact token */}
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route
           path="/staff"
