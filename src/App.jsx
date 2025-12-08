@@ -14,24 +14,35 @@ const AppRoutes = () => {
     return userStr ? JSON.parse(userStr) : null;
   });
 
-  // Auto redirect on page load, kecuali reset password / forgot / login
+  // ✅ Auto redirect - fixed supaya reset password tak kacau
   useEffect(() => {
-  const skipPaths = ["/login", "/forgot-password"];
-  const isResetPassword = window.location.pathname.startsWith("/reset-password");
-  const shouldRedirect = user && !skipPaths.includes(window.location.pathname) && !isResetPassword;
-    
+    const skipPaths = ["/login", "/forgot-password"];
     const currentPath = window.location.pathname;
-    if (
-      user &&
-      !currentPath.startsWith("/reset-password") &&
-      !currentPath.startsWith("/forgot-password") &&
-      !currentPath.startsWith("/login")
-    ) {
+    const isResetPassword = currentPath.startsWith("/reset-password");
+
+    const shouldRedirect =
+      !skipPaths.includes(currentPath) && !isResetPassword;
+
+    // Kalau belum login tapi akses page protected
+    if (!user && shouldRedirect) {
+      navigate("/login");
+      return;
+    }
+
+    // Kalau dah login, route ikut role
+    if (user && shouldRedirect) {
       switch (user.role) {
-        case "admin": navigate("/admin"); break;
-        case "approver": navigate("/approver"); break;
-        case "staff": navigate("/staff"); break;
-        default: navigate("/login");
+        case "admin":
+          navigate("/admin");
+          break;
+        case "approver":
+          navigate("/approver");
+          break;
+        case "staff":
+          navigate("/staff");
+          break;
+        default:
+          navigate("/login");
       }
     }
   }, [user, navigate]);
@@ -48,7 +59,9 @@ const AppRoutes = () => {
       {/* Optional Logout button */}
       {user && (
         <div className="p-4 bg-gray-100 text-right">
-          <span className="mr-4 font-semibold">{user.username} ({user.role})</span>
+          <span className="mr-4 font-semibold">
+            {user.username} ({user.role})
+          </span>
           <button
             onClick={handleLogout}
             className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
@@ -62,8 +75,9 @@ const AppRoutes = () => {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login setUser={setUser} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token?" element={<ResetPassword />} />
-        <Route path="*" element={<Navigate to="/login" />} />
+
+        {/* ✅ Reset password - wajib exact token */}
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         <Route
           path="/staff"
@@ -78,7 +92,7 @@ const AppRoutes = () => {
           element={user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />}
         />
 
-        {/* Wildcard route, paling last */}
+        {/* ✅ Wildcard route - letak PALING BAWAH */}
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </>
