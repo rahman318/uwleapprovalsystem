@@ -15,6 +15,13 @@ const AppRoutes = () => {
   });
 
   // ✅ Auto redirect - fixed supaya reset password tak kacau
+  // Dalam App.jsx (paling atas useEffect)
+useEffect(() => {
+  if (window.location.pathname.startsWith("/reset-password/")) {
+    navigate("/reset-password", { replace: true });
+  }
+}, [navigate])
+
   useEffect(() => {
     const skipPaths = ["/login", "/forgot-password"];
     const currentPath = window.location.pathname;
