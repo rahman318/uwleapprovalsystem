@@ -14,21 +14,13 @@ const AppRoutes = () => {
     return userStr ? JSON.parse(userStr) : null;
   });
 
-  // ✅ Auto redirect - fixed supaya reset password tak kacau
-  // Dalam App.jsx (paling atas useEffect)
-useEffect(() => {
-  if (window.location.pathname.startsWith("/reset-password/")) {
-    navigate("/reset-password", { replace: true });
-  }
-}, [navigate])
-
+  // ✅ Auto redirect untuk protected routes
   useEffect(() => {
     const skipPaths = ["/login", "/forgot-password"];
     const currentPath = window.location.pathname;
-    const isResetPassword = currentPath.startsWith("/reset-password");
+    const isResetPassword = currentPath.startsWith("/reset-password/"); // <-- jangan hilangkan token
 
-    const shouldRedirect =
-      !skipPaths.includes(currentPath) && !isResetPassword;
+    const shouldRedirect = !skipPaths.includes(currentPath) && !isResetPassword;
 
     // Kalau belum login tapi akses page protected
     if (!user && shouldRedirect) {
@@ -83,7 +75,7 @@ useEffect(() => {
         <Route path="/login" element={<Login setUser={setUser} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* ✅ Reset password - wajib exact token */}
+        {/* ✅ Reset password route */}
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         <Route
