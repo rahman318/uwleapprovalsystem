@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { useParams, useNavigate } from "react-router-dom";
@@ -8,14 +8,29 @@ const ResetPassword = () => {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [tokenValid, setTokenValid] = useState(true); // 🔹 fallback token invalid
 
-    // ✅ Letak check token paling awal
-  if (!token) {
+  // 🔹 Debug token
+  useEffect(() => {
+    console.log("Token dari URL:", token);
+
+    if (!token) {
+      setTokenValid(false);
+    }
+  }, [token]);
+
+  if (!tokenValid) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md text-center">
-          <h2 className="text-xl font-semibold mb-4">Token Tidak Ditemui</h2>
-          <p>Sila klik link reset password yang diterima melalui email.</p>
+          <h2 className="text-xl font-semibold mb-4">Token Tidak Ditemui / Tidak Sah</h2>
+          <p>Sila klik link reset password yang diterima melalui email atau minta reset baru.</p>
+          <button
+            onClick={() => navigate("/forgot-password")}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Reset Semula Kata Laluan
+          </button>
         </div>
       </div>
     );
@@ -35,9 +50,10 @@ const ResetPassword = () => {
     }
 
     try {
-      const res = await axios.post(`https://backenduwleapprovalsystem.onrender.com/api/auth/reset-password/${token}`, {
-        password,
-      });
+      const res = await axios.post(
+        `https://backenduwleapprovalsystem.onrender.com/api/auth/reset-password/${token}`,
+        { password }
+      );
 
       Swal.fire({
         icon: "success",
@@ -47,17 +63,24 @@ const ResetPassword = () => {
         showConfirmButton: false,
       });
 
-      // ✅ Auto redirect ke login selepas 2 saat
+      // 🔹 Auto redirect ke login selepas 2 saat
       setTimeout(() => {
         navigate("/login");
       }, 2000);
-      
+
     } catch (err) {
+      console.error("Reset password error:", err.response || err);
+
       Swal.fire(
         "Ralat!",
         err.response?.data?.message || "Token tidak sah atau telah tamat tempoh.",
         "error"
       );
+
+      // 🔹 Redirect ke forgot-password selepas token invalid
+      setTimeout(() => {
+        navigate("/forgot-password");
+      }, 3000);
     }
   };
 
