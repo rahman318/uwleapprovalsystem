@@ -51,7 +51,7 @@ const ResetPassword = () => {
 
     try {
       const res = await axios.post(
-        `https://backenduwleapprovalsystem.onrender.com/api/auth/reset-password/${token}`,
+        `https://backenduwleapprovalsystem.onrender.com/api/auth/reset-password/testtoken`,
         { password }
       );
 
