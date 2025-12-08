@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { useParams, useNavigate } from "react-router-dom";
@@ -8,18 +8,10 @@ const ResetPassword = () => {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [tokenValid, setTokenValid] = useState(true); // 🔹 fallback token invalid
+  const [loading, setLoading] = useState(false);
 
-  // 🔹 Debug token
-  useEffect(() => {
-    console.log("Token dari URL:", token);
-
-    if (!token) {
-      setTokenValid(false);
-    }
-  }, [token]);
-
-  if (!tokenValid) {
+  // 🔹 Kalau user akses route tanpa token langsung
+  if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md text-center">
@@ -38,20 +30,20 @@ const ResetPassword = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!password || !confirmPassword) {
       Swal.fire("Oops!", "Sila isi semua medan kata laluan.", "warning");
       return;
     }
-
     if (password !== confirmPassword) {
       Swal.fire("Oops!", "Kata laluan tidak sepadan!", "error");
       return;
     }
 
+    setLoading(true);
+
     try {
       const res = await axios.post(
-        `https://backenduwleapprovalsystem.onrender.com/api/auth/reset-password/testtoken`,
+        `https://backenduwleapprovalsystem.onrender.com/api/auth/reset-password/${token}`,
         { password }
       );
 
@@ -63,11 +55,9 @@ const ResetPassword = () => {
         showConfirmButton: false,
       });
 
-      // 🔹 Auto redirect ke login selepas 2 saat
       setTimeout(() => {
         navigate("/login");
       }, 2000);
-
     } catch (err) {
       console.error("Reset password error:", err.response || err);
 
@@ -77,10 +67,11 @@ const ResetPassword = () => {
         "error"
       );
 
-      // 🔹 Redirect ke forgot-password selepas token invalid
       setTimeout(() => {
         navigate("/forgot-password");
       }, 3000);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -96,6 +87,7 @@ const ResetPassword = () => {
             placeholder="Masukkan kata laluan baru"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
           />
           <label className="block mb-2 text-sm font-medium text-gray-700">Sahkan Kata Laluan</label>
           <input
@@ -104,12 +96,16 @@ const ResetPassword = () => {
             placeholder="Ulang kata laluan baru"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={loading}
           />
           <button
             type="submit"
-            className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
+            className={`w-full py-2 rounded-lg text-white transition ${
+              loading ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+            }`}
+            disabled={loading}
           >
-            Reset Kata Laluan
+            {loading ? "Processing..." : "Reset Kata Laluan"}
           </button>
         </form>
       </div>
