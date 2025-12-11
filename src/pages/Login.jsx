@@ -1,28 +1,24 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import axios from "axios";
 
 export default function Login({ setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // ✅ state toggle password
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("https://backenduwleapprovalsystem.onrender.com/api/auth/login", {
-        email,
-        password,
-      });
-
-      console.log("✅ Full response dari backend:", res.data);
+      const res = await axios.post(
+        "https://backenduwleapprovalsystem.onrender.com/api/auth/login",
+        { email, password }
+      );
 
       const token = res.data.token;
       const userRaw = res.data.user;
-      console.log("🔑 Token:", token);
-      console.log("👤 User object:", userRaw);
 
       const user = {
         _id: userRaw._id || userRaw.id,
@@ -32,16 +28,12 @@ export default function Login({ setUser }) {
       };
 
       if (!user._id || !user.username) {
-        console.error("❌ User object invalid:", user);
         throw new Error("❌ User object invalid dari backend");
       }
 
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
-
-      if (setUser) {
-        setUser(user);
-      }
+      if (setUser) setUser(user);
 
       Swal.fire({
         icon: "success",
@@ -65,7 +57,6 @@ export default function Login({ setUser }) {
           navigate("/login");
       }
     } catch (err) {
-      console.error("❌ Login error:", err);
       Swal.fire({
         icon: "error",
         title: "Login Gagal",
@@ -76,7 +67,7 @@ export default function Login({ setUser }) {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-blue-50 to-blue-100 font-[Inter]">
-      {/* ✅ Logo Placeholder */}
+      {/* Logo */}
       <div className="flex flex-col items-center mb-6">
         <img
           src="/company logo.png"
@@ -88,7 +79,7 @@ export default function Login({ setUser }) {
         </h1>
       </div>
 
-      {/* ✅ Login Card */}
+      {/* Login Card */}
       <div className="w-full max-w-md bg-white p-6 rounded-2xl shadow-lg border border-blue-100">
         <h2 className="text-xl font-semibold text-center text-blue-700 mb-4">
           Log Masuk Akaun
@@ -116,7 +107,7 @@ export default function Login({ setUser }) {
           </div>
 
           {/* Password */}
-          <div>
+          <div className="relative">
             <label
               htmlFor="password"
               className="block text-sm font-medium text-gray-700 mb-1"
@@ -124,16 +115,23 @@ export default function Login({ setUser }) {
               Kata Laluan
             </label>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               id="password"
               name="password"
               autoComplete="current-password"
               placeholder="Masukkan kata laluan"
-              className="w-full border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 rounded-lg outline-none transition"
+              className="w-full border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 rounded-lg outline-none transition pr-10"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </button>
           </div>
 
           {/* Submit */}
