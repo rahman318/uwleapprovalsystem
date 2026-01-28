@@ -11,14 +11,20 @@
   },
   "dependencies": {
     "axios": "^1.12.2",
+    "fontkit": "^2.0.4",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.4",
     "lucide": "^0.544.0",
     "lucide-react": "^0.544.0",
+    "pdf-lib": "^1.17.1",
+    "qrcode": "^1.5.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.1",
     "react-signature-canvas": "^1.1.0-alpha.2",
     "sweetalert2": "^11.23.0",
-    "tailwind": "^2.3.1"
+    "tailwind": "^2.3.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
