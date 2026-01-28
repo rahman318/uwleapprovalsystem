@@ -1,21 +1,26 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import SignatureCanvas from "react-signature-canvas";
 
-const ApproverSignaturePad = ({ onSave }) => {
+const ApproverSignaturePad = ({ onChange }) => {
   const sigRef = useRef(null);
 
-  const clear = () => sigRef.current.clear();
+  // Clear signature
+  const clear = () => {
+    sigRef.current.clear();
+    onChange(""); // kosongkan signature
+  };
 
-  const save = () => {
-    if (sigRef.current.isEmpty()) return alert("Sila buat tanda dahulu!");
-    const dataURL = sigRef.current.toDataURL();
-    onSave(dataURL); // hantar balik ke ApproverDashboard
+  // Auto capture bila user draw
+  const handleEnd = () => {
+    if (!sigRef.current.isEmpty()) {
+      const dataURL = sigRef.current.toDataURL();
+      onChange(dataURL); // terus hantar balik ke parent
+    }
   };
 
   return (
     <div className="border p-2 rounded bg-white">
       <p className="font-semibold mb-1">Approver Signature</p>
-
       <SignatureCanvas
         ref={sigRef}
         penColor="black"
@@ -24,8 +29,8 @@ const ApproverSignaturePad = ({ onSave }) => {
           height: 150,
           className: "border rounded",
         }}
+        onEnd={handleEnd} // auto capture bila selesai draw
       />
-
       <div className="mt-2 flex gap-2">
         <button
           type="button"
@@ -33,14 +38,6 @@ const ApproverSignaturePad = ({ onSave }) => {
           className="bg-red-500 text-white px-3 py-1 rounded"
         >
           Clear
-        </button>
-
-        <button
-          type="button"
-          onClick={save}
-          className="bg-blue-600 text-white px-3 py-1 rounded"
-        >
-          Save Signature
         </button>
       </div>
     </div>
