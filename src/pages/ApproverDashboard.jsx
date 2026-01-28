@@ -68,7 +68,7 @@ const ApproverDashboard = () => {
 
   const fetchRequests = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/requests", {
+      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/requests", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRequests(res.data || []);
@@ -104,7 +104,7 @@ const ApproverDashboard = () => {
 
     try {
       await axios.put(
-        `http://localhost:5000/api/requests/approve-level/${selectedRequest._id}`,
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/approve-level/${selectedRequest._id}`,
         { signatureApprover },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -130,7 +130,7 @@ const ApproverDashboard = () => {
 
     try {
       await axios.put(
-        `http://localhost:5000/api/requests/reject-level/${selectedRequest._id}`,
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/reject-level/${selectedRequest._id}`,
         { signatureApprover },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -242,7 +242,7 @@ const ApproverDashboard = () => {
                         return (
                           <li key={idx}>
                             <a
-                              href={`http://localhost:5000/${filePath}`}
+                              href={`https://backenduwleapprovalsystem.onrender.com/${filePath}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:underline"
@@ -301,7 +301,7 @@ const ApproverDashboard = () => {
                     return (
                       <li key={idx}>
                         <a
-                          href={`http://localhost:5000/${filePath}`}
+                          href={`https://backenduwleapprovalsystem.onrender.com/${filePath}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:underline"
