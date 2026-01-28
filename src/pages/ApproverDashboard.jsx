@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import ApproverSignaturePad from "../pages/ApproverSignaturePad"; // path betul
+import ApproverSignaturePad from "../pages/ApproverSignaturePad";
 
 const ApproverDashboard = () => {
   const [requests, setRequests] = useState([]);
@@ -14,9 +14,6 @@ const ApproverDashboard = () => {
 
   const token = localStorage.getItem("token");
 
-  const formatDate = (date) =>
-    date ? new Date(date).toLocaleDateString("ms-MY") : "-";
-
   const formatDateTime = (date) =>
     date
       ? new Date(date).toLocaleString("ms-MY", {
@@ -28,15 +25,56 @@ const ApproverDashboard = () => {
         })
       : "-";
 
+  const formatDate = (date) =>
+    date
+      ? new Date(date).toLocaleDateString("ms-MY", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })
+      : "-";
+
+  const getTempohCuti = (request) => {
+    let detailsObj = {};
+    if (request.details) {
+      try {
+        detailsObj =
+          typeof request.details === "string"
+            ? JSON.parse(request.details)
+            : request.details;
+      } catch {
+        detailsObj = {};
+      }
+    }
+
+    if (request.items && request.items.length > 0) {
+      const item = request.items[0];
+      const start = item.startDate || item.leaveDate;
+      const end = item.endDate || item.leaveDate;
+      if (start && end) return `${formatDate(start)} - ${formatDate(end)}`;
+    }
+
+    const start = detailsObj.startDate || detailsObj.leaveDate;
+    const end = detailsObj.endDate || detailsObj.leaveDate;
+    if (start && end) return `${formatDate(start)} - ${formatDate(end)}`;
+
+    const rootStart = request.startDate || request.leaveDate;
+    const rootEnd = request.endDate || request.leaveDate;
+    if (rootStart && rootEnd)
+      return `${formatDate(rootStart)} - ${formatDate(rootEnd)}`;
+
+    return "-";
+  };
+
   const fetchRequests = async () => {
     try {
-      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/requests", {
+      const res = await axios.get("http://localhost:5000/api/requests", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setRequests(res.data.filter((r) => r.status === "Pending"));
+      setRequests(res.data || []);
       setLoading(false);
     } catch (err) {
-      console.error("❌ Error fetching requests:", err);
+      console.error(err);
       setError("Gagal fetch request staff!");
       setLoading(false);
     }
@@ -48,92 +86,98 @@ const ApproverDashboard = () => {
     return () => clearInterval(intervalRef.current);
   }, []);
 
-  const handleAction = async (id, action) => {
+  const canApproveLevel = (request, approverId) => {
+    const approvals = request.approvals || [];
+    const levelObj = approvals.find((a) => a.approverId === approverId);
+    if (!levelObj) return false;
+
+    for (let i = 0; i < levelObj.level - 1; i++) {
+      if (approvals[i]?.status !== "Approved") return false;
+    }
+
+    return levelObj.status === "Pending";
+  };
+
+  const handleApprove = async (levelObj) => {
+    if (!signatureApprover)
+      return Swal.fire("Error", "Sila tanda sebelum approve!", "error");
+
     try {
-      await axios.patch(
-        `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}`,
-        { status: action },
+      await axios.put(
+        `http://localhost:5000/api/requests/approve-level/${selectedRequest._id}`,
+        { signatureApprover },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       Swal.fire({
         icon: "success",
-        title: `Request ${action}d`,
+        title: `Level ${levelObj.level} approved!`,
         timer: 1500,
         showConfirmButton: false,
       });
-      setRequests((prev) => prev.filter((r) => r._id !== id));
-    } catch (err) {
-      console.error(err);
-      Swal.fire({ icon: "error", title: "Gagal update request" });
+
+      setShowApproveModal(false);
+      setSignatureApprover("");
+      fetchRequests();
+    } catch {
+      Swal.fire("Error", "Gagal approve request", "error");
     }
   };
 
-  const handleViewPDF = async (id) => {
+  const handleReject = async (levelObj) => {
+    if (!signatureApprover)
+      return Swal.fire("Error", "Sila tanda sebelum reject!", "error");
+
     try {
-      const res = await axios.get(
-        `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}/pdf`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: "blob",
-        }
+      await axios.put(
+        `http://localhost:5000/api/requests/reject-level/${selectedRequest._id}`,
+        { signatureApprover },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const fileURL = URL.createObjectURL(
-        new Blob([res.data], { type: "application/pdf" })
-      );
-
-      window.open(fileURL, "_blank");
-    } catch (err) {
-      console.error("❌ PDF error:", err);
       Swal.fire({
-        icon: "error",
-        title: "Gagal buka PDF bossskurrr!",
-        text: "Check backend / file not found",
+        icon: "success",
+        title: `Level ${levelObj.level} rejected!`,
+        timer: 1500,
+        showConfirmButton: false,
       });
+
+      setShowApproveModal(false);
+      setSignatureApprover("");
+      fetchRequests();
+    } catch {
+      Swal.fire("Error", "Gagal reject request", "error");
     }
   };
 
-  const renderFile = (file) => {
-    if (!file) return "-";
-    const ext = file.split(".").pop().toLowerCase();
-    if (["jpg", "jpeg", "png", "gif"].includes(ext)) {
-      return (
-        <a href={file} target="_blank" rel="noopener noreferrer">
-          <img
-            src={file}
-            alt="upload"
-            className="w-16 h-16 object-cover rounded"
-          />
-        </a>
-      );
-    } else {
-      return (
-        <a
-          href={file}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 underline"
-        >
-          Download File
-        </a>
-      );
-    }
-  };
-
-  const renderStatus = (status) => {
-    let color = "";
-    if (status === "Pending") color = "bg-yellow-100 text-yellow-800";
-    if (status === "Approved") color = "bg-green-100 text-green-800";
-    if (status === "Rejected") color = "bg-red-100 text-red-800";
+  const renderApproverStatus = (request) => {
+    const approvals = request.approvals || [];
+    if (!approvals.length) return "-";
 
     return (
-      <span
-        className={`px-2 py-1 rounded-full text-xs font-semibold ${color}`}
-      >
-        {status}
-      </span>
+      <ul className="space-y-1">
+        {approvals.map((a, idx) => (
+          <li key={idx}>
+            Level {a.level}: {a.approverName || a.approverId} -{" "}
+            <span
+              className={`font-semibold ${
+                a.status === "Approved"
+                  ? "text-green-600"
+                  : a.status === "Rejected"
+                  ? "text-red-600"
+                  : "text-yellow-600"
+              }`}
+            >
+              {a.status}
+            </span>
+          </li>
+        ))}
+      </ul>
     );
   };
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p className="text-red-600">{error}</p>;
 
   return (
     <div className="p-6">
@@ -141,75 +185,88 @@ const ApproverDashboard = () => {
         Approver Dashboard
       </h1>
 
-      {loading && <p>Loading...</p>}
-      {error && <p className="text-red-600">{error}</p>}
-
       <div className="overflow-x-auto shadow-lg rounded-lg">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full border border-gray-300">
           <thead className="bg-blue-100 text-blue-800">
             <tr>
-              <th className="px-4 py-2 text-left">Staff</th>
-              <th className="px-4 py-2 text-left">Request Type</th>
-              <th className="px-4 py-2 text-left">Submit Date</th>
-              <th className="px-4 py-2 text-left">Leave Period</th>
-              <th className="px-4 py-2 text-left">Details</th>
-              <th className="px-4 py-2 text-left">File</th>
-              <th className="px-4 py-2 text-left">Status</th>
-              <th className="px-4 py-2 text-left">Action</th>
+              {[
+                "Staff",
+                "Request Type",
+                "Tempoh Cuti",
+                "Submit Date",
+                "Approvers",
+                "Attachment",
+                "Action",
+              ].map((h, i) => (
+                <th key={i} className="px-4 py-2 border border-gray-300">
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+
+          <tbody className="bg-white">
             {requests.map((r) => (
-              <tr
-                key={r._id}
-                className="hover:bg-gray-50 transition duration-200"
-              >
-                <td className="px-4 py-2 font-medium">
-                  {r.userId?.username || r.staffName || "-"}
+              <tr key={r._id}>
+                <td className="px-4 py-2 border border-gray-300">
+                  {r.staffName}
                 </td>
-                <td className="px-4 py-2">{r.requestType}</td>
-                <td className="px-4 py-2">{formatDateTime(r.createdAt)}</td>
-                <td className="px-4 py-2">
-                  {r.requestType === "Cuti" ? (
-                    r.leaveStart && r.leaveEnd ? (
-                      `${formatDate(r.leaveStart)} → ${formatDate(r.leaveEnd)}`
-                    ) : r.leaveStart ? (
-                      formatDate(r.leaveStart)
-                    ) : r.leaveEnd ? (
-                      formatDate(r.leaveEnd)
-                    ) : (
-                      "-"
-                    )
+
+                <td className="px-4 py-2 border border-gray-300">
+                  {r.requestType}
+                </td>
+
+                <td className="px-4 py-2 border border-gray-300">
+                  {r.requestType === "CUTI" ? getTempohCuti(r) : "-"}
+                </td>
+
+                <td className="px-4 py-2 border border-gray-300">
+                  {formatDateTime(r.createdAt)}
+                </td>
+
+                <td className="px-4 py-2 border border-gray-300">
+                  {renderApproverStatus(r)}
+                </td>
+
+                <td className="px-4 py-2 border border-gray-300">
+                  {r.attachments && r.attachments.length > 0 ? (
+                    <ul className="space-y-1">
+                      {r.attachments.map((file, idx) => {
+                        const filePath = file.filePath || file.path;
+                        const fileName =
+                          file.originalName ||
+                          file.fileName ||
+                          "Attachment";
+                        if (!filePath) return null;
+
+                        return (
+                          <li key={idx}>
+                            <a
+                              href={`http://localhost:5000/${filePath}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              📎 {fileName}
+                            </a>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   ) : (
-                    "-"
+                    <span className="text-gray-400">Tiada fail</span>
                   )}
                 </td>
-                <td className="px-4 py-2">{r.details || "-"}</td>
-                <td className="px-4 py-2">{renderFile(r.file)}</td>
-                <td className="px-4 py-2">{renderStatus(r.status)}</td>
-                <td className="px-4 py-2 flex space-x-2">
-                  <button
-                    onClick={() => handleViewPDF(r._id)}
-                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition"
-                  >
-                    📄 View PDF
-                  </button>
 
+                <td className="px-4 py-2 border border-gray-300">
                   <button
+                    className="bg-green-600 text-white px-3 py-1 rounded"
                     onClick={() => {
                       setSelectedRequest(r);
                       setShowApproveModal(true);
                     }}
-                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
                   >
-                    ✔ Approve
-                  </button>
-
-                  <button
-                    onClick={() => handleAction(r._id, "Rejected")}
-                    className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
-                  >
-                    ❌ Reject
+                    ✔ Approve / Reject
                   </button>
                 </td>
               </tr>
@@ -218,64 +275,91 @@ const ApproverDashboard = () => {
         </table>
       </div>
 
-      {/* ⬅️ Modal Approve */}
+      {/* MODAL */}
       {showApproveModal && selectedRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-[500px]">
-            <h2 className="text-xl font-bold mb-4">Approve Request</h2>
-            <p className="mb-2">Staff: {selectedRequest.staffName}</p>
-            <p className="mb-2">Request Type: {selectedRequest.requestType}</p>
+          <div className="bg-white p-6 rounded shadow-lg w-[520px]">
+            <h2 className="text-xl font-bold mb-4">Approve / Reject</h2>
+
+            <p>Staff: {selectedRequest.staffName}</p>
+            <p>Request Type: {selectedRequest.requestType}</p>
+
+            {selectedRequest.requestType === "CUTI" && (
+              <p>Tempoh Cuti: {getTempohCuti(selectedRequest)}</p>
+            )}
+
+            {selectedRequest.attachments?.length > 0 && (
+              <div className="mt-3">
+                <p className="font-semibold">Attachment:</p>
+                <ul className="space-y-1">
+                  {selectedRequest.attachments.map((file, idx) => {
+                    const filePath = file.filePath || file.path;
+                    const fileName =
+                      file.originalName || file.fileName || "Attachment";
+                    if (!filePath) return null;
+
+                    return (
+                      <li key={idx}>
+                        <a
+                          href={`http://localhost:5000/${filePath}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          📎 {fileName}
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
 
             <ApproverSignaturePad
-              onSave={(sig) => setSignatureApprover(sig)}
+              onChange={(sig) => setSignatureApprover(sig)}
             />
 
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={async () => {
-                  if (!signatureApprover)
-                    return alert("Sila tanda sebelum approve!");
+            <div className="mt-4 space-y-2">
+              {(selectedRequest.approvals || []).map((levelObj) =>
+                canApproveLevel(selectedRequest, levelObj.approverId) ? (
+                  <div
+                    key={levelObj.level}
+                    className="flex justify-between items-center"
+                  >
+                    <span>
+                      Level {levelObj.level}:{" "}
+                      {levelObj.approverName || levelObj.approverId}
+                    </span>
 
-                  try {
-                    await axios.put(
-                      `https://backenduwleapprovalsystem.onrender.com/api/requests/approve/${selectedRequest._id}`,
-                      {
-                        status: "Approved",
-                        signatureApprover,
-                      },
-                      { headers: { Authorization: `Bearer ${token}` } }
-                    );
-                    Swal.fire({
-                      icon: "success",
-                      title: "Request approved & signature saved!",
-                      timer: 1500,
-                      showConfirmButton: false,
-                    });
-                    fetchRequests();
-                    setShowApproveModal(false);
-                    setSignatureApprover("");
-                  } catch (err) {
-                    console.error(err);
-                    Swal.fire({
-                      icon: "error",
-                      title: "Gagal approve request",
-                    });
-                  }
-                }}
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-              >
-                Approve
-              </button>
-              <button
-                onClick={() => {
-                  setShowApproveModal(false);
-                  setSignatureApprover("");
-                }}
-                className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
-              >
-                Cancel
-              </button>
+                    <div className="space-x-2">
+                      <button
+                        className="bg-green-600 text-white px-3 py-1 rounded"
+                        onClick={() => handleApprove(levelObj)}
+                      >
+                        ✔ Approve
+                      </button>
+
+                      <button
+                        className="bg-red-600 text-white px-3 py-1 rounded"
+                        onClick={() => handleReject(levelObj)}
+                      >
+                        ❌ Reject
+                      </button>
+                    </div>
+                  </div>
+                ) : null
+              )}
             </div>
+
+            <button
+              onClick={() => {
+                setShowApproveModal(false);
+                setSignatureApprover("");
+              }}
+              className="mt-4 bg-gray-400 text-white px-4 py-2 rounded"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
