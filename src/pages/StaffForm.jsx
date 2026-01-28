@@ -58,8 +58,8 @@ const StaffForm = () => {
     const fetchData = async () => {
       try {
         const [staffRes, approverRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/users/staff", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
-          axios.get("http://localhost:5000/api/users/approvers", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
+          axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/staff", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
+          axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
         ]);
         setStaffList(staffRes.data || []);
         setApproversList(approverRes.data || []);
@@ -140,7 +140,7 @@ const StaffForm = () => {
     if (file) payload.append("file", file);
 
     try {
-      await axios.post("http://localhost:5000/api/requests", payload, {
+      await axios.post("https://backenduwleapprovalsystem.onrender.com/api/requests", payload, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
