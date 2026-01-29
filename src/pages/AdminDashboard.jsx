@@ -1,4 +1,4 @@
-// AdminDashboard.jsx - Full Version with Register User, User List & Requests
+// AdminDashboard.jsx - Full Version with Borders, Hover, Shadow & Export
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -63,7 +63,7 @@ const AdminDashboard = () => {
   // ================== FETCH ==================
   const fetchCurrentUser = async () => {
     try {
-      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/me", {
+      const res = await axios.get("http://localhost:5000/api/users/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setCurrentUser(res.data);
@@ -74,7 +74,7 @@ const AdminDashboard = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/users", {
+      const res = await axios.get("http://localhost:5000/api/users", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data);
@@ -85,7 +85,7 @@ const AdminDashboard = () => {
 
   const fetchRequests = async () => {
     try {
-      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/requests", {
+      const res = await axios.get("http://localhost:5000/api/requests", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStaffRequests(res.data);
@@ -113,7 +113,7 @@ const AdminDashboard = () => {
       });
     }
     try {
-      await axios.post("https://backenduwleapprovalsystem.onrender.com/api/users/register", formData, {
+      await axios.post("http://localhost:5000/api/users/register", formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       Swal.fire({
@@ -145,7 +145,7 @@ const AdminDashboard = () => {
     });
     if (!confirm.isConfirmed) return;
     try {
-      await axios.delete(`https://backenduwleapprovalsystem.onrender.com/api/users/${id}`, {
+      await axios.delete(`http://localhost:5000/api/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers((prev) => prev.filter((u) => u._id !== id));
@@ -162,7 +162,7 @@ const AdminDashboard = () => {
     });
     if (!confirm.isConfirmed) return;
     try {
-      await axios.delete(`https://backenduwleapprovalsystem.onrender.com/api/requests/${id}`, {
+      await axios.delete(`http://localhost:5000/api/requests/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStaffRequests((prev) => prev.filter((r) => r._id !== id));
@@ -175,7 +175,7 @@ const AdminDashboard = () => {
   const handleDownloadPDF = async (requestId) => {
     try {
       const res = await axios.get(
-        `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/pdf`,
+        `http://localhost:5000/api/requests/${requestId}/pdf`,
         {
           headers: { Authorization: `Bearer ${token}` },
           responseType: "arraybuffer",
@@ -245,6 +245,7 @@ const AdminDashboard = () => {
       )
     : staffRequests;
 
+  // ================== UI ==================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-blue-50 p-8">
       <div className="max-w-7xl mx-auto">
@@ -252,13 +253,14 @@ const AdminDashboard = () => {
           Admin Dashboard
         </h1>
 
-        {/* ===== REGISTER USER ===== */}
+        {/* REGISTER USER */}
         <div className="bg-white p-6 rounded-xl shadow mb-10">
           <h2 className="font-semibold mb-4">Daftar Pengguna</h2>
           <form
             onSubmit={handleRegister}
             className="grid grid-cols-1 md:grid-cols-2 gap-4"
           >
+            {/* Inputs */}
             <input
               className="border p-2 rounded"
               placeholder="Nama"
@@ -326,7 +328,7 @@ const AdminDashboard = () => {
           </form>
         </div>
 
-        {/* ===== LIST USERS ===== */}
+        {/* USERS */}
         <div className="bg-white p-6 rounded-xl shadow mb-10 overflow-x-auto">
           <h2 className="font-semibold mb-4">Senarai Pengguna</h2>
           <table className="w-full text-sm border border-gray-300 border-collapse">
@@ -373,7 +375,7 @@ const AdminDashboard = () => {
           </table>
         </div>
 
-        {/* ===== STAFF REQUESTS ===== */}
+        {/* REQUESTS */}
         <div className="bg-white p-6 rounded-xl shadow overflow-x-auto">
           <h2 className="font-semibold mb-4">Staff Requests</h2>
 
@@ -435,12 +437,21 @@ const AdminDashboard = () => {
                             <li key={idx} className="flex items-center gap-2">
                               <span
                                 className="text-blue-700 underline cursor-pointer"
-                                onClick={() => handleViewFile(file.fileUrl)}
+                                onClick={() =>
+                                  handleViewFile(
+                                    `http://localhost:5000/${file.filePath}`
+                                  )
+                                }
                               >
                                 {file.originalName}
                               </span>
                               <button
-                                onClick={() => window.open(file.fileUrl, "_blank")}
+                                onClick={() =>
+                                  window.open(
+                                    `http://localhost:5000/${file.filePath}`,
+                                    "_blank"
+                                  )
+                                }
                                 className="bg-green-500 text-white px-2 py-0.5 rounded text-xs"
                               >
                                 View
