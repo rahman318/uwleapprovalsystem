@@ -1,4 +1,4 @@
-// AdminDashboard.jsx - Updated for Supabase File URLs
+// AdminDashboard.jsx - Full Version with Register User, User List & Requests
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -245,7 +245,6 @@ const AdminDashboard = () => {
       )
     : staffRequests;
 
-  // ================== UI ==================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-blue-50 p-8">
       <div className="max-w-7xl mx-auto">
@@ -253,9 +252,128 @@ const AdminDashboard = () => {
           Admin Dashboard
         </h1>
 
-        {/* ...REGISTER USER & USERS SECTION OMITTED FOR BREVITY */}
+        {/* ===== REGISTER USER ===== */}
+        <div className="bg-white p-6 rounded-xl shadow mb-10">
+          <h2 className="font-semibold mb-4">Daftar Pengguna</h2>
+          <form
+            onSubmit={handleRegister}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          >
+            <input
+              className="border p-2 rounded"
+              placeholder="Nama"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              required
+            />
+            <input
+              className="border p-2 rounded"
+              placeholder="Email"
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+              required
+            />
+            <input
+              className="border p-2 rounded"
+              type="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+              required
+            />
+            <input
+              className="border p-2 rounded"
+              placeholder="Department"
+              value={formData.department}
+              onChange={(e) =>
+                setFormData({ ...formData, department: e.target.value })
+              }
+            />
+            <select
+              className="border p-2 rounded"
+              value={formData.role}
+              onChange={(e) =>
+                setFormData({ ...formData, role: e.target.value })
+              }
+            >
+              <option value="staff">Staff</option>
+              <option value="approver">Approver</option>
+              <option value="admin">Admin</option>
+            </select>
+            {formData.role === "approver" && (
+              <select
+                className="border p-2 rounded"
+                value={formData.level}
+                onChange={(e) =>
+                  setFormData({ ...formData, level: e.target.value })
+                }
+              >
+                <option value="">Pilih Level</option>
+                <option value="1">Level 1</option>
+                <option value="2">Level 2</option>
+                <option value="3">Level 3</option>
+              </select>
+            )}
+            <button className="bg-blue-600 text-white rounded py-2 font-semibold">
+              Daftar
+            </button>
+          </form>
+        </div>
 
-        {/* REQUESTS */}
+        {/* ===== LIST USERS ===== */}
+        <div className="bg-white p-6 rounded-xl shadow mb-10 overflow-x-auto">
+          <h2 className="font-semibold mb-4">Senarai Pengguna</h2>
+          <table className="w-full text-sm border border-gray-300 border-collapse">
+            <thead>
+              <tr className="bg-blue-100">
+                <th className="p-3 border border-gray-300">Nama</th>
+                <th className="p-3 border border-gray-300">Email</th>
+                <th className="p-3 border border-gray-300">Role</th>
+                <th className="p-3 border border-gray-300">Department</th>
+                <th className="p-3 border border-gray-300">Level</th>
+                <th className="p-3 border border-gray-300">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr
+                  key={u._id}
+                  className={`hover:bg-gray-100 ${
+                    u.role === "staff" ? "bg-gray-50" : "bg-white"
+                  }`}
+                >
+                  <td className="p-3 border border-gray-300">{u.name}</td>
+                  <td className="p-3 border border-gray-300">{u.email}</td>
+                  <td className="p-3 border border-gray-300">{u.role}</td>
+                  <td className="p-3 border border-gray-300">{u.department || "-"}</td>
+                  <td className="p-3 border border-gray-300">
+                    {u.role === "approver"
+                      ? u.level
+                        ? `Level ${u.level}`
+                        : "Belum tetapkan"
+                      : "-"}
+                  </td>
+                  <td className="p-3 border border-gray-300 space-x-2">
+                    <button
+                      onClick={() => handleDeleteUser(u._id)}
+                      className="bg-red-500 text-white px-2 py-1 rounded"
+                    >
+                      🗑
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ===== STAFF REQUESTS ===== */}
         <div className="bg-white p-6 rounded-xl shadow overflow-x-auto">
           <h2 className="font-semibold mb-4">Staff Requests</h2>
 
