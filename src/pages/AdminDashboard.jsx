@@ -175,7 +175,7 @@ const AdminDashboard = () => {
   const handleDownloadPDF = async (requestId) => {
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/requests/${requestId}/pdf`,
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/pdf`,
         {
           headers: { Authorization: `Bearer ${token}` },
           responseType: "arraybuffer",
