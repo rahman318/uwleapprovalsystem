@@ -439,7 +439,7 @@ const AdminDashboard = () => {
                                 className="text-blue-700 underline cursor-pointer"
                                 onClick={() =>
                                   handleViewFile(
-                                    `http://localhost:5000/${file.filePath}`
+                                    `https://backenduwleapprovalsystem.onrender.com/${file.filePath}`
                                   )
                                 }
                               >
