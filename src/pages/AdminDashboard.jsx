@@ -431,38 +431,31 @@ const AdminDashboard = () => {
                     <td className="p-3 border border-gray-300">{r.staffName || "-"}</td>
                     <td className="p-3 border border-gray-300">{r.requestType || "-"}</td>
                     <td className="p-3 border border-gray-300">
-                      {r.attachments && r.attachments.length > 0 ? (
-                        <ul className="space-y-1">
-                          {r.attachments.map((file, idx) => (
-                            <li key={idx} className="flex items-center gap-2">
-                              <span
-                                className="text-blue-700 underline cursor-pointer"
-                                onClick={() =>
-                                  handleViewFile(
-                                    `https://backenduwleapprovalsystem.onrender.com/${file.fileUrl}`
-                                  )
-                                }
-                              >
-                                {file.originalName}
-                              </span>
-                              <button
-                                onClick={() =>
-                                  window.open(
-                                    `https://backenduwleapprovalsystem.onrender.com/${file.fileUrl}`,
-                                    "_blank"
-                                  )
-                                }
-                                className="bg-green-500 text-white px-2 py-0.5 rounded text-xs"
-                              >
-                                View
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
+  {r.attachments && r.attachments.length > 0 ? (
+    <ul className="space-y-1">
+      {r.attachments.map((file, idx) => (
+        <li key={idx} className="flex items-center gap-2">
+          {/* Click to view */}
+          <span
+            className="text-blue-700 underline cursor-pointer"
+            onClick={() => handleViewFile(file.fileUrl)} // ✅ Supabase public URL terus
+          >
+            {file.originalName}
+          </span>
+          {/* Button to open in new tab */}
+          <button
+            onClick={() => window.open(file.fileUrl, "_blank")} // ✅ Supabase public URL terus
+            className="bg-green-500 text-white px-2 py-0.5 rounded text-xs"
+          >
+            View
+          </button>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    "-"
+  )}
+</td>
                     <td className="p-3 border border-gray-300">{getStatusDisplay(status)}</td>
                     <td className="p-3 border border-gray-300 space-x-2">
                       <button
