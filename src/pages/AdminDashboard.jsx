@@ -448,7 +448,7 @@ const AdminDashboard = () => {
                               <button
                                 onClick={() =>
                                   window.open(
-                                    `https://backenduwleapprovalsystem.onrender.com/${file.filePath}`,
+                                    `https://backenduwleapprovalsystem.onrender.com/${file.fileUrl}`,
                                     "_blank"
                                   )
                                 }
