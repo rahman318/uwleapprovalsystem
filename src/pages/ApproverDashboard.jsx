@@ -229,35 +229,36 @@ const ApproverDashboard = () => {
                 </td>
 
                 <td className="px-4 py-2 border border-gray-300">
-                  {r.attachments && r.attachments.length > 0 ? (
-                    <ul className="space-y-1">
-                      {r.attachments.map((file, idx) => {
-                        const filePath = file.filePath || file.path;
-                        const fileName =
-                          file.originalName ||
-                          file.fileName ||
-                          "Attachment";
-                        if (!filePath) return null;
+  {r.attachments && r.attachments.length > 0 ? (
+    <ul className="space-y-1">
+      {r.attachments.map((file, idx) => {
+        const fileName = file.originalName || file.fileName || "Attachment";
+        if (!file.fileUrl) return null;
 
-                        return (
-                          <li key={idx}>
-                            <a
-                              href={`https://backenduwleapprovalsystem.onrender.com/${filePath}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
-                            >
-                              📎 {fileName}
-                            </a>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <span className="text-gray-400">Tiada fail</span>
-                  )}
-                </td>
-
+        return (
+          <li key={idx} className="flex items-center gap-2">
+            <a
+              href={file.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              📎 {fileName}
+            </a>
+            <button
+              onClick={() => window.open(file.fileUrl, "_blank")}
+              className="bg-green-500 text-white px-2 py-0.5 rounded text-xs"
+            >
+              View
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  ) : (
+    <span className="text-gray-400">Tiada fail</span>
+  )}
+</td>
                 <td className="px-4 py-2 border border-gray-300">
                   <button
                     className="bg-green-600 text-white px-3 py-1 rounded"
@@ -289,31 +290,35 @@ const ApproverDashboard = () => {
             )}
 
             {selectedRequest.attachments?.length > 0 && (
-              <div className="mt-3">
-                <p className="font-semibold">Attachment:</p>
-                <ul className="space-y-1">
-                  {selectedRequest.attachments.map((file, idx) => {
-                    const filePath = file.filePath || file.path;
-                    const fileName =
-                      file.originalName || file.fileName || "Attachment";
-                    if (!filePath) return null;
+  <div className="mt-3">
+    <p className="font-semibold">Attachment:</p>
+    <ul className="space-y-1">
+      {selectedRequest.attachments.map((file, idx) => {
+        const fileName = file.originalName || file.fileName || "Attachment";
+        if (!file.fileUrl) return null;
 
-                    return (
-                      <li key={idx}>
-                        <a
-                          href={`https://backenduwleapprovalsystem.onrender.com/${filePath}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          📎 {fileName}
-                        </a>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
+        return (
+          <li key={idx} className="flex items-center gap-2">
+            <a
+              href={file.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              📎 {fileName}
+            </a>
+            <button
+              onClick={() => window.open(file.fileUrl, "_blank")}
+              className="bg-green-500 text-white px-2 py-0.5 rounded text-xs"
+            >
+              View
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  </div>
+)}
 
             <ApproverSignaturePad
               onChange={(sig) => setSignatureApprover(sig)}
