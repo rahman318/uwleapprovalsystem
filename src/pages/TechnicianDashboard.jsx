@@ -23,7 +23,7 @@ const TechnicianDashboard = () => {
   // ================== FETCH CURRENT USER ==================
   const fetchCurrentUser = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/users/me", {
+      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setCurrentUser(res.data);
@@ -36,7 +36,7 @@ const TechnicianDashboard = () => {
   const fetchRequests = async () => {
     if (!currentUser) return;
     try {
-      const res = await axios.get("http://localhost:5000/api/requests", {
+      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/requests", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -167,7 +167,7 @@ const TechnicianDashboard = () => {
       if (!confirm.isConfirmed) return;
 
       const res = await axios.put(
-        `http://localhost:5000/api/requests/${requestId}/maintenance`,
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/maintenance`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -265,7 +265,7 @@ const TechnicianDashboard = () => {
                               window.open(file.fileUrl, "_blank");
                             } else if (file.filePath) {
                               window.open(
-                                `http://localhost:5000/${file.filePath}`,
+                                `https://backenduwleapprovalsystem.onrender.com/${file.filePath}`,
                                 "_blank"
                               );
                             }
