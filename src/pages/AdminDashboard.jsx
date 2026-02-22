@@ -206,7 +206,7 @@ const AdminDashboard = () => {
   // ================== FETCH ==================
   const fetchCurrentUser = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/users/me", {
+      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setCurrentUser(res.data);
@@ -217,7 +217,7 @@ const AdminDashboard = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/users", {
+      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/users", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data);
@@ -228,7 +228,7 @@ const AdminDashboard = () => {
 
   const fetchRequests = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/requests", {
+      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/requests", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStaffRequests(res.data);
@@ -257,7 +257,7 @@ const AdminDashboard = () => {
     }
     try {
       await axios.post(
-        "http://localhost:5000/api/users/register",
+        "https://backenduwleapprovalsystem.onrender.com/api/users/register",
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -290,7 +290,7 @@ const AdminDashboard = () => {
     });
     if (!confirm.isConfirmed) return;
     try {
-      await axios.delete(`http://localhost:5000/api/users/${id}`, {
+      await axios.delete(`https://backenduwleapprovalsystem.onrender.com/api/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers((prev) => prev.filter((u) => u._id !== id));
@@ -307,7 +307,7 @@ const AdminDashboard = () => {
     });
     if (!confirm.isConfirmed) return;
     try {
-      await axios.delete(`http://localhost:5000/api/requests/${id}`, {
+      await axios.delete(`https://backenduwleapprovalsystem.onrender.com/api/requests/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStaffRequests((prev) => prev.filter((r) => r._id !== id));
@@ -320,7 +320,7 @@ const AdminDashboard = () => {
   const handleDownloadPDF = async (requestId) => {
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/requests/${requestId}/pdf`,
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/pdf`,
         {
           headers: { Authorization: `Bearer ${token}` },
           responseType: "arraybuffer",
