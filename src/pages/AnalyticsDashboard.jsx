@@ -17,7 +17,7 @@ const AnalyticsDashboard = () => {
   // ================== FETCH REQUESTS ==================
   const fetchRequests = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/requests", {
+      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/requests", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const maintenanceRequests = res.data.filter(
