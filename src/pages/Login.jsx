@@ -39,7 +39,7 @@ export default function Login({ setUser }) {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", { email, password });
+      const res = await axios.post("https://backenduwleapprovalsystem.onrender.com/api/auth/login", { email, password });
 
       const token = res.data.token;
       const userRaw = res.data.user;
