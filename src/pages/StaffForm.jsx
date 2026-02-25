@@ -146,7 +146,7 @@ const StaffForm = () => {
     payload.append("staffDepartment", staffDepartment);
 
     if (file) {
-      payload.append("attachments", file); // ✅ field name sama dengan backend multer
+      payload.append("files", file); // ✅ field name sama dengan backend multer
     }
 
     try {
