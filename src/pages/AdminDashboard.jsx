@@ -36,42 +36,48 @@ const AnalyticsDashboard = ({ requests }) => {
   const pendingCount = totalRequests - approvedCount - rejectedCount;
 
   // ================== Analytics Data ==================
-  const requestTypesCount = {};
-  const technicianCount = {};
-  const statusCount = {};
+const requestTypesCount = {};
+const technicianCount = {};
+const statusCount = {};
 
-  filteredRequests.forEach((r) => {
-    // Request Types
-    requestTypesCount[r.requestType] = (requestTypesCount[r.requestType] || 0) + 1;
+filteredRequests.forEach((r) => {
+  // Request Types
+  requestTypesCount[r.requestType] = (requestTypesCount[r.requestType] || 0) + 1;
 
-    // Status
-    const status = r.approvals?.some((a) => a.status === "Rejected")
-      ? "Rejected"
-      : r.approvals?.every((a) => a.status === "Approved")
-      ? "Approved"
-      : "Pending";
-    statusCount[status] = (statusCount[status] || 0) + 1;
+  // Status
+  const status = r.approvals?.some((a) => a.status === "Rejected")
+    ? "Rejected"
+    : r.approvals?.every((a) => a.status === "Approved")
+    ? "Approved"
+    : "Pending";
+  statusCount[status] = (statusCount[status] || 0) + 1;
 
-    // Technician Count ✅
-    if (r.assignedTechnician?.username) {
-      technicianCount[r.assignedTechnician.username] =
-        (technicianCount[r.assignedTechnician.username] || 0) + 1;
-    }
-  });
+  // Technician Count ✅ with fallback
+  let techName;
+  if (!r.assignedTechnician) {
+    techName = "Unassigned"; // kosong
+  } else if (typeof r.assignedTechnician === "object") {
+    techName = r.assignedTechnician.username || r.assignedTechnician._id || "Unknown";
+  } else {
+    techName = r.assignedTechnician; // ID string fallback
+  }
 
-  // Chart Data
-  const chartRequestTypes = Object.keys(requestTypesCount).map((key) => ({
-    name: key,
-    count: requestTypesCount[key],
-  }));
-  const chartStatus = Object.keys(statusCount).map((key) => ({
-    name: key,
-    count: statusCount[key],
-  }));
-  const chartTechnician = Object.keys(technicianCount).map((key) => ({
-    name: key,
-    count: technicianCount[key],
-  }));
+  technicianCount[techName] = (technicianCount[techName] || 0) + 1;
+});
+
+// Chart Data
+const chartRequestTypes = Object.keys(requestTypesCount).map((key) => ({
+  name: key,
+  count: requestTypesCount[key],
+}));
+const chartStatus = Object.keys(statusCount).map((key) => ({
+  name: key,
+  count: statusCount[key],
+}));
+const chartTechnician = Object.keys(technicianCount).map((key) => ({
+  name: key,
+  count: technicianCount[key],
+}));
 
   // ================== EXPORT TO EXCEL ==================
   const exportToExcel = () => {
