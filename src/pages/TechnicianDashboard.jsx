@@ -254,30 +254,41 @@ const TechnicianDashboard = () => {
                       : "-"}
                   </td>
 
-                  <td className="p-3 border">
-                    {r.attachments?.length > 0 ? (
-                      r.attachments.map((file, idx) => (
-                        <div
-                          key={idx}
-                          className="text-blue-600 underline cursor-pointer hover:text-blue-800"
-                          onClick={() => {
-                            if (file.url) {
-                              window.open(file.url, "_blank");
-                            } else if (file.filePath) {
-                              window.open(
-                                `https://backenduwleapprovalsystem.onrender.com/${file.filePath}`,
-                                "_blank"
-                              );
-                            }
-                          }}
-                        >
-                          📎 {file.originalName}
-                        </div>
-                      ))
-                    ) : (
-                      "-"
-                    )}
-                  </td>
+                 <td className="p-3 border">
+  {r.attachments?.length > 0 ? (
+    <ul className="space-y-1">
+      {r.attachments.map((file, idx) => {
+        const fileName = file.originalName || file.fileName || "Attachment";
+        if (!file.url && !file.filePath) return null;
+
+        // Tentukan URL final
+        const fileUrl = file.url || `https://backenduwleapprovalsystem.onrender.com/${file.filePath}`;
+
+        return (
+          <li key={idx} className="flex items-center gap-2">
+            <a
+              href={fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              📎 {fileName}
+            </a>
+
+            <button
+              onClick={() => window.open(fileUrl, "_blank")}
+              className="bg-green-500 text-white px-2 py-0.5 rounded text-xs"
+            >
+              View
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  ) : (
+    <span className="text-gray-400">Tiada fail</span>
+  )}
+</td>
 
                   <td className="p-3 border">
                     {r.maintenanceStatus !== "Completed" ? (
