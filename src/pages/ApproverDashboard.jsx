@@ -271,11 +271,11 @@ const ApproverDashboard = () => {
                     <ul className="space-y-1">
                       {r.attachments.map((file, idx) => {
                         const fileName = file.originalName || file.fileName || "Attachment";
-                        if (!file.fileUrl) return null;
+                        if (!file.url) return null;
                         return (
                           <li key={idx} className="flex items-center gap-2">
                             <a
-                              href={file.fileUrl}
+                              href={file.url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:underline"
@@ -283,7 +283,7 @@ const ApproverDashboard = () => {
                               📎 {fileName}
                             </a>
                             <button
-                              onClick={() => window.open(file.fileUrl, "_blank")}
+                              onClick={() => window.open(file.url, "_blank")}
                               className="bg-green-500 text-white px-2 py-0.5 rounded text-xs"
                             >
                               View
