@@ -111,7 +111,7 @@ export default function Login({ setUser }) {
           className="h-16 w-auto mb-2 z-10"
         />
         <h1 className="text-2xl font-bold text-white tracking-wide z-10">
-          e-Approval & Maintenance Portal
+          E-Approval & Maintenance Portal
         </h1>
 
         {/* SMART Analytics Button */}
