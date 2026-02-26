@@ -261,8 +261,8 @@ const TechnicianDashboard = () => {
                           key={idx}
                           className="text-blue-600 underline cursor-pointer hover:text-blue-800"
                           onClick={() => {
-                            if (file.fileUrl) {
-                              window.open(file.fileUrl, "_blank");
+                            if (file.url) {
+                              window.open(file.url, "_blank");
                             } else if (file.filePath) {
                               window.open(
                                 `https://backenduwleapprovalsystem.onrender.com/${file.filePath}`,
