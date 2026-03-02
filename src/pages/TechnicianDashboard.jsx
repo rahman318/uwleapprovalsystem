@@ -7,7 +7,7 @@ const TechnicianDashboard = () => {
   const [requests, setRequests] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [remarks, setRemarks] = useState({}); // untuk simpan remark sementara tiap row
+  const [remarks, setRemarks] = useState({}); // { requestId: { text: "", file: File } }
 
   const token = localStorage.getItem("token");
 
@@ -16,7 +16,6 @@ const TechnicianDashboard = () => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
   const formatClock = (date) => date.toLocaleTimeString();
 
   // ================== FETCH CURRENT USER ==================
@@ -53,7 +52,7 @@ const TechnicianDashboard = () => {
       // initialize remarks state
       const initialRemarks = {};
       myRequests.forEach((r) => {
-        initialRemarks[r._id] = r.remark || "";
+        initialRemarks[r._id] = { text: r.technicianRemark || "", file: null };
       });
       setRemarks(initialRemarks);
     } catch (err) {
@@ -82,32 +81,28 @@ const TechnicianDashboard = () => {
   // ================== SLA COUNTDOWN ==================
   const getSLARemaining = (assignedAt, slaHours, maintenanceStatus) => {
     if (!assignedAt || maintenanceStatus === "Completed") return "-";
-
     const assignedTime = new Date(assignedAt);
     const deadline = new Date(assignedTime.getTime() + slaHours * 60 * 60 * 1000);
     const diffMs = deadline - currentTime;
     const diffAbs = Math.abs(diffMs);
-
     const hours = Math.floor(diffAbs / (1000 * 60 * 60));
     const minutes = Math.floor((diffAbs % (1000 * 60 * 60)) / (1000 * 60));
 
-    if (diffMs < 0) return <span className="text-red-600 font-bold animate-pulse">🚨 {hours}h {minutes}m overdue</span>;
-    if (hours === 0 && minutes <= 30) return <span className="text-yellow-600 font-semibold">⏳ {hours}h {minutes}m left</span>;
-
+    if (diffMs < 0)
+      return <span className="text-red-600 font-bold animate-pulse">🚨 {hours}h {minutes}m overdue</span>;
+    if (hours === 0 && minutes <= 30)
+      return <span className="text-yellow-600 font-semibold">⏳ {hours}h {minutes}m left</span>;
     return `⏳ ${hours}h ${minutes}m left`;
   };
 
   // ================== STATUS BADGE ==================
   const getStatusBadge = (request) => {
-    if (request.maintenanceStatus === "Submitted") {
+    if (request.maintenanceStatus === "Submitted")
       return <span className="px-3 py-1 rounded-full text-white bg-gray-500 font-semibold">Submitted</span>;
-    }
-    if (request.maintenanceStatus === "In Progress") {
+    if (request.maintenanceStatus === "In Progress")
       return <span className="px-3 py-1 rounded-full text-white bg-yellow-500 animate-pulse font-bold">🚧 In Progress</span>;
-    }
-    if (request.maintenanceStatus === "Completed") {
+    if (request.maintenanceStatus === "Completed")
       return <span className="px-3 py-1 rounded-full text-white bg-green-600 font-bold">✅ Completed</span>;
-    }
     return request.maintenanceStatus;
   };
 
@@ -127,7 +122,6 @@ const TechnicianDashboard = () => {
         title: confirmTitle,
         showCancelButton: true,
       });
-
       if (!confirm.isConfirmed) return;
 
       const res = await axios.put(
@@ -147,24 +141,35 @@ const TechnicianDashboard = () => {
     }
   };
 
-  // ================== SAVE REMARK ==================
+  // ================== SAVE REMARK + PROOF IMAGE ==================
   const handleSaveRemark = async (requestId) => {
     try {
-      const remark = remarks[requestId] || "";
+      const remarkObj = remarks[requestId] || {};
+      const formData = new FormData();
+      formData.append("technicianRemark", remarkObj.text || "");
+      if (remarkObj.file) formData.append("proofImage", remarkObj.file);
+
       const res = await axios.patch(
-        `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/remark`,
-        { remark },
-        { headers: { Authorization: `Bearer ${token}` } }
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/technician-update`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
 
-      Swal.fire({ icon: "success", title: "Remark berjaya disimpan", timer: 1500, showConfirmButton: false });
+      Swal.fire({ icon: "success", title: "Remark & proof berjaya disimpan", timer: 1500, showConfirmButton: false });
 
       setRequests((prev) =>
-        prev.map((r) => (r._id === requestId ? { ...r, remark: res.data.request.remark } : r))
+        prev.map((r) => (r._id === requestId ? { ...r, ...res.data.request } : r))
       );
+
+      setRemarks((prev) => ({ ...prev, [requestId]: { text: remarkObj.text } })); // clear file
     } catch (err) {
-      console.error("❌ Save remark error:", err);
-      Swal.fire({ icon: "error", title: "Gagal simpan remark" });
+      console.error("❌ Save remark & proof error:", err);
+      Swal.fire({ icon: "error", title: "Gagal simpan remark / proof" });
     }
   };
 
@@ -190,7 +195,7 @@ const TechnicianDashboard = () => {
                 <th className="p-3 border text-left">SLA</th>
                 <th className="p-3 border text-left">Time Taken</th>
                 <th className="p-3 border text-left">Attachments</th>
-                <th className="p-3 border text-left">Remark</th> {/* new column */}
+                <th className="p-3 border text-left">Remark / Proof</th>
                 <th className="p-3 border text-left">Action</th>
               </tr>
             </thead>
@@ -225,15 +230,44 @@ const TechnicianDashboard = () => {
                         </ul>
                       ) : <span className="text-gray-400">Tiada fail</span>}
                     </td>
+
+                    {/* Remark + Proof Upload */}
                     <td className="p-3 border">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-2">
                         <input
                           type="text"
-                          value={remarks[r._id] || ""}
-                          onChange={(e) => setRemarks(prev => ({ ...prev, [r._id]: e.target.value }))}
+                          value={remarks[r._id]?.text || ""}
+                          onChange={(e) => setRemarks(prev => ({
+                            ...prev,
+                            [r._id]: { ...prev[r._id], text: e.target.value }
+                          }))}
                           className="border border-gray-300 p-1 rounded w-full text-sm"
                           placeholder="Masukkan remark..."
                         />
+
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              setRemarks(prev => ({
+                                ...prev,
+                                [r._id]: { ...prev[r._id], file }
+                              }));
+                            }
+                          }}
+                          className="border border-gray-300 p-1 rounded text-sm"
+                        />
+
+                        {remarks[r._id]?.file && (
+                          <img
+                            src={URL.createObjectURL(remarks[r._id].file)}
+                            alt="Preview"
+                            className="w-24 h-24 object-cover border border-gray-200 rounded"
+                          />
+                        )}
+
                         <button
                           onClick={() => handleSaveRemark(r._id)}
                           className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 text-sm"
@@ -242,6 +276,7 @@ const TechnicianDashboard = () => {
                         </button>
                       </div>
                     </td>
+
                     <td className="p-3 border">
                       {r.maintenanceStatus !== "Completed" ? (
                         <button onClick={() => handleMarkStatus(r._id)} className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Update</button>
