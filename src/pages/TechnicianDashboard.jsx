@@ -12,9 +12,7 @@ const TechnicianDashboard = () => {
 
   // ================== DIGITAL CLOCK ==================
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -23,9 +21,10 @@ const TechnicianDashboard = () => {
   // ================== FETCH CURRENT USER ==================
   const fetchCurrentUser = async () => {
     try {
-      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        "https://backenduwleapprovalsystem.onrender.com/api/users/me",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setCurrentUser(res.data);
     } catch (err) {
       console.error("❌ Fetch current user error:", err);
@@ -36,9 +35,10 @@ const TechnicianDashboard = () => {
   const fetchRequests = async () => {
     if (!currentUser) return;
     try {
-      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/requests", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        "https://backenduwleapprovalsystem.onrender.com/api/requests",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       const myRequests = res.data.filter(
         (r) =>
@@ -59,28 +59,16 @@ const TechnicianDashboard = () => {
 
   useEffect(() => {
     fetchRequests();
-    const interval = setInterval(fetchRequests, 5000);
+    const interval = setInterval(fetchRequests, 10000); // 10s refresh
     return () => clearInterval(interval);
   }, [currentUser]);
 
-  // ================== FORMAT TIME ==================
+  // ================== FORMAT TIME TAKEN ==================
   const formatTimeTaken = (minutes) => {
     if (minutes == null) return "-";
     const hrs = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    if (hrs > 0) return `${hrs} jam ${mins} minit`;
-    return `${mins} minit`;
-  };
-
-  // ================== OVERDUE CHECK ==================
-  const checkOverdue = (assignedAt, slaHours, maintenanceStatus) => {
-    if (!assignedAt) return false;
-    if (maintenanceStatus === "Completed") return false;
-
-    const assignedTime = new Date(assignedAt);
-    const diffHours = (currentTime - assignedTime) / (1000 * 60 * 60);
-
-    return diffHours > slaHours;
+    return hrs > 0 ? `${hrs} jam ${mins} minit` : `${mins} minit`;
   };
 
   // ================== SLA COUNTDOWN ==================
@@ -88,61 +76,31 @@ const TechnicianDashboard = () => {
     if (!assignedAt || maintenanceStatus === "Completed") return "-";
 
     const assignedTime = new Date(assignedAt);
-    const deadline = new Date(
-      assignedTime.getTime() + slaHours * 60 * 60 * 1000
-    );
-
+    const deadline = new Date(assignedTime.getTime() + slaHours * 60 * 60 * 1000);
     const diffMs = deadline - currentTime;
-    const absMs = Math.abs(diffMs);
+    const diffAbs = Math.abs(diffMs);
 
-    const hours = Math.floor(absMs / (1000 * 60 * 60));
-    const minutes = Math.floor((absMs % (1000 * 60 * 60)) / (1000 * 60));
+    const hours = Math.floor(diffAbs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffAbs % (1000 * 60 * 60)) / (1000 * 60));
 
-    if (diffMs < 0) {
-      return `🚨 ${hours}h ${minutes}m overdue`;
-    }
+    if (diffMs < 0) return <span className="text-red-600 font-bold animate-pulse">🚨 {hours}h {minutes}m overdue</span>;
+    if (hours === 0 && minutes <= 30) return <span className="text-yellow-600 font-semibold">⏳ {hours}h {minutes}m left</span>;
 
     return `⏳ ${hours}h ${minutes}m left`;
   };
 
   // ================== STATUS BADGE ==================
   const getStatusBadge = (request) => {
-    const isOverdue = checkOverdue(
-      request.assignedAt,
-      request.slaHours,
-      request.maintenanceStatus
-    );
-
-    if (isOverdue) {
-      return (
-        <span className="px-3 py-1 rounded-full text-white bg-red-600 animate-pulse font-bold">
-          🚨 OVERDUE
-        </span>
-      );
+    if (request.maintenanceStatus === "Submitted") {
+      return <span className="px-3 py-1 rounded-full text-white bg-gray-500 font-semibold">Submitted</span>;
     }
-
-    switch (request.maintenanceStatus) {
-      case "Submitted":
-        return (
-          <span className="px-3 py-1 rounded-full text-white bg-gray-500">
-            Submitted
-          </span>
-        );
-      case "In Progress":
-        return (
-          <span className="px-3 py-1 rounded-full text-white bg-yellow-500 animate-pulse">
-            🚧 In Progress
-          </span>
-        );
-      case "Completed":
-        return (
-          <span className="px-3 py-1 rounded-full text-white bg-green-600">
-            ✅ Completed
-          </span>
-        );
-      default:
-        return request.maintenanceStatus;
+    if (request.maintenanceStatus === "In Progress") {
+      return <span className="px-3 py-1 rounded-full text-white bg-yellow-500 animate-pulse font-bold">🚧 In Progress</span>;
     }
+    if (request.maintenanceStatus === "Completed") {
+      return <span className="px-3 py-1 rounded-full text-white bg-green-600 font-bold">✅ Completed</span>;
+    }
+    return request.maintenanceStatus;
   };
 
   // ================== UPDATE STATUS ==================
@@ -152,10 +110,8 @@ const TechnicianDashboard = () => {
       if (!request) return;
 
       let confirmTitle = "";
-      if (request.maintenanceStatus === "Submitted")
-        confirmTitle = "Mark as In Progress?";
-      else if (request.maintenanceStatus === "In Progress")
-        confirmTitle = "Mark as Completed?";
+      if (request.maintenanceStatus === "Submitted") confirmTitle = "Mark as In Progress?";
+      else if (request.maintenanceStatus === "In Progress") confirmTitle = "Mark as Completed?";
       else return;
 
       const confirm = await Swal.fire({
@@ -172,17 +128,10 @@ const TechnicianDashboard = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      Swal.fire({
-        icon: "success",
-        title: "Status updated",
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      Swal.fire({ icon: "success", title: "Status updated", timer: 1500, showConfirmButton: false });
 
       setRequests((prev) =>
-        prev.map((r) =>
-          r._id === requestId ? { ...r, ...res.data.request } : r
-        )
+        prev.map((r) => (r._id === requestId ? { ...r, ...res.data.request } : r))
       );
     } catch (err) {
       console.error("❌ Update status error:", err);
@@ -192,120 +141,75 @@ const TechnicianDashboard = () => {
 
   // ================== UI ==================
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
 
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-blue-700">
-            Technician Dashboard
-          </h1>
-
+          <h1 className="text-3xl font-bold text-blue-700">Technician Dashboard</h1>
           <div className="bg-black text-green-400 font-mono px-4 py-2 rounded-lg shadow-lg text-lg">
             {formatClock(currentTime)}
           </div>
         </div>
 
-        <table className="w-full text-sm border border-gray-300 border-collapse">
-          <thead>
-            <tr className="bg-blue-100">
-              <th className="p-3 border">Serial</th>
-              <th className="p-3 border">Staff</th>
-              <th className="p-3 border">Department</th>
-              <th className="p-3 border">Status</th>
-              <th className="p-3 border">SLA</th>
-              <th className="p-3 border">Time Taken</th>
-              <th className="p-3 border">Attachments</th>
-              <th className="p-3 border">Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {requests.length === 0 ? (
+        <div className="overflow-x-auto rounded-lg shadow-md border border-gray-200">
+          <table className="w-full text-sm table-auto border-collapse">
+            <thead className="bg-blue-100">
               <tr>
-                <td colSpan={8} className="text-center p-4 border">
-                  Tiada request untuk anda
-                </td>
+                <th className="p-3 border text-left">Serial</th>
+                <th className="p-3 border text-left">Staff</th>
+                <th className="p-3 border text-left">Dept</th>
+                <th className="p-3 border text-left">Status</th>
+                <th className="p-3 border text-left">SLA</th>
+                <th className="p-3 border text-left">Time Taken</th>
+                <th className="p-3 border text-left">Attachments</th>
+                <th className="p-3 border text-left">Action</th>
               </tr>
-            ) : (
-              requests.map((r) => (
-                <tr key={r._id} className="hover:bg-gray-50">
-                  <td className="p-3 border font-semibold text-blue-700">
-                    {r.serialNumber}
-                  </td>
-
-                  <td className="p-3 border">{r.staffName}</td>
-                  <td className="p-3 border">{r.staffDepartment}</td>
-
-                  <td className="p-3 border">
-                    {getStatusBadge(r)}
-                  </td>
-
-                  <td className="p-3 border">
-                    {getSLARemaining(
-                      r.assignedAt,
-                      r.slaHours,
-                      r.maintenanceStatus
-                    )}
-                  </td>
-
-                  <td className="p-3 border">
-                    {r.maintenanceStatus === "Completed"
-                      ? formatTimeTaken(r.timeToComplete)
-                      : "-"}
-                  </td>
-
-                 <td className="p-3 border">
-  {r.attachments?.length > 0 ? (
-    <ul className="space-y-1">
-      {r.attachments.map((file, idx) => {
-        const fileName = file.originalName || file.fileName || "Attachment";
-        const fileUrl = file.url || (file.filePath ? `https://backenduwleapprovalsystem.onrender.com/${file.filePath}` : null);
-        if (!fileUrl) return null;
-
-        return (
-          <li key={idx} className="flex items-center gap-2">
-            <a
-              href={fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              📎 {fileName}
-            </a>
-            <button
-              onClick={() => window.open(fileUrl, "_blank")}
-              className="bg-green-500 text-white px-2 py-0.5 rounded text-xs"
-            >
-              View
-            </button>
-          </li>
-        );
-      })}
-    </ul>
-  ) : (
-    <span className="text-gray-400">Tiada fail</span>
-  )}
-</td>
-
-                  <td className="p-3 border">
-                    {r.maintenanceStatus !== "Completed" ? (
-                      <button
-                        onClick={() => handleMarkStatus(r._id)}
-                        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                      >
-                        Update
-                      </button>
-                    ) : (
-                      <span className="text-green-700 font-semibold">
-                        Completed
-                      </span>
-                    )}
-                  </td>
+            </thead>
+            <tbody>
+              {requests.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="text-center p-4 border text-gray-500">Tiada request untuk anda</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                requests.map((r) => (
+                  <tr key={r._id} className="hover:bg-gray-50">
+                    <td className="p-3 border font-semibold text-blue-700">{r.serialNumber}</td>
+                    <td className="p-3 border">{r.staffName}</td>
+                    <td className="p-3 border">{r.staffDepartment}</td>
+                    <td className="p-3 border">{getStatusBadge(r)}</td>
+                    <td className="p-3 border">{getSLARemaining(r.assignedAt, r.slaHours, r.maintenanceStatus)}</td>
+                    <td className="p-3 border">{r.maintenanceStatus === "Completed" ? formatTimeTaken(r.timeToComplete) : "-"}</td>
+                    <td className="p-3 border">
+                      {r.attachments?.length > 0 ? (
+                        <ul className="space-y-1">
+                          {r.attachments.map((file, idx) => {
+                            const fileName = file.originalName || file.fileName || "Attachment";
+                            const fileUrl = file.url || (file.filePath ? `https://backenduwleapprovalsystem.onrender.com/${file.filePath}` : null);
+                            if (!fileUrl) return null;
+                            return (
+                              <li key={idx} className="flex items-center gap-2">
+                                <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">📎 {fileName}</a>
+                                <button onClick={() => window.open(fileUrl, "_blank")} className="bg-green-500 text-white px-2 py-0.5 rounded text-xs">View</button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : <span className="text-gray-400">Tiada fail</span>}
+                    </td>
+                    <td className="p-3 border">
+                      {r.maintenanceStatus !== "Completed" ? (
+                        <button onClick={() => handleMarkStatus(r._id)} className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Update</button>
+                      ) : (
+                        <span className="text-green-700 font-semibold">Completed</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
       </div>
     </div>
   );
