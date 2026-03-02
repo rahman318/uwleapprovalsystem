@@ -7,6 +7,7 @@ const TechnicianDashboard = () => {
   const [requests, setRequests] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [remarks, setRemarks] = useState({}); // untuk simpan remark sementara tiap row
 
   const token = localStorage.getItem("token");
 
@@ -48,6 +49,13 @@ const TechnicianDashboard = () => {
       );
 
       setRequests(myRequests);
+
+      // initialize remarks state
+      const initialRemarks = {};
+      myRequests.forEach((r) => {
+        initialRemarks[r._id] = r.remark || "";
+      });
+      setRemarks(initialRemarks);
     } catch (err) {
       console.error("❌ Fetch requests error:", err);
     }
@@ -59,7 +67,7 @@ const TechnicianDashboard = () => {
 
   useEffect(() => {
     fetchRequests();
-    const interval = setInterval(fetchRequests, 10000); // 10s refresh
+    const interval = setInterval(fetchRequests, 10000); // refresh 10s
     return () => clearInterval(interval);
   }, [currentUser]);
 
@@ -139,11 +147,31 @@ const TechnicianDashboard = () => {
     }
   };
 
+  // ================== SAVE REMARK ==================
+  const handleSaveRemark = async (requestId) => {
+    try {
+      const remark = remarks[requestId] || "";
+      const res = await axios.patch(
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/remark`,
+        { remark },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      Swal.fire({ icon: "success", title: "Remark berjaya disimpan", timer: 1500, showConfirmButton: false });
+
+      setRequests((prev) =>
+        prev.map((r) => (r._id === requestId ? { ...r, remark: res.data.request.remark } : r))
+      );
+    } catch (err) {
+      console.error("❌ Save remark error:", err);
+      Swal.fire({ icon: "error", title: "Gagal simpan remark" });
+    }
+  };
+
   // ================== UI ==================
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-blue-700">Technician Dashboard</h1>
           <div className="bg-black text-green-400 font-mono px-4 py-2 rounded-lg shadow-lg text-lg">
@@ -162,13 +190,14 @@ const TechnicianDashboard = () => {
                 <th className="p-3 border text-left">SLA</th>
                 <th className="p-3 border text-left">Time Taken</th>
                 <th className="p-3 border text-left">Attachments</th>
+                <th className="p-3 border text-left">Remark</th> {/* new column */}
                 <th className="p-3 border text-left">Action</th>
               </tr>
             </thead>
             <tbody>
               {requests.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center p-4 border text-gray-500">Tiada request untuk anda</td>
+                  <td colSpan={9} className="text-center p-4 border text-gray-500">Tiada request untuk anda</td>
                 </tr>
               ) : (
                 requests.map((r) => (
@@ -197,6 +226,23 @@ const TechnicianDashboard = () => {
                       ) : <span className="text-gray-400">Tiada fail</span>}
                     </td>
                     <td className="p-3 border">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={remarks[r._id] || ""}
+                          onChange={(e) => setRemarks(prev => ({ ...prev, [r._id]: e.target.value }))}
+                          className="border border-gray-300 p-1 rounded w-full text-sm"
+                          placeholder="Masukkan remark..."
+                        />
+                        <button
+                          onClick={() => handleSaveRemark(r._id)}
+                          className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 text-sm"
+                        >
+                          Simpan
+                        </button>
+                      </div>
+                    </td>
+                    <td className="p-3 border">
                       {r.maintenanceStatus !== "Completed" ? (
                         <button onClick={() => handleMarkStatus(r._id)} className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Update</button>
                       ) : (
@@ -209,7 +255,6 @@ const TechnicianDashboard = () => {
             </tbody>
           </table>
         </div>
-
       </div>
     </div>
   );
