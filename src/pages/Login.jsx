@@ -6,6 +6,7 @@ import axios from "axios";
 export default function Login({ setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // ✅ toggle state
   const navigate = useNavigate();
 
   // ================= SMART ANALYTICS BUTTON =================
@@ -130,6 +131,7 @@ export default function Login({ setUser }) {
         </h2>
 
         <form onSubmit={handleLogin} className="space-y-4">
+          {/* Email */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
               Email
@@ -147,21 +149,29 @@ export default function Login({ setUser }) {
             />
           </div>
 
-          <div>
+          {/* Password with toggle */}
+          <div className="relative">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               Kata Laluan
             </label>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"} // ✅ toggle type
               id="password"
               name="password"
               autoComplete="current-password"
               placeholder="Masukkan kata laluan"
-              className="w-full border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 rounded-lg outline-none transition"
+              className="w-full border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 rounded-lg outline-none transition pr-10"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-2 top-9 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </button>
           </div>
 
           <button
