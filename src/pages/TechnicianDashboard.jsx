@@ -189,7 +189,7 @@ const TechnicianDashboard = () => {
             <thead className="bg-blue-100">
               <tr>
                 <th className="p-3 border text-left">Serial</th>
-                <th className="p-3 border text-left">Staff</th>
+                <th className="p-3 border text-left">Requestor</th>
                 <th className="p-3 border text-left">Dept</th>
                 <th className="p-3 border text-left">Problem</th>
                 <th className="p-3 border text-left">Status</th>
