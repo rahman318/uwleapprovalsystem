@@ -16,7 +16,7 @@ const ApproverDashboard = () => {
 
   const token = localStorage.getItem("token");
 
-  // ================= Helpers =================
+  // ================= DATE HELPERS =================
   const formatDateTime = (date) =>
     date
       ? new Date(date).toLocaleString("ms-MY", {
@@ -37,64 +37,45 @@ const ApproverDashboard = () => {
         })
       : "-";
 
+  // ================= TEMPoh CUTI =================
   const getTempohCuti = (request) => {
-    let detailsObj = {};
-    if (request.details) {
-      try {
-        detailsObj =
-          typeof request.details === "string"
-            ? JSON.parse(request.details)
-            : request.details;
-      } catch {
-        detailsObj = {};
-      }
+    if (request.leaveStart && request.leaveEnd) {
+      return `${formatDate(request.leaveStart)} - ${formatDate(request.leaveEnd)}`;
     }
-
-    if (request.items && request.items.length > 0) {
-      const item = request.items[0];
-      const start = item.startDate || item.leaveDate;
-      const end = item.endDate || item.leaveDate;
-      if (start && end) return `${formatDate(start)} - ${formatDate(end)}`;
-    }
-
-    const start = detailsObj.startDate || detailsObj.leaveDate;
-    const end = detailsObj.endDate || detailsObj.leaveDate;
-    if (start && end) return `${formatDate(start)} - ${formatDate(end)}`;
-
-    const rootStart = request.startDate || request.leaveDate;
-    const rootEnd = request.endDate || request.leaveDate;
-    if (rootStart && rootEnd)
-      return `${formatDate(rootStart)} - ${formatDate(rootEnd)}`;
-
     return "-";
   };
 
+  // ================= PROBLEM DESCRIPTION =================
   const getProblemDescription = (request) => {
-  // ✅ First check root field from backend
-  if (request.problemDescription && request.problemDescription.trim() !== "") {
-    return request.problemDescription;
-  }
-
-  // ✅ Fallback check inside details
-  if (request.details) {
-    try {
-      const detailsObj =
-        typeof request.details === "string"
-          ? JSON.parse(request.details)
-          : request.details;
-
-      if (detailsObj?.problemDescription) {
-        return detailsObj.problemDescription;
-      }
-    } catch (err) {
-      console.error("ProblemDescription parse error:", err);
+    if (request.problemDescription && request.problemDescription.trim() !== "") {
+      return request.problemDescription;
     }
-  }
+    return "-";
+  };
 
-  return "-";
-};
+  // ================= STATUS BADGE =================
+  const getStatusBadge = (status) => {
+    if (status === "Approved")
+      return "bg-green-600 text-white px-2 py-1 rounded text-xs";
 
-  // ================= Fetch Requests =================
+    if (status === "Rejected")
+      return "bg-red-600 text-white px-2 py-1 rounded text-xs";
+
+    return "bg-yellow-500 text-white px-2 py-1 rounded text-xs";
+  };
+
+  // ================= ROW COLOR =================
+  const getRowColor = (request) => {
+    if (request.finalStatus === "Approved") return "bg-green-50";
+    if (request.finalStatus === "Rejected") return "bg-red-50";
+
+    if (request.requestType === "Maintenance" && !request.assignedTechnician)
+      return "bg-yellow-50";
+
+    return "bg-white";
+  };
+
+  // ================= FETCH REQUESTS =================
   const fetchRequests = async () => {
     try {
       const res = await axios.get(
@@ -129,36 +110,16 @@ const ApproverDashboard = () => {
   useEffect(() => {
     fetchRequests();
     fetchTechnicians();
+
     intervalRef.current = setInterval(fetchRequests, 5000);
+
     return () => clearInterval(intervalRef.current);
   }, []);
 
-  // ================= Approval Logic =================
-  const canApproveLevel = (request, approverId) => {
-    const approvals = request.approvals || [];
-    const levelObj = approvals.find((a) => a.approverId === approverId);
-    if (!levelObj) return false;
-
-    for (let i = 0; i < levelObj.level - 1; i++) {
-      if (approvals[i]?.status !== "Approved") return false;
-    }
-
-    return levelObj.status === "Pending";
-  };
-
-  const handleApprove = async (levelObj) => {
+  // ================= APPROVE =================
+  const handleApprove = async () => {
     if (!signatureApprover)
       return Swal.fire("Error", "Sila tanda sebelum approve!", "error");
-
-    if (
-      selectedRequest.requestType === "Maintenance" &&
-      !assignedTech[selectedRequest._id]
-    )
-      return Swal.fire(
-        "Error",
-        "Sila assign technician sebelum approve!",
-        "error"
-      );
 
     try {
       await axios.put(
@@ -169,7 +130,7 @@ const ApproverDashboard = () => {
 
       Swal.fire({
         icon: "success",
-        title: `Level ${levelObj.level} approved!`,
+        title: "Request Approved",
         timer: 1500,
         showConfirmButton: false,
       });
@@ -182,7 +143,8 @@ const ApproverDashboard = () => {
     }
   };
 
-  const handleReject = async (levelObj) => {
+  // ================= REJECT =================
+  const handleReject = async () => {
     if (!signatureApprover)
       return Swal.fire("Error", "Sila tanda sebelum reject!", "error");
 
@@ -195,7 +157,7 @@ const ApproverDashboard = () => {
 
       Swal.fire({
         icon: "success",
-        title: `Level ${levelObj.level} rejected!`,
+        title: "Request Rejected",
         timer: 1500,
         showConfirmButton: false,
       });
@@ -208,6 +170,7 @@ const ApproverDashboard = () => {
     }
   };
 
+  // ================= ASSIGN TECHNICIAN =================
   const handleAssignTechnician = async (requestId, techId) => {
     try {
       await axios.put(
@@ -215,12 +178,14 @@ const ApproverDashboard = () => {
         { technicianId: techId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       Swal.fire({
         icon: "success",
-        title: "Technician berjaya diassign!",
-        timer: 1500,
+        title: "Technician Assigned",
+        timer: 1200,
         showConfirmButton: false,
       });
+
       fetchRequests();
     } catch (err) {
       console.error(err);
@@ -228,244 +193,197 @@ const ApproverDashboard = () => {
     }
   };
 
-  const renderApproverStatus = (request) => {
-    const approvals = request.approvals || [];
-    if (!approvals.length) return "-";
-
-    return (
-      <ul className="space-y-1">
-        {approvals.map((a, idx) => (
-          <li key={idx}>
-            Level {a.level}: {a.approverName || a.approverId} -{" "}
-            <span
-              className={`font-semibold ${
-                a.status === "Approved"
-                  ? "text-green-600"
-                  : a.status === "Rejected"
-                  ? "text-red-600"
-                  : "text-yellow-600"
-              }`}
-            >
-              {a.status}
-            </span>
-          </li>
-        ))}
-      </ul>
-    );
-  };
-
-  // ================= Render =================
+  // ================= RENDER =================
   if (loading) return <p>Loading...</p>;
   if (error) return <p className="text-red-600">{error}</p>;
 
   return (
     <div className="p-6">
+
       <h1 className="text-2xl font-bold mb-6 text-blue-700">
         Approver Dashboard
       </h1>
 
       <div className="overflow-x-auto shadow-lg rounded-lg">
+
         <table className="min-w-full border border-gray-300">
+
           <thead className="bg-blue-100 text-blue-800">
             <tr>
-              {[
-                "Staff",
-                "Request Type",
-                "Tempoh Cuti",
-                "Submit Date",
-                "Problem Description",
-                "Approvers",
-                "Attachment",
-                "Action",
-              ].map((h, i) => (
-                <th key={i} className="px-4 py-2 border border-gray-300">
-                  {h}
-                </th>
-              ))}
+              <th className="border px-3 py-2">Staff</th>
+              <th className="border px-3 py-2">Request Type</th>
+              <th className="border px-3 py-2">Tempoh Cuti</th>
+              <th className="border px-3 py-2">Submit Date</th>
+              <th className="border px-3 py-2">Problem Description</th>
+              <th className="border px-3 py-2">Status</th>
+              <th className="border px-3 py-2">Attachment</th>
+              <th className="border px-3 py-2">Action</th>
             </tr>
           </thead>
 
-          <tbody className="bg-white">
+          <tbody>
+
             {requests.map((r) => (
-              <tr key={r._id}>
-                <td className="px-4 py-2 border border-gray-300">{r.staffName}</td>
-                <td className="px-4 py-2 border border-gray-300">{r.requestType}</td>
-                <td className="px-4 py-2 border border-gray-300">
-                  {r.requestType === "CUTI" ? getTempohCuti(r) : "-"}
+
+              <tr key={r._id} className={getRowColor(r)}>
+
+                <td className="border px-3 py-2">{r.staffName}</td>
+
+                <td className="border px-3 py-2">{r.requestType}</td>
+
+                <td className="border px-3 py-2">
+                  {r.requestType === "Cuti" ? getTempohCuti(r) : "-"}
                 </td>
-                <td className="px-4 py-2 border border-gray-300">
+
+                <td className="border px-3 py-2">
                   {formatDateTime(r.createdAt)}
                 </td>
-                <td className="px-4 py-2 border border-gray-300">
+
+                <td className="border px-3 py-2">
                   {getProblemDescription(r)}
                 </td>
-                <td className="px-4 py-2 border border-gray-300">
-                  {renderApproverStatus(r)}
+
+                <td className="border px-3 py-2">
+                  <span className={getStatusBadge(r.finalStatus)}>
+                    {r.finalStatus || "Pending"}
+                  </span>
                 </td>
-                <td className="px-4 py-2 border border-gray-300">
+
+                <td className="border px-3 py-2">
+
                   {r.attachments?.length > 0 ? (
-                    <ul className="space-y-1">
-                      {r.attachments.map((file, idx) => (
-                        <li key={idx} className="flex items-center gap-2">
-                          <a
-                            href={file.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                          >
-                            📎 {file.originalName || file.fileName}
-                          </a>
-                          <button
-                            onClick={() => window.open(file.url, "_blank")}
-                            className="bg-green-500 text-white px-2 py-0.5 rounded text-xs"
-                          >
-                            View
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
+
+                    r.attachments.map((file, i) => (
+
+                      <div key={i}>
+                        <a
+                          href={file.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline"
+                        >
+                          View File
+                        </a>
+                      </div>
+
+                    ))
+
                   ) : (
-                    <span className="text-gray-400">Tiada fail</span>
+                    "No File"
                   )}
+
                 </td>
-                <td className="px-4 py-2 border border-gray-300">
+
+                <td className="border px-3 py-2">
+
                   <button
                     className="bg-green-600 text-white px-3 py-1 rounded"
                     onClick={() => {
                       setSelectedRequest(r);
-                      setAssignedTech((prev) => ({
-                        ...prev,
-                        [r._id]: r.assignedTechnician?._id || "",
-                      }));
                       setShowApproveModal(true);
                     }}
                   >
-                    ✔ Approve / Reject
+                    Approve / Reject
                   </button>
+
                 </td>
+
               </tr>
+
             ))}
+
           </tbody>
+
         </table>
+
       </div>
 
       {/* MODAL */}
+
       {showApproveModal && selectedRequest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-[520px] max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Approve / Reject</h2>
 
-            <p>Staff: {selectedRequest.staffName}</p>
-            <p>Request Type: {selectedRequest.requestType}</p>
-            {selectedRequest.requestType === "CUTI" && (
-              <p>Tempoh Cuti: {getTempohCuti(selectedRequest)}</p>
-            )}
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
 
-            <p className="mt-2 font-semibold">Problem Description:</p>
-            <p className="border p-2 rounded bg-gray-50">
-              {getProblemDescription(selectedRequest)}
+          <div className="bg-white p-6 rounded w-[500px]">
+
+            <h2 className="text-xl font-bold mb-4">
+              Approve / Reject Request
+            </h2>
+
+            <p>
+              <b>Staff:</b> {selectedRequest.staffName}
             </p>
 
-            {selectedRequest.attachments?.length > 0 && (
-              <div className="mt-3">
-                <p className="font-semibold">Attachment:</p>
-                <ul className="space-y-1">
-                  {selectedRequest.attachments.map((file, idx) => (
-                    <li key={idx} className="flex items-center gap-2">
-                      <a
-                        href={file.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        📎 {file.originalName || file.fileName}
-                      </a>
-                      <button
-                        onClick={() => window.open(file.url, "_blank")}
-                        className="bg-green-500 text-white px-2 py-0.5 rounded text-xs"
-                      >
-                        View
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <p>
+              <b>Problem:</b> {getProblemDescription(selectedRequest)}
+            </p>
 
             {selectedRequest.requestType === "Maintenance" && (
+
               <div className="mt-3">
-                <label className="font-semibold block mb-1">Assign Technician:</label>
+
+                <label className="font-semibold">
+                  Assign Technician
+                </label>
+
                 <select
-                  value={assignedTech[selectedRequest._id] || ""}
-                  onChange={(e) => {
-                    const techId = e.target.value;
-                    setAssignedTech((prev) => ({
-                      ...prev,
-                      [selectedRequest._id]: techId,
-                    }));
-                    handleAssignTechnician(selectedRequest._id, techId);
-                  }}
-                  className="border px-2 py-1 rounded w-full"
+                  className="border w-full mt-1 p-2"
+                  onChange={(e) =>
+                    handleAssignTechnician(
+                      selectedRequest._id,
+                      e.target.value
+                    )
+                  }
                 >
-                  <option value="">-- Pilih Technician --</option>
+                  <option value="">Select Technician</option>
+
                   {technicians.map((t) => (
                     <option key={t._id} value={t._id}>
                       {t.name}
                     </option>
                   ))}
+
                 </select>
+
               </div>
+
             )}
 
-            <ApproverSignaturePad onChange={(sig) => setSignatureApprover(sig)} />
+            <ApproverSignaturePad
+              onChange={(sig) => setSignatureApprover(sig)}
+            />
 
-            <div className="mt-4 space-y-2">
-              {(selectedRequest.approvals || []).map((levelObj) =>
-                canApproveLevel(selectedRequest, levelObj.approverId) ? (
-                  <div
-                    key={levelObj.level}
-                    className="flex justify-between items-center"
-                  >
-                    <span>
-                      Level {levelObj.level}: {levelObj.approverName || levelObj.approverId}
-                    </span>
+            <div className="flex justify-end gap-3 mt-4">
 
-                    <div className="space-x-2">
-                      <button
-                        className="bg-green-600 text-white px-3 py-1 rounded"
-                        onClick={() => handleApprove(levelObj)}
-                        disabled={
-                          selectedRequest.requestType === "MAINTENANCE" &&
-                          !assignedTech[selectedRequest._id]
-                        }
-                      >
-                        ✔ Approve
-                      </button>
+              <button
+                className="bg-green-600 text-white px-4 py-2 rounded"
+                onClick={handleApprove}
+              >
+                Approve
+              </button>
 
-                      <button
-                        className="bg-red-600 text-white px-3 py-1 rounded"
-                        onClick={() => handleReject(levelObj)}
-                      >
-                        ❌ Reject
-                      </button>
-                    </div>
-                  </div>
-                ) : null
-              )}
+              <button
+                className="bg-red-600 text-white px-4 py-2 rounded"
+                onClick={handleReject}
+              >
+                Reject
+              </button>
+
+              <button
+                className="bg-gray-500 text-white px-4 py-2 rounded"
+                onClick={() => setShowApproveModal(false)}
+              >
+                Cancel
+              </button>
+
             </div>
 
-            <button
-              onClick={() => {
-                setShowApproveModal(false);
-                setSignatureApprover("");
-              }}
-              className="mt-4 bg-gray-400 text-white px-4 py-2 rounded"
-            >
-              Cancel
-            </button>
           </div>
+
         </div>
+
       )}
+
     </div>
   );
 };
