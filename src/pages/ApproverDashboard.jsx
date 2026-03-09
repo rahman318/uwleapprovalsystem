@@ -70,15 +70,29 @@ const ApproverDashboard = () => {
   };
 
   const getProblemDescription = (request) => {
-    if (!request.details) return "-";
+  // ✅ First check root field from backend
+  if (request.problemDescription && request.problemDescription.trim() !== "") {
+    return request.problemDescription;
+  }
+
+  // ✅ Fallback check inside details
+  if (request.details) {
     try {
       const detailsObj =
-        typeof request.details === "string" ? JSON.parse(request.details) : request.details;
-      return detailsObj?.problemDescription || "-";
-    } catch {
-      return "-";
+        typeof request.details === "string"
+          ? JSON.parse(request.details)
+          : request.details;
+
+      if (detailsObj?.problemDescription) {
+        return detailsObj.problemDescription;
+      }
+    } catch (err) {
+      console.error("ProblemDescription parse error:", err);
     }
-  };
+  }
+
+  return "-";
+};
 
   // ================= Fetch Requests =================
   const fetchRequests = async () => {
