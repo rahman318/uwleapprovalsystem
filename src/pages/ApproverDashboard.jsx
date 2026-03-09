@@ -16,6 +16,7 @@ const ApproverDashboard = () => {
 
   const token = localStorage.getItem("token");
 
+  // ================= Helpers =================
   const formatDateTime = (date) =>
     date
       ? new Date(date).toLocaleString("ms-MY", {
@@ -68,6 +69,18 @@ const ApproverDashboard = () => {
     return "-";
   };
 
+  const getProblemDescription = (request) => {
+    if (!request.details) return "-";
+    try {
+      const detailsObj =
+        typeof request.details === "string" ? JSON.parse(request.details) : request.details;
+      return detailsObj?.problemDescription || "-";
+    } catch {
+      return "-";
+    }
+  };
+
+  // ================= Fetch Requests =================
   const fetchRequests = async () => {
     try {
       const res = await axios.get(
@@ -106,6 +119,7 @@ const ApproverDashboard = () => {
     return () => clearInterval(intervalRef.current);
   }, []);
 
+  // ================= Approval Logic =================
   const canApproveLevel = (request, approverId) => {
     const approvals = request.approvals || [];
     const levelObj = approvals.find((a) => a.approverId === approverId);
@@ -226,6 +240,7 @@ const ApproverDashboard = () => {
     );
   };
 
+  // ================= Render =================
   if (loading) return <p>Loading...</p>;
   if (error) return <p className="text-red-600">{error}</p>;
 
@@ -244,7 +259,7 @@ const ApproverDashboard = () => {
                 "Request Type",
                 "Tempoh Cuti",
                 "Submit Date",
-                "Problem Description", // ✅ new column
+                "Problem Description",
                 "Approvers",
                 "Attachment",
                 "Action",
@@ -257,74 +272,65 @@ const ApproverDashboard = () => {
           </thead>
 
           <tbody className="bg-white">
-            {requests.map((r) => {
-              let problemDescription = "";
-              try {
-                const detailsObj =
-                  typeof r.details === "string" ? JSON.parse(r.details) : r.details;
-                problemDescription = detailsObj?.problemDescription || "-";
-              } catch {
-                problemDescription = "-";
-              }
-
-              return (
-                <tr key={r._id}>
-                  <td className="px-4 py-2 border border-gray-300">{r.staffName}</td>
-                  <td className="px-4 py-2 border border-gray-300">{r.requestType}</td>
-                  <td className="px-4 py-2 border border-gray-300">
-                    {r.requestType === "CUTI" ? getTempohCuti(r) : "-"}
-                  </td>
-                  <td className="px-4 py-2 border border-gray-300">
-                    {formatDateTime(r.createdAt)}
-                  </td>
-                  <td className="px-4 py-2 border border-gray-300">{problemDescription}</td>
-                  <td className="px-4 py-2 border border-gray-300">
-                    {renderApproverStatus(r)}
-                  </td>
-                  <td className="px-4 py-2 border border-gray-300">
-                    {r.attachments?.length > 0 ? (
-                      <ul className="space-y-1">
-                        {r.attachments.map((file, idx) => (
-                          <li key={idx} className="flex items-center gap-2">
-                            <a
-                              href={file.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
-                            >
-                              📎 {file.originalName || file.fileName}
-                            </a>
-                            <button
-                              onClick={() => window.open(file.url, "_blank")}
-                              className="bg-green-500 text-white px-2 py-0.5 rounded text-xs"
-                            >
-                              View
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <span className="text-gray-400">Tiada fail</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2 border border-gray-300">
-                    <button
-                      className="bg-green-600 text-white px-3 py-1 rounded"
-                      onClick={() => {
-                        setSelectedRequest(r);
-                        setAssignedTech((prev) => ({
-                          ...prev,
-                          [r._id]: r.assignedTechnician?._id || "",
-                        }));
-                        setShowApproveModal(true);
-                      }}
-                    >
-                      ✔ Approve / Reject
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+            {requests.map((r) => (
+              <tr key={r._id}>
+                <td className="px-4 py-2 border border-gray-300">{r.staffName}</td>
+                <td className="px-4 py-2 border border-gray-300">{r.requestType}</td>
+                <td className="px-4 py-2 border border-gray-300">
+                  {r.requestType === "CUTI" ? getTempohCuti(r) : "-"}
+                </td>
+                <td className="px-4 py-2 border border-gray-300">
+                  {formatDateTime(r.createdAt)}
+                </td>
+                <td className="px-4 py-2 border border-gray-300">
+                  {getProblemDescription(r)}
+                </td>
+                <td className="px-4 py-2 border border-gray-300">
+                  {renderApproverStatus(r)}
+                </td>
+                <td className="px-4 py-2 border border-gray-300">
+                  {r.attachments?.length > 0 ? (
+                    <ul className="space-y-1">
+                      {r.attachments.map((file, idx) => (
+                        <li key={idx} className="flex items-center gap-2">
+                          <a
+                            href={file.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            📎 {file.originalName || file.fileName}
+                          </a>
+                          <button
+                            onClick={() => window.open(file.url, "_blank")}
+                            className="bg-green-500 text-white px-2 py-0.5 rounded text-xs"
+                          >
+                            View
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-gray-400">Tiada fail</span>
+                  )}
+                </td>
+                <td className="px-4 py-2 border border-gray-300">
+                  <button
+                    className="bg-green-600 text-white px-3 py-1 rounded"
+                    onClick={() => {
+                      setSelectedRequest(r);
+                      setAssignedTech((prev) => ({
+                        ...prev,
+                        [r._id]: r.assignedTechnician?._id || "",
+                      }));
+                      setShowApproveModal(true);
+                    }}
+                  >
+                    ✔ Approve / Reject
+                  </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -341,10 +347,9 @@ const ApproverDashboard = () => {
               <p>Tempoh Cuti: {getTempohCuti(selectedRequest)}</p>
             )}
 
-            {/* Problem Description in Modal */}
             <p className="mt-2 font-semibold">Problem Description:</p>
             <p className="border p-2 rounded bg-gray-50">
-              {selectedRequest.details?.problemDescription || "-"}
+              {getProblemDescription(selectedRequest)}
             </p>
 
             {selectedRequest.attachments?.length > 0 && (
