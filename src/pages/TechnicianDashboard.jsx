@@ -191,6 +191,7 @@ const TechnicianDashboard = () => {
                 <th className="p-3 border text-left">Serial</th>
                 <th className="p-3 border text-left">Staff</th>
                 <th className="p-3 border text-left">Dept</th>
+                <th className="p-3 border text-left">Problem</th>
                 <th className="p-3 border text-left">Status</th>
                 <th className="p-3 border text-left">SLA</th>
                 <th className="p-3 border text-left">Time Taken</th>
@@ -202,7 +203,7 @@ const TechnicianDashboard = () => {
             <tbody>
               {requests.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center p-4 border text-gray-500">Tiada request untuk anda</td>
+                  <td colSpan={10} className="text-center p-4 border text-gray-500">Tiada request untuk anda</td>
                 </tr>
               ) : (
                 requests.map((r) => (
@@ -210,6 +211,18 @@ const TechnicianDashboard = () => {
                     <td className="p-3 border font-semibold text-blue-700">{r.serialNumber}</td>
                     <td className="p-3 border">{r.staffName}</td>
                     <td className="p-3 border">{r.staffDepartment}</td>
+                    <td
+  className="p-3 border text-gray-700"
+  style={{
+    maxWidth: "250px",
+    whiteSpace: "pre-wrap",
+    fontSize: "13px"
+  }}
+>
+  {r.problemDescription || (
+    <span className="text-gray-400 italic">Tiada deskripsi</span>
+  )}
+</td>
                     <td className="p-3 border">{getStatusBadge(r)}</td>
                     <td className="p-3 border">{getSLARemaining(r.assignedAt, r.slaHours, r.maintenanceStatus)}</td>
                     <td className="p-3 border">{r.maintenanceStatus === "Completed" ? formatTimeTaken(r.timeToComplete) : "-"}</td>
