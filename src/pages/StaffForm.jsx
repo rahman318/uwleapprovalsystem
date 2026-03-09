@@ -50,6 +50,7 @@ const StaffForm = () => {
       { level: 3, approverId: null, status: "Pending", approverName: "-" },
     ],
     items: [],
+    problemDescription: "", // ✅ new field
   });
 
   const token = localStorage.getItem("token");
@@ -144,6 +145,7 @@ const StaffForm = () => {
     payload.append("approvals", JSON.stringify(filteredApprovals));
     payload.append("signatureStaff", signatureData || "");
     payload.append("staffDepartment", staffDepartment);
+    payload.append("problemDescription", formData.problemDescription); // ✅ new field
 
     if (file) {
       payload.append("files", file); // ✅ field name sama dengan backend multer
@@ -169,6 +171,7 @@ const StaffForm = () => {
           { level: 3, approverId: null, status: "Pending", approverName: "-" },
         ],
         items: [],
+        problemDescription: "", // ✅ reset
       });
       setFile(null);
       signatureRef.current?.clear();
@@ -335,9 +338,22 @@ const StaffForm = () => {
                   </tr>
                 </>
               )}
-
             </tbody>
           </table>
+        </div>
+
+        {/* Problem Description */}
+        <div className="mt-4">
+          <label className="block mb-2 font-semibold text-gray-700">Problem Description</label>
+          <textarea
+            name="problemDescription"
+            value={formData.problemDescription}
+            onChange={e => setFormData({ ...formData, problemDescription: e.target.value })}
+            className="w-full border px-2 py-1 rounded"
+            rows={3}
+            placeholder="Terangkan masalah / penerangan ringkas..."
+            required
+          />
         </div>
 
         {/* File Upload */}
