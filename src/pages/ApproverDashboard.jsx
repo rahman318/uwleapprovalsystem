@@ -36,14 +36,39 @@ const ApproverDashboard = () => {
         })
       : "-";
 
-  // ================= TEMPoh CUTI =================
+  // ================= Tempoh CUTI =================
   const getTempohCuti = (request) => {
-    if (request.leaveStart && request.leaveEnd) {
-      return `${formatDate(request.leaveStart)} - ${formatDate(request.leaveEnd)}`;
+    let detailsObj = {};
+    if (request.details) {
+      try {
+        detailsObj =
+          typeof request.details === "string"
+            ? JSON.parse(request.details)
+            : request.details;
+      } catch {
+        detailsObj = {};
+      }
     }
+
+    if (request.items && request.items.length > 0) {
+      const item = request.items[0];
+      const start = item.startDate || item.leaveDate;
+      const end = item.endDate || item.leaveDate;
+      if (start && end) return `${formatDate(start)} - ${formatDate(end)}`;
+    }
+
+    const start = detailsObj.startDate || detailsObj.leaveDate;
+    const end = detailsObj.endDate || detailsObj.leaveDate;
+    if (start && end) return `${formatDate(start)} - ${formatDate(end)}`;
+
+    const rootStart = request.startDate || request.leaveDate;
+    const rootEnd = request.endDate || request.leaveDate;
+    if (rootStart && rootEnd)
+      return `${formatDate(rootStart)} - ${formatDate(rootEnd)}`;
+
     return "-";
   };
-
+  
   // ================= PROBLEM DESCRIPTION =================
   const getProblemDescription = (request) => {
     if (request.problemDescription && request.problemDescription.trim() !== "") {
