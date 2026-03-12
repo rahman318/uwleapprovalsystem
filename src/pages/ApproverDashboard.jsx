@@ -67,7 +67,7 @@ const ApproverDashboard = () => {
   const getRowColor = (request) => {
     if (request.finalStatus === "Approved") return "bg-green-50";
     if (request.finalStatus === "Rejected") return "bg-red-50";
-    if (request.requestType === "Maintenance" && !request.assignedTechnician)
+    if (request.requestType?.toLowerCase() === "maintenance" && !request.assignedTechnician)
       return "bg-yellow-50";
     return "bg-white";
   };
@@ -163,6 +163,11 @@ const ApproverDashboard = () => {
         { technicianId: techId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      // Update local state supaya dropdown nama terus muncul
+      setSelectedRequest((prev) => ({
+        ...prev,
+        assignedTechnician: techId
+      }));
       Swal.fire({ icon: "success", title: "Technician Assigned", timer: 1200, showConfirmButton: false });
       fetchRequests();
     } catch (err) {
@@ -198,7 +203,7 @@ const ApproverDashboard = () => {
               <tr key={r._id} className={getRowColor(r)}>
                 <td className="border px-3 py-2">{r.staffName}</td>
                 <td className="border px-3 py-2">{r.requestType}</td>
-                <td className="border px-3 py-2">{r.requestType === "Cuti" ? getTempohCuti(r) : "-"}</td>
+                <td className="border px-3 py-2">{r.requestType?.toLowerCase() === "cuti" ? getTempohCuti(r) : "-"}</td>
                 <td className="border px-3 py-2">{formatDateTime(r.createdAt)}</td>
                 <td className="border px-3 py-2">{getProblemDescription(r)}</td>
                 <td className="border px-3 py-2">
@@ -242,12 +247,12 @@ const ApproverDashboard = () => {
             <p><b>Staff:</b> {selectedRequest.staffName}</p>
             <p><b>Problem:</b> {getProblemDescription(selectedRequest)}</p>
 
-            {selectedRequest.requestType === "Maintenance" && (
+            {selectedRequest.requestType?.toLowerCase() === "maintenance" && (
               <div className="mt-3">
                 <label className="font-semibold">Assign Technician</label>
                 <select
                   className="border w-full mt-1 p-2"
-                  value={selectedRequest.assignedTechnician?._id || ""}
+                  value={selectedRequest.assignedTechnician || ""}
                   onChange={(e) => handleAssignTechnician(selectedRequest._id, e.target.value)}
                 >
                   <option value="">Select Technician</option>
