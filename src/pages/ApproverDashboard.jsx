@@ -158,27 +158,59 @@ const ApproverDashboard = () => {
 
   // ================= REJECT =================
   const handleReject = async () => {
-    if (!signatureApprover)
-      return Swal.fire("Error", "Sila tanda sebelum reject!", "error");
+  if (!signatureApprover)
+    return Swal.fire("Error", "Sila tanda sebelum reject!", "error");
 
-    if (selectedRequest.finalStatus !== "Pending")
-      return Swal.fire("Info", "Request telah dikunci!", "info");
+  if (selectedRequest.finalStatus !== "Pending")
+    return Swal.fire("Info", "Request telah dikunci!", "info");
 
-    try {
-      await axios.put(
-        `https://backenduwleapprovalsystem.onrender.com/api/requests/reject-level/${selectedRequest._id}`,
-        { signatureApprover },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  // 🔥 POPUP REMARK
+  const { value: remark } = await Swal.fire({
+    title: "Reject Request",
+    input: "textarea",
+    inputLabel: "Sebab / Remark",
+    inputPlaceholder: "Masukkan sebab reject...",
+    inputAttributes: {
+      "aria-label": "Type your remark here"
+    },
+    showCancelButton: true,
+    confirmButtonText: "Reject",
+    cancelButtonText: "Cancel"
+  });
 
-      Swal.fire({ icon: "success", title: "Request Rejected", timer: 1500, showConfirmButton: false });
-      setShowApproveModal(false);
-      setSignatureApprover("");
-      fetchRequests();
-    } catch {
-      Swal.fire("Error", "Gagal reject request", "error");
-    }
-  };
+  // kalau user cancel
+  if (remark === undefined) return;
+
+  // kalau kosong
+  if (!remark || remark.trim() === "") {
+    return Swal.fire("Error", "Remark wajib diisi!", "error");
+  }
+
+  try {
+    await axios.put(
+      `https://backenduwleapprovalsystem.onrender.com/api/requests/reject-level/${selectedRequest._id}`,
+      {
+        signatureApprover,
+        remark // 🔥 hantar ke backend
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    Swal.fire({
+      icon: "success",
+      title: "Request Rejected",
+      timer: 1500,
+      showConfirmButton: false
+    });
+
+    setShowApproveModal(false);
+    setSignatureApprover("");
+    fetchRequests();
+
+  } catch {
+    Swal.fire("Error", "Gagal reject request", "error");
+  }
+};
 
   // ================= ASSIGN TECHNICIAN =================
   const handleAssignTechnician = async (requestId, techId) => {
