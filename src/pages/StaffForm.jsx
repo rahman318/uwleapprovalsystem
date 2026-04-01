@@ -48,6 +48,7 @@ const StaffForm = () => {
       { level: 1, approverId: null, status: "Pending", approverName: "-" },
       { level: 2, approverId: null, status: "Pending", approverName: "-" },
       { level: 3, approverId: null, status: "Pending", approverName: "-" },
+      { level: 4, approverId: null, status: "Pending", approverName: "-" },
     ],
     items: [],
     problemDescription: "", // ✅ new field
@@ -169,6 +170,7 @@ const StaffForm = () => {
           { level: 1, approverId: null, status: "Pending", approverName: "-" },
           { level: 2, approverId: null, status: "Pending", approverName: "-" },
           { level: 3, approverId: null, status: "Pending", approverName: "-" },
+          { level: 4, approverId: null, status: "Pending", approverName: "-" },
         ],
         items: [],
         problemDescription: "", // ✅ reset
@@ -366,7 +368,7 @@ const StaffForm = () => {
         {/* Multi-Level Approvers */}
         <div className="mt-4 space-y-2">
           <label className="block mb-2 font-semibold text-gray-700">Pilih Approvers (Level 1,2,3)</label>
-          {[1,2,3].map(level => (
+          {[1,2,3,4].map(level => (
             <select
               key={level}
               value={formData.approvals[level-1]?.approverId || ""}
