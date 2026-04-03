@@ -55,8 +55,6 @@ const StaffForm = () => {
     problemDescription: "",
   });
 
-  const token = localStorage.getItem("token");
-
   // ================= Fetch Approvers SAHAJA =================
 useEffect(() => {
   const fetchData = async () => {
