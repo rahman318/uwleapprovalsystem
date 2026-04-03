@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useNavigate } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import SignatureCanvas from "react-signature-canvas";
@@ -37,6 +37,8 @@ const StaffForm = () => {
   const [approversList, setApproversList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState(null);
+
+  const navigate = useNavigate();
 
   const signatureRef = useRef(null);
 
