@@ -33,12 +33,11 @@ const SignaturePad = forwardRef((props, ref) => {
 
 // ================= StaffForm =================
 const StaffForm = () => {
+  const navigate = useNavigate();
   const [staffList, setStaffList] = useState([]);
   const [approversList, setApproversList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState(null);
-
-  const navigate = useNavigate();
 
   const signatureRef = useRef(null);
 
