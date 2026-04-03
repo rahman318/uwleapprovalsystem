@@ -190,12 +190,12 @@ const StaffForm = () => {
       <div className="flex justify-between items-center mb-8">
     <h2 className="text-3xl font-bold text-gray-800">Staff Request Form</h2>
     <button
-      type="button"
-      onClick={() => window.location.href = "/my-requests"}
-      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-    >
-      My Requests
-    </button>
+  type="button"
+  onClick={() => navigate("/my-requests")}
+  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+>
+  My Requests
+</button>
   </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
