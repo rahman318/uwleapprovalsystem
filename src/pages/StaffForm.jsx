@@ -1,10 +1,9 @@
-version bossskurrr:
-
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import SignatureCanvas from "react-signature-canvas";
 import { useNavigate } from "react-router-dom";
+import jwt_decode from "jwt-decode"; // ✅ tambah
 
 // ================= SignaturePad =================
 const SignaturePad = forwardRef((props, ref) => {
@@ -34,15 +33,16 @@ const SignaturePad = forwardRef((props, ref) => {
 // ================= StaffForm =================
 const StaffForm = () => {
   const navigate = useNavigate();
-  const [staffList, setStaffList] = useState([]);
   const [approversList, setApproversList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState(null);
 
   const signatureRef = useRef(null);
 
+  const token = localStorage.getItem("token");
+  const user = token ? jwt_decode(token) : null; // ✅ decode user
+
   const [formData, setFormData] = useState({
-    staffId: "",
     requestType: "CUTI",
     details: {},
     approvals: [
@@ -57,25 +57,29 @@ const StaffForm = () => {
 
   const token = localStorage.getItem("token");
 
-  // ================= Fetch Staff & Approvers =================
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [staffRes, approverRes] = await Promise.all([
-          axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/staff", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
-          axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
-        ]);
-        setStaffList(staffRes.data || []);
-        setApproversList(approverRes.data || []);
-      } catch (err) {
-        Swal.fire("Error", "Gagal fetch staff atau approvers", "error");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  // ================= Fetch Approvers SAHAJA =================
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const res = await axios.get(
+        "https://backenduwleapprovalsystem.onrender.com/api/users/approvers",
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
 
+      setApproversList(res.data || []);
+
+    } catch (err) {
+      Swal.fire("Error", "Gagal fetch approvers", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, []);
+  
   // ================= Handlers =================
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleDetailsChange = (e) => setFormData({ ...formData, details: { ...formData.details, [e.target.name]: e.target.value } });
@@ -187,15 +191,6 @@ const StaffForm = () => {
         {/* Staff & Request Type */}
         <table className="w-full table-auto bg-white rounded shadow-sm overflow-hidden">
           <tbody>
-            <tr className="border-b bg-gray-50">
-              <td className="py-2 px-4 font-semibold text-gray-700">Nama Staff</td>
-              <td className="py-2 px-4">
-                <select name="staffId" value={formData.staffId} onChange={handleChange} required className="w-full border border-gray-300 rounded px-3 py-2">
-                  <option value="">-- Pilih Staff --</option>
-                  {staffList.map(s => <option key={s._id} value={s._id}>{s.name || s.username}</option>)}
-                </select>
-              </td>
-            </tr>
             <tr className="border-b bg-white">
               <td className="py-2 px-4 font-semibold text-gray-700">Jenis Permohonan</td>
               <td className="py-2 px-4">
