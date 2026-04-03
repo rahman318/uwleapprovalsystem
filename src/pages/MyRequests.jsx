@@ -12,7 +12,7 @@ const MyRequests = () => {
   const fetchRequests = async () => {
     try {
       const res = await fetch(
-        "https://backenduwleapprovalsystem.onrender.com/job-orders/my-requests",
+        "https://backenduwleapprovalsystem.onrender.com/my-requests",
         {
           headers: { Authorization: "Bearer " + token },
         }
