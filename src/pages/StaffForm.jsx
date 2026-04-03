@@ -1,18 +1,17 @@
+version bossskurrr:
+
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import SignatureCanvas from "react-signature-canvas";
-import { useNavigate } from "react-router-dom"; // ✅ import useNavigate
+import { useNavigate } from "react-router-dom";
 
 // ================= SignaturePad =================
 const SignaturePad = forwardRef((props, ref) => {
   const sigRef = useRef(null);
 
   useImperativeHandle(ref, () => ({
-    getSignature: () => {
-      if (!sigRef.current || sigRef.current.isEmpty()) return null;
-      return sigRef.current.toDataURL();
-    },
+    getSignature: () => (!sigRef.current || sigRef.current.isEmpty() ? null : sigRef.current.toDataURL()),
     clear: () => sigRef.current?.clear(),
   }));
 
@@ -53,11 +52,12 @@ const StaffForm = () => {
       { level: 4, approverId: null, status: "Pending", approverName: "-" },
     ],
     items: [],
-    problemDescription: "", // ✅ new field
+    problemDescription: "",
   });
 
   const token = localStorage.getItem("token");
 
+  // ================= Fetch Staff & Approvers =================
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -76,6 +76,7 @@ const StaffForm = () => {
     fetchData();
   }, []);
 
+  // ================= Handlers =================
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleDetailsChange = (e) => setFormData({ ...formData, details: { ...formData.details, [e.target.name]: e.target.value } });
 
@@ -110,35 +111,27 @@ const StaffForm = () => {
     setFormData({ ...formData, items: newItems });
   };
 
-  // ================= FIXED Attachment =================
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]); // simpan file di state
-    } else {
-      setFile(null);
-    }
+    if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
+    else setFile(null);
   };
-  // ====================================================
 
+  // ================= Submit Form =================
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const staff = staffList.find((s) => s._id === formData.staffId);
     if (!staff) return Swal.fire("Error", "Sila pilih staff", "error");
     const staffDepartment = staff.department || "-";
 
     if (formData.requestType === "PEMBELIAN") {
       for (let i = 0; i < formData.items.length; i++) {
-        if (!formData.items[i].itemName) {
-          return Swal.fire("Error", `Item ${i + 1} belum ada nama item`, "error");
-        }
+        if (!formData.items[i].itemName) return Swal.fire("Error", `Item ${i + 1} belum ada nama item`, "error");
       }
     }
 
     const signatureData = signatureRef.current?.getSignature() || null;
     const filteredApprovals = formData.approvals.filter(a => a.approverId);
 
-    // 🔥 FormData untuk upload + Supabase
     const payload = new FormData();
     payload.append("userId", staff._id);
     payload.append("staffName", staff.name || staff.username);
@@ -148,18 +141,13 @@ const StaffForm = () => {
     payload.append("approvals", JSON.stringify(filteredApprovals));
     payload.append("signatureStaff", signatureData || "");
     payload.append("staffDepartment", staffDepartment);
-    payload.append("problemDescription", formData.problemDescription); // ✅ new field
+    payload.append("problemDescription", formData.problemDescription);
 
-    if (file) {
-      payload.append("files", file); // ✅ field name sama dengan backend multer
-    }
+    if (file) payload.append("files", file);
 
     try {
       await axios.post("https://backenduwleapprovalsystem.onrender.com/api/requests", payload, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
       });
       Swal.fire("Success", "Request berjaya dihantar!", "success");
 
@@ -175,7 +163,7 @@ const StaffForm = () => {
           { level: 4, approverId: null, status: "Pending", approverName: "-" },
         ],
         items: [],
-        problemDescription: "", // ✅ reset
+        problemDescription: "",
       });
       setFile(null);
       signatureRef.current?.clear();
@@ -187,18 +175,13 @@ const StaffForm = () => {
 
   if (loading) return <p className="text-center mt-6 text-gray-600">Loading...</p>;
 
+  // ================= Render =================
   return (
     <div className="max-w-5xl mx-auto mt-10 p-6 bg-gray-50 rounded-xl shadow-lg">
       <div className="flex justify-between items-center mb-8">
-    <h2 className="text-3xl font-bold text-gray-800">Staff Request Form</h2>
-    <button
-  type="button"
-  onClick={() => navigate("/my-requests")}
-  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
->
-  My Requests
-</button>
-  </div>
+        <h2 className="text-3xl font-bold text-gray-800">Staff Request Form</h2>
+        <button type="button" onClick={() => navigate("/my-requests")} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">My Requests</button>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Staff & Request Type */}
@@ -378,7 +361,7 @@ const StaffForm = () => {
 
         {/* Multi-Level Approvers */}
         <div className="mt-4 space-y-2">
-          <label className="block mb-2 font-semibold text-gray-700">Pilih Approvers (Level 1,2,3)</label>
+          <label className="block mb-2 font-semibold text-gray-700">Pilih Approvers (Level 1-4)</label>
           {[1,2,3,4].map(level => (
             <select
               key={level}
@@ -404,7 +387,6 @@ const StaffForm = () => {
         <div className="mt-6 text-center">
           <button type="submit" className="bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-bold py-2 px-6 rounded shadow-md">Submit Request</button>
         </div>
-
       </form>
     </div>
   );
