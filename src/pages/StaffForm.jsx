@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useNavigate } from "react";
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import SignatureCanvas from "react-signature-canvas";
+import { useNavigate } from "react-router-dom"; // ✅ import useNavigate
 
 // ================= SignaturePad =================
 const SignaturePad = forwardRef((props, ref) => {
