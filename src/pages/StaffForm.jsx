@@ -3,7 +3,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import SignatureCanvas from "react-signature-canvas";
 import { useNavigate } from "react-router-dom";
-import jwt_decode from "jwt-decode";
+import * as jwt_decode from "jwt-decode";
 
 // ================= SignaturePad =================
 const SignaturePad = forwardRef((props, ref) => {
@@ -40,7 +40,7 @@ const StaffForm = () => {
   const signatureRef = useRef(null);
 
   const token = localStorage.getItem("token");
-  const user = token ? jwt_decode(token) : null; // ✅ decode user
+  const user = token ? jwt_decode.default(token) : null;
 
   const [formData, setFormData] = useState({
     requestType: "CUTI",
