@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
+import MyRequests from "./pages/MyRequests";
 import StaffForm from "./pages/StaffForm";
 import ApproverDashboard from "./pages/ApproverDashboard";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
@@ -57,6 +58,9 @@ const AppRoutes = () => {
         <Route
           path="/staff"
           element={user?.role === "staff" ? <StaffForm /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/my-requests" element={user?.role === "staff" ? <MyRequests /> : <Navigate to="/login" />}
         />
         <Route
           path="/approver"
