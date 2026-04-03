@@ -1,26 +1,32 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios"; // lebih selamat & mudah handle headers
 
 const MyRequests = () => {
   const [requests, setRequests] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  // Ambil token dari localStorage (pastikan staff login)
   const token = localStorage.getItem("token");
 
-  // Fetch data dari backend
   const fetchRequests = async () => {
     try {
-      const res = await fetch(
-        "https://backenduwleapprovalsystem.onrender.com/my-requests",
+      setLoading(true);
+      const res = await axios.get(
+        "https://backenduwleapprovalsystem.onrender.com/api/requests/my", // pastikan endpoint betul
         {
-          headers: { Authorization: "Bearer " + token },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
-      const data = await res.json();
+
+      // Jika backend return object { success: true, requests: [...] }
+      const data = res.data.requests || res.data || [];
       setRequests(data);
     } catch (error) {
       console.error("Failed to fetch requests:", error);
+      setRequests([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -28,10 +34,12 @@ const MyRequests = () => {
     fetchRequests();
   }, []);
 
-  // Filter & search
   const filteredRequests = requests
     .filter((r) => r.title.toLowerCase().includes(search.toLowerCase()))
     .filter((r) => !filter || r.status === filter);
+
+  if (loading) return <p>Loading My Requests...</p>;
+  if (!requests.length) return <p>No requests found.</p>;
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial" }}>
@@ -45,7 +53,11 @@ const MyRequests = () => {
           onChange={(e) => setSearch(e.target.value)}
           style={{ padding: "5px", marginRight: "10px" }}
         />
-        <select value={filter} onChange={(e) => setFilter(e.target.value)} style={{ padding: "5px" }}>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          style={{ padding: "5px" }}
+        >
           <option value="">All Status</option>
           <option value="Pending">Pending</option>
           <option value="Approved">Approved</option>
@@ -86,19 +98,30 @@ const MyRequests = () => {
           <p>Created At: {new Date(r.createdAt).toLocaleString()}</p>
 
           {r.approvals && r.approvals.length > 0 && (
-            <div style={{ marginLeft: "15px", paddingLeft: "10px", borderLeft: "2px solid #999", marginTop: "5px" }}>
+            <div
+              style={{
+                marginLeft: "15px",
+                paddingLeft: "10px",
+                borderLeft: "2px solid #999",
+                marginTop: "5px",
+              }}
+            >
               {r.approvals.map((a, idx) => {
-                const name = a.approverId ? a.approverId.name : "-";
-                const email = a.approverId ? a.approverId.email : "-";
-                const dept = a.approverId ? a.approverId.department : "-";
-                const actionDate = a.actionDate ? new Date(a.actionDate).toLocaleString() : "-";
+                const name = a.approverId?.name || "-";
+                const email = a.approverId?.email || "-";
+                const dept = a.approverId?.department || "-";
+                const actionDate = a.actionDate
+                  ? new Date(a.actionDate).toLocaleString()
+                  : "-";
 
                 return (
                   <div key={idx} style={{ marginBottom: "5px" }}>
                     <p>
                       Level {a.level} - {a.status}
                     </p>
-                    <p>Approver: {name} ({email}) | Dept: {dept}</p>
+                    <p>
+                      Approver: {name} ({email}) | Dept: {dept}
+                    </p>
                     <p>Action Date: {actionDate}</p>
                     <p>Remark: {a.remark || "-"}</p>
                   </div>
