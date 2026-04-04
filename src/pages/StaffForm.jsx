@@ -66,7 +66,7 @@ const StaffForm = () => {
 
     setLoading(true);
 
-    const fetchApprovers = axios.get(`${BASE_URL}/users/approvers`, { headers: { Authorization: `Bearer ${token}` } });
+    const fetchApprovers = axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
     const fetchHistory = axios.get(`${BASE_URL}/requests/my-requests?userId=${userId}&limit=10`, { headers: { Authorization: `Bearer ${token}` } });
 
     Promise.all([fetchApprovers, fetchHistory])
