@@ -44,7 +44,7 @@ const StaffForm = () => {
   const signatureRef = useRef(null);
 
   const token = localStorage.getItem("token");
-  const user = token ? jwtDecode(token) : null;
+  const user = token ? jwtDecode.default(token) : null;
 
   const [formData, setFormData] = useState({
     staffId: user?._id || "",
