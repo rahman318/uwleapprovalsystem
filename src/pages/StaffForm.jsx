@@ -2,15 +2,17 @@ import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } f
 import axios from "axios";
 import Swal from "sweetalert2";
 import SignatureCanvas from "react-signature-canvas";
-import { useNavigate } from "react-router-dom";
-import * as jwtDecode from "jwt-decode"; // ✅ compatible dengan ESM
+import jwtDecode from "jwt-decode"; // pastikan pakai jwt-decode@3.1.2
 
 // ================= SignaturePad =================
 const SignaturePad = forwardRef((props, ref) => {
   const sigRef = useRef(null);
 
   useImperativeHandle(ref, () => ({
-    getSignature: () => (!sigRef.current || sigRef.current.isEmpty() ? null : sigRef.current.toDataURL()),
+    getSignature: () => {
+      if (!sigRef.current || sigRef.current.isEmpty()) return null;
+      return sigRef.current.toDataURL();
+    },
     clear: () => sigRef.current?.clear(),
   }));
 
@@ -24,9 +26,7 @@ const SignaturePad = forwardRef((props, ref) => {
         canvasProps={{ width: 400, height: 150, className: "border" }}
       />
       <div className="mt-2 flex gap-2">
-        <button type="button" onClick={clear} className="bg-red-500 text-white px-3 py-1 rounded">
-          Clear
-        </button>
+        <button type="button" onClick={clear} className="bg-red-500 text-white px-3 py-1 rounded">Clear</button>
       </div>
     </div>
   );
@@ -34,20 +34,14 @@ const SignaturePad = forwardRef((props, ref) => {
 
 // ================= StaffForm =================
 const StaffForm = () => {
-  const navigate = useNavigate();
   const [approversList, setApproversList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState(null);
-  const [staffList, setStaffList] = useState([]);
   const [requestHistory, setRequestHistory] = useState([]);
 
   const signatureRef = useRef(null);
 
-  const token = localStorage.getItem("token");
-  const user = token ? jwtDecode.default(token) : null;
-
   const [formData, setFormData] = useState({
-    staffId: user?._id || "",
     requestType: "CUTI",
     details: {},
     approvals: [
@@ -60,40 +54,29 @@ const StaffForm = () => {
     problemDescription: "",
   });
 
-  // ================= Fetch Approvers & Staff =================
+  const token = localStorage.getItem("token");
+  const user = token ? jwtDecode(token) : null;
+  const userId = user?._id;
+
+  // ================= Fetch Approvers & Request History =================
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [approversRes, staffRes] = await Promise.all([
+        const [approverRes, historyRes] = await Promise.all([
           axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
-          axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/staff", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
+          axios.get(`https://backenduwleapprovalsystem.onrender.com/api/requests/user/${userId}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
         ]);
-        setApproversList(approversRes.data || []);
-        setStaffList(staffRes.data || []);
+
+        setApproversList(approverRes.data || []);
+        setRequestHistory(historyRes.data || []);
       } catch (err) {
-        Swal.fire("Error", "Gagal fetch data", "error");
+        Swal.fire("Error", "Gagal fetch approvers atau request history", "error");
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
-
-  // ================= Fetch Staff Request History =================
-  useEffect(() => {
-    const fetchHistory = async () => {
-      if (!formData.staffId) return;
-      try {
-        const res = await axios.get(`https://backenduwleapprovalsystem.onrender.com/api/requests/staff/${formData.staffId}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        setRequestHistory(res.data || []);
-      } catch (err) {
-        console.error("❌ Gagal fetch request history", err);
-      }
-    };
-    fetchHistory();
-  }, [formData.staffId]);
+    if (userId) fetchData();
+  }, [userId, token]);
 
   // ================= Handlers =================
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -135,44 +118,34 @@ const StaffForm = () => {
     else setFile(null);
   };
 
-  // ================= Submit Form =================
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const staff = staffList.find((s) => s._id === formData.staffId);
-    if (!staff) return Swal.fire("Error", "Sila pilih staff", "error");
-    const staffDepartment = staff.department || "-";
-
-    if (formData.requestType === "PEMBELIAN") {
-      for (let i = 0; i < formData.items.length; i++) {
-        if (!formData.items[i].itemName)
-          return Swal.fire("Error", `Item ${i + 1} belum ada nama item`, "error");
-      }
-    }
+    if (!userId) return Swal.fire("Error", "User tidak dikenali", "error");
 
     const signatureData = signatureRef.current?.getSignature() || null;
     const filteredApprovals = formData.approvals.filter(a => a.approverId);
 
     const payload = new FormData();
-    payload.append("userId", staff._id);
-    payload.append("staffName", staff.name || staff.username);
+    payload.append("userId", userId);
     payload.append("requestType", formData.requestType);
     payload.append("details", JSON.stringify(formData.details));
     payload.append("items", JSON.stringify(formData.items));
     payload.append("approvals", JSON.stringify(filteredApprovals));
     payload.append("signatureStaff", signatureData || "");
-    payload.append("staffDepartment", staffDepartment);
     payload.append("problemDescription", formData.problemDescription);
+
     if (file) payload.append("files", file);
 
     try {
       await axios.post("https://backenduwleapprovalsystem.onrender.com/api/requests", payload, {
-        headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
       });
       Swal.fire("Success", "Request berjaya dihantar!", "success");
 
-      // reset form
       setFormData({
-        staffId: user?._id || "",
         requestType: "CUTI",
         details: {},
         approvals: [
@@ -186,6 +159,10 @@ const StaffForm = () => {
       });
       setFile(null);
       signatureRef.current?.clear();
+
+      // refresh history
+      const historyRes = await axios.get(`https://backenduwleapprovalsystem.onrender.com/api/requests/user/${userId}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      setRequestHistory(historyRes.data || []);
     } catch (err) {
       console.error("❌ Submit Error:", err.response || err);
       Swal.fire("Error", err.response?.data?.message || "Gagal hantar request", "error");
@@ -194,69 +171,58 @@ const StaffForm = () => {
 
   if (loading) return <p className="text-center mt-6 text-gray-600">Loading...</p>;
 
-  // ================= Render =================
   return (
     <div className="max-w-5xl mx-auto mt-10 p-6 bg-gray-50 rounded-xl shadow-lg">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-800">Staff Request Form</h2>
-        <button
-          type="button"
-          onClick={() => navigate("/my-requests")}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          My Requests
-        </button>
+      <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Staff Request Form</h2>
+
+      {/* ================= Request History ================= */}
+      <div className="mb-6">
+        <h3 className="text-xl font-semibold mb-2">Request History</h3>
+        {requestHistory.length === 0 ? (
+          <p className="text-gray-600">Tiada rekod permohonan.</p>
+        ) : (
+          <div className="overflow-x-auto rounded shadow-sm">
+            <table className="w-full table-auto border-collapse border">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-2 py-1 border">Tarikh</th>
+                  <th className="px-2 py-1 border">Jenis</th>
+                  <th className="px-2 py-1 border">Status</th>
+                  <th className="px-2 py-1 border">Approvers</th>
+                </tr>
+              </thead>
+              <tbody>
+                {requestHistory.map((req) => (
+                  <tr key={req._id} className="bg-white border-b">
+                    <td className="px-2 py-1 border">{new Date(req.createdAt).toLocaleDateString()}</td>
+                    <td className="px-2 py-1 border">{req.requestType}</td>
+                    <td className="px-2 py-1 border">{req.approvals.every(a=>a.status==="Approved") ? "Approved" : req.approvals.some(a=>a.status==="Rejected") ? "Rejected" : "Pending"}</td>
+                    <td className="px-2 py-1 border">{req.approvals.map(a => a.approverName).join(", ")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Staff Select */}
-        <div className="mb-4">
-          <label className="block mb-1 font-semibold">Pilih Staff</label>
-          <select
-            name="staffId"
-            value={formData.staffId}
-            onChange={(e) => setFormData({ ...formData, staffId: e.target.value })}
-            className="w-full border px-3 py-2 rounded"
-          >
-            <option value="">-- Pilih Staff --</option>
-            {staffList.map((s) => (
-              <option key={s._id} value={s._id}>
-                {s.name} ({s.department})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Request History */}
-        {requestHistory.length > 0 && (
-          <div className="mb-4 p-3 border rounded bg-white">
-            <h3 className="font-semibold mb-2">Request History</h3>
-            <ul className="list-disc pl-5 text-gray-700">
-              {requestHistory.map((r) => (
-                <li key={r._id}>
-                  {r.requestType} - {r.approvals[0]?.status || "Pending"} - {new Date(r.createdAt).toLocaleString()}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Request Type */}
-        <div className="mb-4">
-          <label className="block mb-1 font-semibold">Jenis Permohonan</label>
-          <select
-            name="requestType"
-            value={formData.requestType}
-            onChange={handleChange}
-            className="w-full border px-3 py-2 rounded"
-          >
-            <option value="CUTI">Cuti</option>
-            <option value="PEMBELIAN">Pembelian</option>
-            <option value="IT_SUPPORT">IT Support</option>
-            <option value="Maintenance">Maintenance Job Request</option>
-          </select>
-        </div>
-
+        {/* Request Type & Details - rest same as before */}
+        <table className="w-full table-auto bg-white rounded shadow-sm overflow-hidden">
+          <tbody>
+            <tr className="border-b bg-white">
+              <td className="py-2 px-4 font-semibold text-gray-700">Jenis Permohonan</td>
+              <td className="py-2 px-4">
+                <select name="requestType" value={formData.requestType} onChange={handleChange} className="w-full border border-gray-300 rounded px-3 py-2">
+                  <option value="CUTI">Cuti</option>
+                  <option value="PEMBELIAN">Pembelian</option>
+                  <option value="IT_SUPPORT">IT Support</option>
+                  <option value="Maintenance">Maintenance Job Request</option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
         {/* Dynamic form details */}
         {formData.requestType === "CUTI" && (
           <div>
