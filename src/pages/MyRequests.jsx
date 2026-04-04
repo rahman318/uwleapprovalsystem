@@ -35,8 +35,8 @@ const MyRequests = () => {
   }, []);
 
   const filteredRequests = requests
-    .filter((r) => r.title.toLowerCase().includes(search.toLowerCase()))
-    .filter((r) => !filter || r.status === filter);
+  .filter((r) => (r.title || "").toLowerCase().includes(search.toLowerCase()))
+  .filter((r) => !filter || r.status === filter);
 
   if (loading) return <p>Loading My Requests...</p>;
   if (!requests.length) return <p>No requests found.</p>;
