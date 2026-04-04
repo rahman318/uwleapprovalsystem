@@ -67,7 +67,7 @@ const StaffForm = () => {
       .catch(err => Swal.fire("Error", "Gagal fetch approvers", "error"));
 
     // fetch user's request history (lazy, limit 10)
-    axios.get(`https://backenduwleapprovalsystem.onrender.com/api/requests/user/${userId}?limit=10`, { headers: { Authorization: `Bearer ${token}` } })
+    axios.get(`https://backenduwleapprovalsystem.onrender.com/api/my-requests/${userId}?limit=10`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => setRequestHistory(res.data || []))
       .catch(err => console.error("Failed fetch history:", err))
       .finally(() => setLoading(false));
