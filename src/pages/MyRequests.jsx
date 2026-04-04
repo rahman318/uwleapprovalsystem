@@ -7,6 +7,7 @@ const MyRequests = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(true);
+  const [openAccordions, setOpenAccordions] = useState({}); // Track open/close
 
   const token = localStorage.getItem("token");
 
@@ -30,6 +31,10 @@ const MyRequests = () => {
   useEffect(() => {
     fetchRequests();
   }, []);
+
+  const toggleAccordion = (id) => {
+    setOpenAccordions((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const filteredRequests = requests.filter((r) =>
     r.requestType?.toLowerCase().includes(search.toLowerCase())
@@ -117,7 +122,12 @@ const MyRequests = () => {
             backgroundColor: "#f9f9f9",
           }}
         >
-          <h3>{r.requestType} - {r.staffName}</h3>
+          <h3 style={{ cursor: "pointer" }} onClick={() => toggleAccordion(r._id)}>
+            {r.requestType} - {r.staffName} {" "}
+            <span style={{ fontSize: "14px", color: "#666" }}>
+              [{openAccordions[r._id] ? "-" : "+"}]
+            </span>
+          </h3>
           <p>
             Final Status:{" "}
             <span
@@ -138,37 +148,42 @@ const MyRequests = () => {
             </span>
           </p>
           <p>Created At: {new Date(r.createdAt).toLocaleString()}</p>
-          {r.problemDescription && <p>Problem: {r.problemDescription}</p>}
 
-          {r.items && r.items.length > 0 && (
-            <div style={{ marginTop: "10px" }}>
-              <strong>Items:</strong>
-              <ul>
-                {r.items.map((i, idx) => (
-                  <li key={idx}>
-                    {i.itemName} | Qty: {i.quantity} | Cost: {i.estimatedCost}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {openAccordions[r._id] && (
+            <>
+              {r.problemDescription && <p>Problem: {r.problemDescription}</p>}
 
-          {r.approvals && r.approvals.length > 0 && (
-            <div style={{ marginTop: "10px" }}>
-              <strong>Approvals:</strong>
-              {r.approvals.map((a, idx) => (
-                <div key={idx} style={{ marginLeft: "10px", marginTop: "5px" }}>
-                  <p>
-                    Level {a.level} - {a.status}
-                  </p>
-                  <p>
-                    Approver: {a.approverName || "-"} | Dept: {a.approverDepartment || "-"}
-                  </p>
-                  <p>Remark: {a.remark || "-"}</p>
-                  <p>Action Date: {a.actionDate ? new Date(a.actionDate).toLocaleString() : "-"}</p>
+              {r.items && r.items.length > 0 && (
+                <div style={{ marginTop: "10px" }}>
+                  <strong>Items:</strong>
+                  <ul>
+                    {r.items.map((i, idx) => (
+                      <li key={idx}>
+                        {i.itemName} | Qty: {i.quantity} | Cost: {i.estimatedCost}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              ))}
-            </div>
+              )}
+
+              {r.approvals && r.approvals.length > 0 && (
+                <div style={{ marginTop: "10px" }}>
+                  <strong>Approvals:</strong>
+                  {r.approvals.map((a, idx) => (
+                    <div key={idx} style={{ marginLeft: "10px", marginTop: "5px" }}>
+                      <p>
+                        Level {a.level} - {a.status}
+                      </p>
+                      <p>
+                        Approver: {a.approverName || "-"} | Dept: {a.approverDepartment || "-"}
+                      </p>
+                      <p>Remark: {a.remark || "-"}</p>
+                      <p>Action Date: {a.actionDate ? new Date(a.actionDate).toLocaleString() : "-"}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
           <div style={{ marginTop: "10px" }}>
