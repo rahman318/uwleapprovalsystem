@@ -7,7 +7,7 @@ const MyRequests = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(true);
-  const [openAccordions, setOpenAccordions] = useState({}); // Track open/close
+  const [openAccordions, setOpenAccordions] = useState({});
 
   const token = localStorage.getItem("token");
 
@@ -36,9 +36,9 @@ const MyRequests = () => {
     setOpenAccordions((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const filteredRequests = requests.filter((r) =>
-    r.requestType?.toLowerCase().includes(search.toLowerCase())
-  ).filter((r) => !filter || r.finalStatus === filter);
+  const filteredRequests = requests
+    .filter((r) => r.requestType?.toLowerCase().includes(search.toLowerCase()))
+    .filter((r) => !filter || r.finalStatus === filter);
 
   const generatePDF = async (request) => {
     const pdfDoc = await PDFDocument.create();
@@ -88,51 +88,80 @@ const MyRequests = () => {
   if (!requests.length) return <p>No requests found.</p>;
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h2>My Requests History</h2>
-
-      <div style={{ marginBottom: "15px" }}>
-        <input
-          type="text"
-          placeholder="Search by type..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ padding: "5px", marginRight: "10px" }}
-        />
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          style={{ padding: "5px" }}
-        >
-          <option value="">All Status</option>
-          <option value="Pending">Pending</option>
-          <option value="Approved">Approved</option>
-          <option value="Rejected">Rejected</option>
-        </select>
+    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
+      {/* Header Section */}
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        marginBottom: "20px",
+      }}>
+        <h2 style={{ margin: "0 0 10px 0", fontSize: "28px", color: "#333" }}>
+          My Requests History
+        </h2>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
+          <input
+            type="text"
+            placeholder="Search by type..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              padding: "8px 12px",
+              borderRadius: "20px",
+              border: "1px solid #ccc",
+              minWidth: "200px",
+              outline: "none",
+            }}
+          />
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            style={{
+              padding: "8px 12px",
+              borderRadius: "20px",
+              border: "1px solid #ccc",
+              outline: "none",
+            }}
+          >
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
       </div>
 
+      {/* Requests List */}
       {filteredRequests.map((r) => (
         <div
           key={r._id}
           style={{
             border: "1px solid #ccc",
-            borderRadius: "8px",
+            borderRadius: "10px",
             padding: "15px",
             marginBottom: "10px",
             backgroundColor: "#f9f9f9",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+            transition: "all 0.3s ease",
           }}
         >
-          <h3 style={{ cursor: "pointer" }} onClick={() => toggleAccordion(r._id)}>
-            {r.requestType} - {r.staffName} {" "}
-            <span style={{ fontSize: "14px", color: "#666" }}>
-              [{openAccordions[r._id] ? "-" : "+"}]
+          <div
+            style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+            onClick={() => toggleAccordion(r._id)}
+          >
+            <h3 style={{ margin: 0 }}>
+              {r.requestType} - {r.staffName}
+            </h3>
+            <span style={{ fontSize: "20px", color: "#666" }}>
+              {openAccordions[r._id] ? "−" : "+"}
             </span>
-          </h3>
-          <p>
+          </div>
+
+          <p style={{ margin: "5px 0" }}>
             Final Status:{" "}
             <span
               style={{
-                padding: "3px 8px",
+                padding: "4px 10px",
                 borderRadius: "5px",
                 color: "#fff",
                 fontWeight: "bold",
@@ -147,56 +176,66 @@ const MyRequests = () => {
               {r.finalStatus || "-"}
             </span>
           </p>
-          <p>Created At: {new Date(r.createdAt).toLocaleString()}</p>
+          <p style={{ margin: "5px 0", color: "#555" }}>
+            Created At: {new Date(r.createdAt).toLocaleString()}
+          </p>
 
-          {openAccordions[r._id] && (
-            <>
-              {r.problemDescription && <p>Problem: {r.problemDescription}</p>}
+          {/* Collapsible content with animation */}
+          <div
+            style={{
+              maxHeight: openAccordions[r._id] ? "1000px" : "0",
+              overflow: "hidden",
+              transition: "max-height 0.4s ease",
+            }}
+          >
+            {r.problemDescription && <p>Problem: {r.problemDescription}</p>}
 
-              {r.items && r.items.length > 0 && (
-                <div style={{ marginTop: "10px" }}>
-                  <strong>Items:</strong>
-                  <ul>
-                    {r.items.map((i, idx) => (
-                      <li key={idx}>
-                        {i.itemName} | Qty: {i.quantity} | Cost: {i.estimatedCost}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {r.approvals && r.approvals.length > 0 && (
-                <div style={{ marginTop: "10px" }}>
-                  <strong>Approvals:</strong>
-                  {r.approvals.map((a, idx) => (
-                    <div key={idx} style={{ marginLeft: "10px", marginTop: "5px" }}>
-                      <p>
-                        Level {a.level} - {a.status}
-                      </p>
-                      <p>
-                        Approver: {a.approverName || "-"} | Dept: {a.approverDepartment || "-"}
-                      </p>
-                      <p>Remark: {a.remark || "-"}</p>
-                      <p>Action Date: {a.actionDate ? new Date(a.actionDate).toLocaleString() : "-"}</p>
-                    </div>
+            {r.items && r.items.length > 0 && (
+              <div style={{ marginTop: "10px" }}>
+                <strong>Items:</strong>
+                <ul>
+                  {r.items.map((i, idx) => (
+                    <li key={idx}>
+                      {i.itemName} | Qty: {i.quantity} | Cost: {i.estimatedCost}
+                    </li>
                   ))}
-                </div>
-              )}
-            </>
-          )}
+                </ul>
+              </div>
+            )}
+
+            {r.approvals && r.approvals.length > 0 && (
+              <div style={{ marginTop: "10px" }}>
+                <strong>Approvals:</strong>
+                {r.approvals.map((a, idx) => (
+                  <div key={idx} style={{ marginLeft: "10px", marginTop: "5px" }}>
+                    <p>
+                      Level {a.level} - {a.status}
+                    </p>
+                    <p>
+                      Approver: {a.approverName || "-"} | Dept: {a.approverDepartment || "-"}
+                    </p>
+                    <p>Remark: {a.remark || "-"}</p>
+                    <p>Action Date: {a.actionDate ? new Date(a.actionDate).toLocaleString() : "-"}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div style={{ marginTop: "10px" }}>
             <button
               onClick={() => generatePDF(r)}
               style={{
-                padding: "5px 10px",
-                borderRadius: "5px",
+                padding: "6px 14px",
+                borderRadius: "20px",
                 backgroundColor: "#007bff",
                 color: "#fff",
                 border: "none",
                 cursor: "pointer",
+                transition: "background-color 0.3s",
               }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = "#0056b3"}
+              onMouseLeave={(e) => e.target.style.backgroundColor = "#007bff"}
             >
               Export to PDF
             </button>
