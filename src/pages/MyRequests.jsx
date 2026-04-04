@@ -13,7 +13,7 @@ const MyRequests = () => {
     try {
       setLoading(true);
       const res = await axios.get(
-        "https://backenduwleapprovalsystem.onrender.com/my-requests", // pastikan endpoint betul
+        "https://backenduwleapprovalsystem.onrender.com/api/my-requests", // pastikan endpoint betul
         {
           headers: { Authorization: `Bearer ${token}` },
         }
