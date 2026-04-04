@@ -1,5 +1,3 @@
-Berikut versi siap bossskurr:
-
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
