@@ -59,7 +59,7 @@ const StaffForm = () => {
     const fetchData = async () => {
       try {
         const [staffRes, approverRes] = await Promise.all([
-          axios.get("https://backenduwleapprovalsystem.onrender.com/api/job-orders/my-requests", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
+          axios.get("https://backenduwleapprovalsystem.onrender.com/my-requests", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
           axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
         ]);
         setStaffList(staffRes.data || []);
