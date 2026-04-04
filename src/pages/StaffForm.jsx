@@ -55,39 +55,33 @@ const StaffForm = () => {
     problemDescription: "",
   });
 
-  const BASE_URL = "https://backenduwleapprovalsystem.onrender.com/api";
+  useEffect(() => {
+  const fetchData = async () => {
+    const token = localStorage.getItem("token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-  // ================= fetch approvers & history =================
-useEffect(() => {
-  if (!userId) {
-    setLoading(false);
-    return;
-  }
+    try {
+      const [historyRes, approverRes] = await Promise.all([
+        axios.get("https://backenduwleapprovalsystem.onrender.com/api/my-requests"/${userId}?limit=10`, { headers }),
+        axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers }),
+      ]);
 
-  setLoading(true);
-
-  const token = localStorage.getItem("token"); // ambil token dari localStorage
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-  const fetchApprovers = axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
-  const fetchHistory = axios.get(`${BASE_URL}/my-requests/${userId}?limit=10`, { headers });
-
-  Promise.all([fetchApprovers, fetchHistory])
-    .then(([approversRes, historyRes]) => {
-      // check sama ada response backend ada nested data
-      const approversData = approversRes.data?.data || approversRes.data || [];
+      // handle nested data jika backend return { data: [...] }
       const historyData = historyRes.data?.data || historyRes.data || [];
+      const approversData = approverRes.data?.data || approverRes.data || [];
 
-      setApproversList(approversData);
       setRequestHistory(historyData);
-    })
-    .catch(err => {
+      setApproversList(approversData);
+    } catch (err) {
       console.error("❌ Fetch Error:", err.response || err);
-      Swal.fire("Error", "Gagal fetch data", "error");
-    })
-    .finally(() => setLoading(false));
+      Swal.fire("Error", "Gagal fetch request history atau approvers", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (userId) fetchData();
 }, [userId]);
-  
   // ================= handlers =================
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleDetailsChange = (e) => setFormData({ ...formData, details: { ...formData.details, [e.target.name]: e.target.value } });
