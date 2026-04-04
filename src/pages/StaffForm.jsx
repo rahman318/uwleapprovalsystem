@@ -328,7 +328,7 @@ const StaffForm = () => {
               )}
             </tbody>
           </table>
-        </div
+        </div>
         {/* Problem Description */}
         <div className="mt-4">
           <label className="block mb-2 font-semibold text-gray-700">Problem Description</label>
