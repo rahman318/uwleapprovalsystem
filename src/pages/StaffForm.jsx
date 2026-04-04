@@ -84,9 +84,8 @@ const StaffForm = () => {
       setLoading(false);
     }
   };
-
-  if (userId) fetchData();
-}, [userId]);
+  fetchData();
+  }, []);
   // ================= handlers =================
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleDetailsChange = (e) => setFormData({ ...formData, details: { ...formData.details, [e.target.name]: e.target.value } });
