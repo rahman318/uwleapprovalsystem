@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } f
 import axios from "axios";
 import Swal from "sweetalert2";
 import SignatureCanvas from "react-signature-canvas";
+import { useNavigate } from "react-router-dom";
 
 // ================= SignaturePad =================
 const SignaturePad = forwardRef((props, ref) => {
@@ -38,6 +39,8 @@ const StaffForm = () => {
   const [requestHistory, setRequestHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState(null);
+  
+  const navigate = useNavigate();
 
   const signatureRef = useRef(null);
 
@@ -191,7 +194,20 @@ const StaffForm = () => {
   return (
     <div className="max-w-5xl mx-auto mt-10 p-6 bg-gray-50 rounded-xl shadow-lg">
       <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Staff Request Form</h2>
+  <button
+    type="submit"
+    className="bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-bold py-2 px-6 rounded shadow-md"
+  >
+    Submit Request
+  </button>
 
+  <button
+    type="button"
+    onClick={() => navigate("/my-requests")}
+    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded shadow-md"
+  >
+    View Request History
+  </button>
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Staff & Request Type */}
         <table className="w-full table-auto bg-white rounded shadow-sm overflow-hidden">
