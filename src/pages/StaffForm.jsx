@@ -86,7 +86,7 @@ const StaffForm = () => {
   }, [userId, token]);
 
   // ================= handlers =================
-    const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+      const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleDetailsChange = (e) => setFormData({ ...formData, details: { ...formData.details, [e.target.name]: e.target.value } });
 
   const handleApproverChange = (level, approverId) => {
@@ -128,35 +128,54 @@ const StaffForm = () => {
       setFile(null);
     }
   };
-  
-  // ================= submit =================
+  // ====================================================
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!userId) return Swal.fire("Error", "User not found, please login again", "error");
+
+    const staff = staffList.find((s) => s._id === formData.staffId);
+    if (!staff) return Swal.fire("Error", "Sila pilih staff", "error");
+    const staffDepartment = staff.department || "-";
+
+    if (formData.requestType === "PEMBELIAN") {
+      for (let i = 0; i < formData.items.length; i++) {
+        if (!formData.items[i].itemName) {
+          return Swal.fire("Error", `Item ${i + 1} belum ada nama item`, "error");
+        }
+      }
+    }
 
     const signatureData = signatureRef.current?.getSignature() || null;
     const filteredApprovals = formData.approvals.filter(a => a.approverId);
 
+    // 🔥 FormData untuk upload + Supabase
     const payload = new FormData();
-    payload.append("userId", userId);
-    payload.append("staffName", user?.name || user?.username);
+    payload.append("userId", staff._id);
+    payload.append("staffName", staff.name || staff.username);
     payload.append("requestType", formData.requestType);
     payload.append("details", JSON.stringify(formData.details));
     payload.append("items", JSON.stringify(formData.items));
     payload.append("approvals", JSON.stringify(filteredApprovals));
     payload.append("signatureStaff", signatureData || "");
-    payload.append("problemDescription", formData.problemDescription);
-    if (file) payload.append("files", file);
+    payload.append("staffDepartment", staffDepartment);
+    payload.append("problemDescription", formData.problemDescription); // ✅ new field
+
+    if (file) {
+      payload.append("files", file); // ✅ field name sama dengan backend multer
+    }
 
     try {
-      await axios.post(`${BASE_URL}/requests`, payload, {
-        headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
+      await axios.post("https://backenduwleapprovalsystem.onrender.com/api/requests", payload, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
       });
-
       Swal.fire("Success", "Request berjaya dihantar!", "success");
 
       // reset form
       setFormData({
+        staffId: "",
         requestType: "CUTI",
         details: {},
         approvals: [
@@ -166,15 +185,10 @@ const StaffForm = () => {
           { level: 4, approverId: null, status: "Pending", approverName: "-" },
         ],
         items: [],
-        problemDescription: "",
+        problemDescription: "", // ✅ reset
       });
       setFile(null);
       signatureRef.current?.clear();
-
-      // reload history
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const historyRes = await axios.get(`${BASE_URL}/my-requests/${userId}?limit=10`, { headers });
-      setRequestHistory(historyRes.data?.data || historyRes.data || []);
     } catch (err) {
       console.error("❌ Submit Error:", err.response || err);
       Swal.fire("Error", err.response?.data?.message || "Gagal hantar request", "error");
@@ -186,11 +200,21 @@ const StaffForm = () => {
   return (
     <div className="max-w-5xl mx-auto mt-10 p-6 bg-gray-50 rounded-xl shadow-lg">
       <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Staff Request Form</h2>
+
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Request Type */}
+        {/* Staff & Request Type */}
         <table className="w-full table-auto bg-white rounded shadow-sm overflow-hidden">
           <tbody>
             <tr className="border-b bg-gray-50">
+              <td className="py-2 px-4 font-semibold text-gray-700">Nama Staff</td>
+              <td className="py-2 px-4">
+                <select name="staffId" value={formData.staffId} onChange={handleChange} required className="w-full border border-gray-300 rounded px-3 py-2">
+                  <option value="">-- Pilih Staff --</option>
+                  {staffList.map(s => <option key={s._id} value={s._id}>{s.name || s.username}</option>)}
+                </select>
+              </td>
+            </tr>
+            <tr className="border-b bg-white">
               <td className="py-2 px-4 font-semibold text-gray-700">Jenis Permohonan</td>
               <td className="py-2 px-4">
                 <select name="requestType" value={formData.requestType} onChange={handleChange} className="w-full border border-gray-300 rounded px-3 py-2">
@@ -203,6 +227,7 @@ const StaffForm = () => {
             </tr>
           </tbody>
         </table>
+
         {/* Dynamic Details / Items */}
         <div className="overflow-x-auto rounded shadow-sm">
           <table className="w-full table-auto border-collapse">
@@ -330,6 +355,7 @@ const StaffForm = () => {
             </tbody>
           </table>
         </div>
+
         {/* Problem Description */}
         <div className="mt-4">
           <label className="block mb-2 font-semibold text-gray-700">Problem Description</label>
@@ -350,10 +376,10 @@ const StaffForm = () => {
           <input type="file" onChange={handleFileChange} className="border px-2 py-1 rounded w-full"/>
           {file && <p className="text-sm mt-1 text-gray-600">Selected: {file.name}</p>}
         </div>
-        
+
         {/* Multi-Level Approvers */}
         <div className="mt-4 space-y-2">
-          <label className="block mb-2 font-semibold text-gray-700">Pilih Approvers (Level 1,2,3,4)</label>
+          <label className="block mb-2 font-semibold text-gray-700">Pilih Approvers (Level 1,2,3)</label>
           {[1,2,3,4].map(level => (
             <select
               key={level}
@@ -379,34 +405,8 @@ const StaffForm = () => {
         <div className="mt-6 text-center">
           <button type="submit" className="bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-bold py-2 px-6 rounded shadow-md">Submit Request</button>
         </div>
-      </form>
 
-      {/* Request History */}
-      <div className="mt-10">
-        <h3 className="text-2xl font-semibold mb-4">Request History (Last 10)</h3>
-        {requestHistory.length === 0 ? (
-          <p className="text-gray-600">Tiada request ditemui.</p>
-        ) : (
-          <table className="w-full border-collapse border border-gray-300">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="border px-2 py-1">Jenis Permohonan</th>
-                <th className="border px-2 py-1">Status</th>
-                <th className="border px-2 py-1">Tarikh</th>
-              </tr>
-            </thead>
-            <tbody>
-              {requestHistory.map(req => (
-                <tr key={req._id} className="hover:bg-gray-50">
-                  <td className="border px-2 py-1">{req.requestType}</td>
-                  <td className="border px-2 py-1">{req.approvals.some(a => a.status === "Pending") ? "Pending" : "Completed"}</td>
-                  <td className="border px-2 py-1">{new Date(req.createdAt).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      </form>
     </div>
   );
 };
