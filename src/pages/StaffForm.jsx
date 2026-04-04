@@ -3,7 +3,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import SignatureCanvas from "react-signature-canvas";
 import { useNavigate } from "react-router-dom";
-import { default as jwtDecode } from "jwt-decode";
+import * as jwtDecode from "jwt-decode"; // ✅ compatible dengan ESM
 
 // ================= SignaturePad =================
 const SignaturePad = forwardRef((props, ref) => {
