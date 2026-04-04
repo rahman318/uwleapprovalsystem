@@ -43,7 +43,7 @@ const MyRequests = () => {
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h2>My Requests History</h2>
+      <h2>Requests History</h2>
 
       <div style={{ marginBottom: "15px" }}>
         <input
