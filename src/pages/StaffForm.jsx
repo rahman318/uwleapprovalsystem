@@ -55,21 +55,29 @@ const StaffForm = () => {
     problemDescription: "",
   });
 
+  const BASE_URL = "https://backenduwleapprovalsystem.onrender.com/api";
+
   // ================= fetch approvers & history =================
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
 
-    // fetch approvers first
-    axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setApproversList(res.data || []))
-      .catch(err => Swal.fire("Error", "Gagal fetch approvers", "error"));
+    const fetchApprovers = axios.get(`${BASE_URL}/users/approvers`, { headers: { Authorization: `Bearer ${token}` } });
+    const fetchHistory = axios.get(`${BASE_URL}/requests/my-requests?userId=${userId}&limit=10`, { headers: { Authorization: `Bearer ${token}` } });
 
-    // fetch user's request history (lazy, limit 10)
-    axios.get(`https://backenduwleapprovalsystem.onrender.com/api/my-requests/${userId}?limit=10`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setRequestHistory(res.data || []))
-      .catch(err => console.error("Failed fetch history:", err))
+    Promise.all([fetchApprovers, fetchHistory])
+      .then(([approversRes, historyRes]) => {
+        setApproversList(approversRes.data || []);
+        setRequestHistory(historyRes.data || []);
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire("Error", "Gagal fetch data", "error");
+      })
       .finally(() => setLoading(false));
   }, [userId, token]);
 
