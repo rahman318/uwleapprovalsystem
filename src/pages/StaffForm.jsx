@@ -2,14 +2,16 @@ import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } f
 import axios from "axios";
 import Swal from "sweetalert2";
 import SignatureCanvas from "react-signature-canvas";
-import jwtDecode from "jwt-decode";
 
 // ================= SignaturePad =================
 const SignaturePad = forwardRef((props, ref) => {
   const sigRef = useRef(null);
 
   useImperativeHandle(ref, () => ({
-    getSignature: () => (sigRef.current?.isEmpty() ? null : sigRef.current.toDataURL()),
+    getSignature: () => {
+      if (!sigRef.current || sigRef.current.isEmpty()) return null;
+      return sigRef.current.toDataURL();
+    },
     clear: () => sigRef.current?.clear(),
   }));
 
@@ -33,18 +35,13 @@ const SignaturePad = forwardRef((props, ref) => {
 const StaffForm = () => {
   const [staffList, setStaffList] = useState([]);
   const [approversList, setApproversList] = useState([]);
-  const [requestHistory, setRequestHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState(null);
 
   const signatureRef = useRef(null);
-  const BASE_URL = "https://backenduwleapprovalsystem.onrender.com/api";
-
-  const token = localStorage.getItem("token");
-  const user = token ? jwtDecode(token) : null;
-  const userId = user?._id;
 
   const [formData, setFormData] = useState({
+    staffId: "",
     requestType: "CUTI",
     details: {},
     approvals: [
@@ -54,40 +51,30 @@ const StaffForm = () => {
       { level: 4, approverId: null, status: "Pending", approverName: "-" },
     ],
     items: [],
-    problemDescription: "",
+    problemDescription: "", // ✅ new field
   });
 
-  // ================= fetch history & approvers =================
+  const token = localStorage.getItem("token");
+
   useEffect(() => {
-    if (!userId || !token) {
-      setLoading(false);
-      return;
-    }
-
-    const headers = { Authorization: `Bearer ${token}` };
-
     const fetchData = async () => {
       try {
-        const [historyRes, approverRes] = await Promise.all([
-          axios.get(`${BASE_URL}/my-requests/${userId}?limit=10`, { headers }),
-          axios.get(`${BASE_URL}/users/approvers`, { headers }),
+        const [staffRes, approverRes] = await Promise.all([
+          axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/staff", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
+          axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
         ]);
-
-        setRequestHistory(historyRes.data?.data || historyRes.data || []);
-        setApproversList(approverRes.data?.data || approverRes.data || []);
+        setStaffList(staffRes.data || []);
+        setApproversList(approverRes.data || []);
       } catch (err) {
-        console.error("❌ Fetch Error:", err.response || err);
-        Swal.fire("Error", "Gagal fetch request history atau approvers", "error");
+        Swal.fire("Error", "Gagal fetch staff atau approvers", "error");
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
-  }, [userId, token]);
+  }, []);
 
-  // ================= handlers =================
-      const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleDetailsChange = (e) => setFormData({ ...formData, details: { ...formData.details, [e.target.name]: e.target.value } });
 
   const handleApproverChange = (level, approverId) => {
