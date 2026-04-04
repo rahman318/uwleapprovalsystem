@@ -67,11 +67,10 @@ const StaffForm = () => {
 
     try {
       const [historyRes, approverRes] = await Promise.all([
-        axios.get(`https://backenduwleapprovalsystem.onrender.com/api/my-requests", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
-        axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
+        axios.get(`https://backenduwleapprovalsystem.onrender.com/api/my-requests/${userId}?limit=10`, { headers }),
+        axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers }),
       ]);
 
-      // ambil data sebenar
       const historyData = historyRes.data?.data || historyRes.data || [];
       const approversData = approverRes.data?.data || approverRes.data || [];
 
@@ -84,8 +83,10 @@ const StaffForm = () => {
       setLoading(false);
     }
   };
-  fetchData();
-  }, []);
+
+  if (userId) fetchData(); // pastikan userId ada
+}, [userId]);
+  
   // ================= handlers =================
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleDetailsChange = (e) => setFormData({ ...formData, details: { ...formData.details, [e.target.name]: e.target.value } });
