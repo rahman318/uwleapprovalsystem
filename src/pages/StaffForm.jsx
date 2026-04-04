@@ -3,7 +3,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import SignatureCanvas from "react-signature-canvas";
 import { useNavigate } from "react-router-dom";
-import jwt_decode from "jwt-decode";
+import* as jwt_decode from "jwt-decode";
 
 // ================= SignaturePad =================
 const SignaturePad = forwardRef((props, ref) => {
