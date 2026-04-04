@@ -6,6 +6,7 @@ const MyRequests = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(true);
+  const [expandedIds, setExpandedIds] = useState([]);
 
   const token = localStorage.getItem("token");
 
@@ -16,7 +17,6 @@ const MyRequests = () => {
         "https://backenduwleapprovalsystem.onrender.com/api/my-requests",
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       const data = res.data.requests || res.data || [];
       setRequests(data);
     } catch (error) {
@@ -31,19 +31,15 @@ const MyRequests = () => {
     fetchRequests();
   }, []);
 
-  const getRequestStatus = (r) => {
-    if (r.finalStatus) return r.finalStatus;
-    if (r.approvals && r.approvals.length) {
-      return r.approvals[r.approvals.length - 1].status || "Pending";
-    }
-    return "Pending";
-  };
+  const getRequestStatus = (r) => r.finalStatus || "Pending";
 
-  const statusColor = (status) => {
-    if (status === "Pending") return "orange";
-    if (status === "Approved") return "green";
-    if (status === "Rejected") return "red";
-    return "gray";
+  const statusColor = (status) =>
+    status === "Pending" ? "#FFA500" : status === "Approved" ? "#28a745" : "#dc3545";
+
+  const toggleExpand = (id) => {
+    setExpandedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
   };
 
   const filteredRequests = requests
@@ -57,21 +53,21 @@ const MyRequests = () => {
   if (!requests.length) return <p>No requests found.</p>;
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h2>My Requests History</h2>
+    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif", maxWidth: "900px", margin: "0 auto" }}>
+      <h2 style={{ textAlign: "center", marginBottom: "20px" }}>My Requests History</h2>
 
-      <div style={{ marginBottom: "15px" }}>
+      <div style={{ marginBottom: "20px", textAlign: "center" }}>
         <input
           type="text"
           placeholder="Search by staff or type..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ padding: "5px", marginRight: "10px" }}
+          style={{ padding: "8px", marginRight: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
         />
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          style={{ padding: "5px" }}
+          style={{ padding: "8px", borderRadius: "5px", border: "1px solid #ccc" }}
         >
           <option value="">All Status</option>
           <option value="Pending">Pending</option>
@@ -80,118 +76,105 @@ const MyRequests = () => {
         </select>
       </div>
 
-      {filteredRequests.map((r) => (
-        <div
-          key={r._id}
-          style={{
-            border: "1px solid #ccc",
-            borderRadius: "8px",
-            padding: "15px",
-            marginBottom: "10px",
-          }}
-        >
-          <h3>
-            {r.requestType} - {r.staffName}
-          </h3>
-          <p>
-            Status:{" "}
-            <span
-              style={{
-                padding: "3px 8px",
-                borderRadius: "5px",
-                color: "#fff",
-                fontWeight: "bold",
-                backgroundColor: statusColor(getRequestStatus(r)),
-              }}
-            >
-              {getRequestStatus(r)}
-            </span>
-          </p>
-          <p>Created At: {new Date(r.createdAt).toLocaleString()}</p>
-          {r.requestType === "CUTI" && r.leaveStart && (
-            <p>
-              Leave: {new Date(r.leaveStart).toLocaleDateString()} -{" "}
-              {new Date(r.leaveEnd).toLocaleDateString()}
-            </p>
-          )}
-          {r.problemDescription && <p>Problem: {r.problemDescription}</p>}
-
-          {r.items && r.items.length > 0 && (
-            <div style={{ marginTop: "10px" }}>
-              <strong>Items:</strong>
-              {r.items.map((item, idx) => (
-                <div key={idx} style={{ paddingLeft: "10px" }}>
-                  <p>
-                    {item.itemName} - Qty: {item.quantity} - Cost:{" "}
-                    {item.estimatedCost} - Supplier: {item.supplier}
-                  </p>
-                  <p>Reason: {item.reason}</p>
-                </div>
-              ))}
+      {filteredRequests.map((r) => {
+        const isExpanded = expandedIds.includes(r._id);
+        return (
+          <div
+            key={r._id}
+            style={{
+              border: "1px solid #ddd",
+              borderRadius: "10px",
+              padding: "15px 20px",
+              marginBottom: "15px",
+              boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+              transition: "all 0.3s",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => toggleExpand(r._id)}>
+              <h3 style={{ margin: 0 }}>{r.requestType} - {r.staffName}</h3>
+              <span
+                style={{
+                  padding: "5px 12px",
+                  borderRadius: "20px",
+                  fontWeight: "bold",
+                  color: "#fff",
+                  backgroundColor: statusColor(getRequestStatus(r)),
+                }}
+              >
+                {getRequestStatus(r)}
+              </span>
             </div>
-          )}
 
-          {r.attachments && r.attachments.length > 0 && (
-            <div style={{ marginTop: "10px" }}>
-              <strong>Attachments:</strong>
-              {r.attachments.map((a, idx) => (
-                <p key={idx}>
-                  <a href={a.url} target="_blank" rel="noopener noreferrer">
-                    {a.originalName}
-                  </a>
-                </p>
-              ))}
-            </div>
-          )}
+            {isExpanded && (
+              <div style={{ marginTop: "15px", lineHeight: "1.5" }}>
+                <p><strong>Created At:</strong> {new Date(r.createdAt).toLocaleString()}</p>
+                {r.problemDescription && <p><strong>Problem:</strong> {r.problemDescription}</p>}
+                {r.leaveStart && r.leaveEnd && <p><strong>Leave:</strong> {new Date(r.leaveStart).toLocaleDateString()} - {new Date(r.leaveEnd).toLocaleDateString()}</p>}
 
-          {r.approvals && r.approvals.length > 0 && (
-            <div
-              style={{
-                marginLeft: "15px",
-                paddingLeft: "10px",
-                borderLeft: "2px solid #999",
-                marginTop: "10px",
-              }}
-            >
-              <strong>Approval History:</strong>
-              {r.approvals.map((a, idx) => {
-                const name = a.approverName || "-";
-                const dept = a.approverDepartment || "-";
-                const actionDate = a.actionDate
-                  ? new Date(a.actionDate).toLocaleString()
-                  : "-";
-                return (
-                  <div key={idx} style={{ marginBottom: "5px" }}>
-                    <p>
-                      Level {a.level} - {a.status}
-                    </p>
-                    <p>
-                      Approver: {name} | Dept: {dept}
-                    </p>
-                    <p>Action Date: {actionDate}</p>
-                    <p>Remark: {a.remark || "-"}</p>
+                {r.items && r.items.length > 0 && (
+                  <div>
+                    <strong>Items:</strong>
+                    <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "5px" }}>
+                      <thead>
+                        <tr>
+                          <th style={{ borderBottom: "1px solid #ccc", textAlign: "left" }}>Item</th>
+                          <th style={{ borderBottom: "1px solid #ccc", textAlign: "left" }}>Qty</th>
+                          <th style={{ borderBottom: "1px solid #ccc", textAlign: "left" }}>Cost</th>
+                          <th style={{ borderBottom: "1px solid #ccc", textAlign: "left" }}>Supplier</th>
+                          <th style={{ borderBottom: "1px solid #ccc", textAlign: "left" }}>Reason</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {r.items.map((item, idx) => (
+                          <tr key={idx}>
+                            <td>{item.itemName}</td>
+                            <td>{item.quantity}</td>
+                            <td>{item.estimatedCost}</td>
+                            <td>{item.supplier}</td>
+                            <td>{item.reason}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                )}
 
-          {r.technicianRemark && (
-            <p>
-              <strong>Technician Remark:</strong> {r.technicianRemark}
-            </p>
-          )}
+                {r.attachments && r.attachments.length > 0 && (
+                  <div style={{ marginTop: "10px" }}>
+                    <strong>Attachments:</strong>
+                    <ul>
+                      {r.attachments.map((a, idx) => (
+                        <li key={idx}>
+                          <a href={a.url} target="_blank" rel="noopener noreferrer" style={{ color: "#007bff", textDecoration: "underline" }}>
+                            {a.originalName}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
-          {r.proofImageUrl && (
-            <p>
-              <strong>Proof Image:</strong>{" "}
-              <a href={r.proofImageUrl} target="_blank" rel="noopener noreferrer">
-                View
-              </a>
-            </p>
-          )}
-        </div>
-      ))}
+                {r.approvals && r.approvals.length > 0 && (
+                  <div style={{ marginTop: "10px" }}>
+                    <strong>Approval History:</strong>
+                    {r.approvals.map((a, idx) => (
+                      <div key={idx} style={{ paddingLeft: "10px", borderLeft: "2px solid #999", marginTop: "5px" }}>
+                        <p style={{ margin: "2px 0" }}><strong>Level {a.level}:</strong> {a.status}</p>
+                        <p style={{ margin: "2px 0" }}>Approver: {a.approverName || "-"} | Dept: {a.approverDepartment || "-"}</p>
+                        <p style={{ margin: "2px 0" }}>Action Date: {a.actionDate ? new Date(a.actionDate).toLocaleString() : "-"}</p>
+                        <p style={{ margin: "2px 0" }}>Remark: {a.remark || "-"}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {r.technicianRemark && <p><strong>Technician Remark:</strong> {r.technicianRemark}</p>}
+                {r.proofImageUrl && <p><strong>Proof Image:</strong> <a href={r.proofImageUrl} target="_blank" rel="noopener noreferrer">View</a></p>}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
