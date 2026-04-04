@@ -158,7 +158,7 @@ const StaffForm = () => {
       signatureRef.current?.clear();
 
       // reload history
-      const historyRes = await axios.get(`https://backenduwleapprovalsystem.onrender.com/api/requests/user/${userId}?limit=10`, { headers: { Authorization: `Bearer ${token}` } });
+      const historyRes = await axios.get(`https://backenduwleapprovalsystem.onrender.com/api/my-requests/${userId}?limit=10`, { headers: { Authorization: `Bearer ${token}` } });
       setRequestHistory(historyRes.data || []);
     } catch (err) {
       console.error("❌ Submit Error:", err.response || err);
