@@ -67,8 +67,8 @@ const StaffForm = () => {
 
     try {
       const [historyRes, approverRes] = await Promise.all([
-        axios.get(`https://backenduwleapprovalsystem.onrender.com/api/my-requests/${userId}?limit=10`, { headers }),
-        axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers }),
+        axios.get(`https://backenduwleapprovalsystem.onrender.com/my-requests/${userId}?limit=10`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
+        axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
       ]);
 
       // ambil data sebenar
