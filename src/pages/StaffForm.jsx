@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } f
 import axios from "axios";
 import Swal from "sweetalert2";
 import SignatureCanvas from "react-signature-canvas";
+import { useNavigate } from "react-router-dom";
 
 // ================= SignaturePad =================
 const SignaturePad = forwardRef((props, ref) => {
@@ -37,6 +38,8 @@ const StaffForm = () => {
   const [approversList, setApproversList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState(null);
+
+  const navigate = useNavigate();
 
   const signatureRef = useRef(null);
 
@@ -192,15 +195,15 @@ const StaffForm = () => {
       {/* ========== View Request History Button ========== */}
       <div className="flex justify-end mb-6">
         <button
-          type="button"
-          onClick={() => window.location.href = "/my-requests"}
-          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded shadow-md flex items-center gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
-          </svg>
-          View Request History
-        </button>
+  type="button"
+  onClick={() => navigate("/my-requests")}
+  className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded shadow-md flex items-center gap-2"
+>
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
+  </svg>
+  View Request History
+</button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
