@@ -9,6 +9,30 @@ const MyRequests = () => {
 
   const token = localStorage.getItem("token");
 
+  // Helper untuk ambil status sebenar
+  const getRequestStatus = (r) => {
+    // Jika backend ada r.status terus
+    if (r.status) return r.status;
+    // Ambil status dari approval terakhir
+    if (r.approvals && r.approvals.length) {
+      return r.approvals[r.approvals.length - 1].status || "Pending";
+    }
+    return "Pending";
+  };
+
+  const statusColor = (status) => {
+    switch (status) {
+      case "Pending":
+        return "orange";
+      case "Approved":
+        return "green";
+      case "Rejected":
+        return "red";
+      default:
+        return "gray";
+    }
+  };
+
   const fetchRequests = async () => {
     try {
       setLoading(true);
@@ -34,42 +58,29 @@ const MyRequests = () => {
   }, []);
 
   const filteredRequests = requests
-    .filter((r) => ((r.title || "")).toLowerCase().includes(search.toLowerCase()))
-    .filter((r) => {
-      if (!filter) return true;
-      const status = (r.status || "").toLowerCase();
-      return status === filter.toLowerCase();
-    });
-
-  const statusColor = (status) => {
-    if (!status) return "gray";
-    const s = status.toLowerCase();
-    if (s === "pending") return "orange";
-    if (s === "approved") return "green";
-    if (s === "rejected") return "red";
-    return "gray";
-  };
+    .filter((r) => (r.title || "").toLowerCase().includes(search.toLowerCase()))
+    .filter((r) => !filter || getRequestStatus(r) === filter);
 
   if (loading) return <p>Loading My Requests...</p>;
   if (!requests.length) return <p>No requests found.</p>;
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h2 style={{ fontSize: "1.8rem", marginBottom: "15px" }}>My Requests History</h2>
+    <div style={{ padding: "20px", fontFamily: "Arial" }}>
+      <h2 style={{ fontSize: "24px", marginBottom: "15px" }}>My Requests History</h2>
 
       {/* Search & Filter */}
-      <div style={{ marginBottom: "20px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+      <div style={{ marginBottom: "15px" }}>
         <input
           type="text"
           placeholder="Search by title..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ padding: "5px 10px", flex: "1 1 200px" }}
+          style={{ padding: "5px", marginRight: "10px", width: "200px" }}
         />
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          style={{ padding: "5px 10px", flex: "1 1 150px" }}
+          style={{ padding: "5px" }}
         >
           <option value="">All Status</option>
           <option value="Pending">Pending</option>
@@ -78,95 +89,108 @@ const MyRequests = () => {
         </select>
       </div>
 
-      {/* Request Cards */}
-      {filteredRequests.map((r) => (
-        <div
-          key={r._id}
-          style={{
-            border: "1px solid #ccc",
-            borderRadius: "10px",
-            padding: "15px",
-            marginBottom: "15px",
-            backgroundColor: "#f9f9f9",
-            boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-          }}
-        >
-          <h3 style={{ marginBottom: "8px" }}>{r.title || "Untitled Request"}</h3>
-          <p>
-            Status:{" "}
-            <span
-              style={{
-                padding: "4px 10px",
-                borderRadius: "5px",
-                color: "#fff",
-                fontWeight: "bold",
-                backgroundColor: statusColor(r.status),
-              }}
-            >
-              {r.status || "-"}
-            </span>
-          </p>
-          <p>Created At: {r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}</p>
+      {/* List Requests */}
+      {filteredRequests.map((r) => {
+        const status = getRequestStatus(r);
 
-          {/* Problem Description */}
-          {r.problemDescription && (
-            <p><strong>Problem Description:</strong> {r.problemDescription}</p>
-          )}
+        return (
+          <div
+            key={r._id}
+            style={{
+              border: "1px solid #ccc",
+              borderRadius: "8px",
+              padding: "15px",
+              marginBottom: "15px",
+              backgroundColor: "#f9f9f9",
+            }}
+          >
+            <h3 style={{ fontSize: "18px", marginBottom: "5px" }}>
+              {r.title || "-"}
+            </h3>
 
-          {/* Items (for PEMBELIAN) */}
-          {r.items && r.items.length > 0 && (
-            <div style={{ marginTop: "10px" }}>
-              <strong>Items:</strong>
-              {r.items.map((item, idx) => (
-                <div key={idx} style={{ marginLeft: "15px", marginTop: "5px" }}>
-                  <p>Item {idx + 1}: {item.itemName}</p>
-                  <p>Quantity: {item.quantity}</p>
-                  <p>Estimated Cost: {item.estimatedCost}</p>
-                  <p>Supplier: {item.supplier}</p>
-                  <p>Reason: {item.reason}</p>
-                </div>
-              ))}
-            </div>
-          )}
+            <p>
+              Status:{" "}
+              <span
+                style={{
+                  padding: "4px 10px",
+                  borderRadius: "5px",
+                  color: "#fff",
+                  fontWeight: "bold",
+                  backgroundColor: statusColor(status),
+                }}
+              >
+                {status}
+              </span>
+            </p>
 
-          {/* Approvals */}
-          {r.approvals && r.approvals.length > 0 && (
-            <div
-              style={{
-                marginTop: "10px",
-                paddingLeft: "10px",
-                borderLeft: "2px solid #999",
-              }}
-            >
-              <strong>Approvals:</strong>
-              {r.approvals.map((a, idx) => {
-                const name = a.approverId?.name || "-";
-                const email = a.approverId?.email || "-";
-                const dept = a.approverId?.department || "-";
-                const actionDate = a.actionDate ? new Date(a.actionDate).toLocaleString() : "-";
-                return (
-                  <div key={idx} style={{ marginBottom: "8px" }}>
-                    <p>Level {a.level} - <strong>{a.status}</strong></p>
-                    <p>Approver: {name} ({email}) | Dept: {dept}</p>
-                    <p>Action Date: {actionDate}</p>
+            <p>Created At: {r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}</p>
+
+            {/* Request Details */}
+            {r.details && Object.keys(r.details).length > 0 && (
+              <div style={{ marginTop: "10px" }}>
+                <strong>Details:</strong>
+                <ul style={{ marginLeft: "15px" }}>
+                  {Object.entries(r.details).map(([key, value]) => (
+                    <li key={key}>
+                      {key}: {value || "-"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Items (for Pembelian) */}
+            {r.items && r.items.length > 0 && (
+              <div style={{ marginTop: "10px" }}>
+                <strong>Items:</strong>
+                <ul style={{ marginLeft: "15px" }}>
+                  {r.items.map((item, idx) => (
+                    <li key={idx}>
+                      {item.itemName || "-"} | Qty: {item.quantity || 0} | Cost: {item.estimatedCost || 0} | Supplier: {item.supplier || "-"} | Reason: {item.reason || "-"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Problem Description */}
+            {r.problemDescription && (
+              <p style={{ marginTop: "10px" }}>
+                <strong>Problem Description:</strong> {r.problemDescription}
+              </p>
+            )}
+
+            {/* File */}
+            {r.files && r.files.length > 0 && (
+              <div style={{ marginTop: "10px" }}>
+                <strong>Attachments:</strong>
+                <ul style={{ marginLeft: "15px" }}>
+                  {r.files.map((f, idx) => (
+                    <li key={idx}>
+                      <a href={f.url} target="_blank" rel="noreferrer">{f.filename}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Multi-Level Approvals */}
+            {r.approvals && r.approvals.length > 0 && (
+              <div style={{ marginTop: "10px", paddingLeft: "10px", borderLeft: "3px solid #999" }}>
+                <strong>Approvals:</strong>
+                {r.approvals.map((a, idx) => (
+                  <div key={idx} style={{ marginBottom: "5px" }}>
+                    <p>Level {a.level} - {a.status || "-"}</p>
+                    <p>Approver: {a.approverId?.name || "-"} ({a.approverId?.email || "-"}) | Dept: {a.approverId?.department || "-"}</p>
+                    <p>Action Date: {a.actionDate ? new Date(a.actionDate).toLocaleString() : "-"}</p>
                     <p>Remark: {a.remark || "-"}</p>
                   </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Signature info */}
-          {r.signatureStaff && (
-            <div style={{ marginTop: "10px" }}>
-              <strong>Signature:</strong>
-              <div>
-                <img src={r.signatureStaff} alt="signature" style={{ maxWidth: "200px", maxHeight: "80px", border: "1px solid #ccc" }} />
+                ))}
               </div>
-            </div>
-          )}
-        </div>
-      ))}
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
