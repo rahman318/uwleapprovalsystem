@@ -58,31 +58,36 @@ const StaffForm = () => {
   const BASE_URL = "https://backenduwleapprovalsystem.onrender.com/api";
 
   // ================= fetch approvers & history =================
-  useEffect(() => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
+useEffect(() => {
+  if (!userId) {
+    setLoading(false);
+    return;
+  }
 
-    setLoading(true);
+  setLoading(true);
 
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const token = localStorage.getItem("token"); // ambil token dari localStorage
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    const fetchApprovers = axios.get(`${BASE_URL}/users/approvers`, { headers });
-    const fetchHistory = axios.get(`${BASE_URL}/my-requests/${userId}?limit=10`, { headers });
+  const fetchApprovers = axios.get(`${BASE_URL}/users/approvers`, { headers });
+  const fetchHistory = axios.get(`${BASE_URL}/my-requests/${userId}?limit=10`, { headers });
 
-    Promise.all([fetchApprovers, fetchHistory])
-      .then(([approversRes, historyRes]) => {
-        setApproversList(approversRes.data || []);
-        setRequestHistory(historyRes.data || []);
-      })
-      .catch(err => {
-        console.error(err);
-        Swal.fire("Error", "Gagal fetch data", "error");
-      })
-      .finally(() => setLoading(false));
-  }, [userId, token]);
+  Promise.all([fetchApprovers, fetchHistory])
+    .then(([approversRes, historyRes]) => {
+      // check sama ada response backend ada nested data
+      const approversData = approversRes.data?.data || approversRes.data || [];
+      const historyData = historyRes.data?.data || historyRes.data || [];
 
+      setApproversList(approversData);
+      setRequestHistory(historyData);
+    })
+    .catch(err => {
+      console.error("❌ Fetch Error:", err.response || err);
+      Swal.fire("Error", "Gagal fetch data", "error");
+    })
+    .finally(() => setLoading(false));
+}, [userId]);
+  
   // ================= handlers =================
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleDetailsChange = (e) => setFormData({ ...formData, details: { ...formData.details, [e.target.name]: e.target.value } });
