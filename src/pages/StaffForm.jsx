@@ -31,6 +31,7 @@ const SignaturePad = forwardRef((props, ref) => {
 
 // ================= StaffForm =================
 const StaffForm = () => {
+  const [staffList, setStaffList] = useState([]);
   const [approversList, setApproversList] = useState([]);
   const [requestHistory, setRequestHistory] = useState([]);
   const [loading, setLoading] = useState(true);
