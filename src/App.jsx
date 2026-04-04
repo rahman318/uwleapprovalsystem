@@ -60,7 +60,7 @@ const AppRoutes = () => {
           element={user?.role === "staff" ? <StaffForm /> : <Navigate to="/login" />}
         />
         <Route
-          path="/my-requests" element={user?.role === "staff" ? <MyRequests /> : <Navigate to="/login" />}
+          <path="/my-requests" element={<MyRequests />} />
         />
         <Route
           path="/approver"
