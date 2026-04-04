@@ -32,11 +32,12 @@ const SignaturePad = forwardRef((props, ref) => {
 // ================= StaffForm =================
 const StaffForm = () => {
   const [approversList, setApproversList] = useState([]);
+  const [requestHistory, setRequestHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState(null);
-  const [requestHistory, setRequestHistory] = useState([]);
 
   const signatureRef = useRef(null);
+  const BASE_URL = "https://backenduwleapprovalsystem.onrender.com/api";
 
   const token = localStorage.getItem("token");
   const user = token ? jwtDecode(token) : null;
@@ -55,41 +56,39 @@ const StaffForm = () => {
     problemDescription: "",
   });
 
-    useEffect(() => {
-  const fetchData = async () => {
-    const token = localStorage.getItem("token"); // pastikan token ada
-    if (!token) {
+  // ================= fetch history & approvers =================
+  useEffect(() => {
+    if (!userId || !token) {
       setLoading(false);
       return;
     }
 
     const headers = { Authorization: `Bearer ${token}` };
 
-    try {
-      const [historyRes, approverRes] = await Promise.all([
-        axios.get(`https://backenduwleapprovalsystem.onrender.com/api/my-requests/${userId}?limit=10`, { headers }),
-        axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers }),
-      ]);
+    const fetchData = async () => {
+      try {
+        const [historyRes, approverRes] = await Promise.all([
+          axios.get(`${BASE_URL}/my-requests/${userId}?limit=10`, { headers }),
+          axios.get(`${BASE_URL}/users/approvers`, { headers }),
+        ]);
 
-      const historyData = historyRes.data?.data || historyRes.data || [];
-      const approversData = approverRes.data?.data || approverRes.data || [];
+        setRequestHistory(historyRes.data?.data || historyRes.data || []);
+        setApproversList(approverRes.data?.data || approverRes.data || []);
+      } catch (err) {
+        console.error("❌ Fetch Error:", err.response || err);
+        Swal.fire("Error", "Gagal fetch request history atau approvers", "error");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      setRequestHistory(historyData);
-      setApproversList(approversData);
-    } catch (err) {
-      console.error("❌ Fetch Error:", err.response || err);
-      Swal.fire("Error", "Gagal fetch request history atau approvers", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchData();
+  }, [userId, token]);
 
-  if (userId) fetchData(); // pastikan userId ada
-}, [userId]);
-  
   // ================= handlers =================
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  const handleDetailsChange = (e) => setFormData({ ...formData, details: { ...formData.details, [e.target.name]: e.target.value } });
+  const handleDetailsChange = (e) =>
+    setFormData({ ...formData, details: { ...formData.details, [e.target.name]: e.target.value } });
 
   const handleApproverChange = (level, approverId) => {
     const newApprovals = [...formData.approvals];
@@ -130,7 +129,6 @@ const StaffForm = () => {
   // ================= submit =================
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!userId) return Swal.fire("Error", "User not found, please login again", "error");
 
     const signatureData = signatureRef.current?.getSignature() || null;
@@ -145,15 +143,11 @@ const StaffForm = () => {
     payload.append("approvals", JSON.stringify(filteredApprovals));
     payload.append("signatureStaff", signatureData || "");
     payload.append("problemDescription", formData.problemDescription);
-
     if (file) payload.append("files", file);
 
     try {
       await axios.post(`${BASE_URL}/requests`, payload, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
       });
 
       Swal.fire("Success", "Request berjaya dihantar!", "success");
@@ -177,7 +171,7 @@ const StaffForm = () => {
       // reload history
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const historyRes = await axios.get(`${BASE_URL}/my-requests/${userId}?limit=10`, { headers });
-      setRequestHistory(historyRes.data || []);
+      setRequestHistory(historyRes.data?.data || historyRes.data || []);
     } catch (err) {
       console.error("❌ Submit Error:", err.response || err);
       Swal.fire("Error", err.response?.data?.message || "Gagal hantar request", "error");
@@ -353,7 +347,7 @@ const StaffForm = () => {
           <input type="file" onChange={handleFileChange} className="border px-2 py-1 rounded w-full"/>
           {file && <p className="text-sm mt-1 text-gray-600">Selected: {file.name}</p>}
         </div>
-
+        
         {/* Multi-Level Approvers */}
         <div className="mt-4 space-y-2">
           <label className="block mb-2 font-semibold text-gray-700">Pilih Approvers (Level 1,2,3,4)</label>
