@@ -55,33 +55,23 @@ const StaffForm = () => {
     problemDescription: "",
   });
 
-  useEffect(() => {
-  const fetchData = async () => {
-    const token = localStorage.getItem("token");
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-    try {
-      const [historyRes, approverRes] = await Promise.all([
-        axios.get("https://backenduwleapprovalsystem.onrender.com/api/my-requests"/${userId}?limit=10`, { headers }),
-        axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers }),
-      ]);
-
-      // handle nested data jika backend return { data: [...] }
-      const historyData = historyRes.data?.data || historyRes.data || [];
-      const approversData = approverRes.data?.data || approverRes.data || [];
-
-      setRequestHistory(historyData);
-      setApproversList(approversData);
-    } catch (err) {
-      console.error("❌ Fetch Error:", err.response || err);
-      Swal.fire("Error", "Gagal fetch request history atau approvers", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (userId) fetchData();
-}, [userId]);
+    useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [staffRes, approverRes] = await Promise.all([
+          axios.get("https://backenduwleapprovalsystem.onrender.com/api/my-requests", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
+          axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
+        ]);
+        setStaffList(staffRes.data || []);
+        setApproversList(approverRes.data || []);
+      } catch (err) {
+        Swal.fire("Error", "Gagal fetch staff atau approvers", "error");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
   // ================= handlers =================
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleDetailsChange = (e) => setFormData({ ...formData, details: { ...formData.details, [e.target.name]: e.target.value } });
