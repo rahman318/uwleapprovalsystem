@@ -86,13 +86,12 @@ const StaffForm = () => {
   }, [userId, token]);
 
   // ================= handlers =================
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  const handleDetailsChange = (e) =>
-    setFormData({ ...formData, details: { ...formData.details, [e.target.name]: e.target.value } });
+    const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleDetailsChange = (e) => setFormData({ ...formData, details: { ...formData.details, [e.target.name]: e.target.value } });
 
   const handleApproverChange = (level, approverId) => {
     const newApprovals = [...formData.approvals];
-    const approver = approversList.find(a => a._id === approverId);
+    const approver = approversList.find((a) => a._id === approverId);
     newApprovals[level - 1] = {
       level,
       approverId: approverId || null,
@@ -121,11 +120,15 @@ const StaffForm = () => {
     setFormData({ ...formData, items: newItems });
   };
 
+  // ================= FIXED Attachment =================
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
-    else setFile(null);
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]); // simpan file di state
+    } else {
+      setFile(null);
+    }
   };
-
+  
   // ================= submit =================
   const handleSubmit = async (e) => {
     e.preventDefault();
