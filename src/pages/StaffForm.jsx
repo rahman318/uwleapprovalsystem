@@ -35,6 +35,7 @@ const SignaturePad = forwardRef((props, ref) => {
 const StaffForm = () => {
   const [staffList, setStaffList] = useState([]);
   const [approversList, setApproversList] = useState([]);
+  const [requestHistory, setRequestHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState(null);
 
@@ -59,12 +60,14 @@ const StaffForm = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [staffRes, approverRes] = await Promise.all([
+        const [staffRes, approverRes, historyRes] = await Promise.all([
           axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/staff", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
           axios.get("https://backenduwleapprovalsystem.onrender.com/api/users/approvers", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
+          axios.get("https://backenduwleapprovalsystem.onrender.com/api/my-requests", { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
         ]);
         setStaffList(staffRes.data || []);
         setApproversList(approverRes.data || []);
+        setRequestHistory(historyRes.data?.data || historyRes.data || []);
       } catch (err) {
         Swal.fire("Error", "Gagal fetch staff atau approvers", "error");
       } finally {
