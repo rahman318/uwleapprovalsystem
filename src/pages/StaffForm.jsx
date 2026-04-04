@@ -40,7 +40,6 @@ const StaffForm = () => {
 
   const token = localStorage.getItem("token");
   const user = token ? jwtDecode(token) : null;
-  const userId = user?._id;
 
   const [formData, setFormData] = useState({
     requestType: "CUTI",
