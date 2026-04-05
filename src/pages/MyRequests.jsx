@@ -21,6 +21,7 @@ const MyRequests = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = res.data.requests || res.data || [];
+      console.log("Fetched Requests:", data); // <-- log fetched requests
       setRequests(data);
     } catch (error) {
       console.error("Failed to fetch requests:", error);
@@ -43,16 +44,22 @@ const MyRequests = () => {
     .filter((r) => !filter || r.finalStatus === filter);
 
   // ----------------- Step 3: Recall Function -----------------
-  const handleRecall = async (id) => {
+  const handleRecall = async (id, finalStatus) => {
+    console.log("Attempting Recall for Request ID:", id);
+    console.log("Token:", token);
+    console.log("Request finalStatus before recall:", finalStatus);
+
     try {
-      await axios.put(
+      const res = await axios.put(
         `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}/recall`,
-        {},
+        {}, // body kosong, sesuaikan kalau backend expect body
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      console.log("Recall Success Response:", res.data);
       alert("Request berjaya direcall!");
       fetchRequests(); // reload list
     } catch (err) {
+      console.log("Full Error Response:", err.response);
       alert(err.response?.data?.message || "Gagal recall request");
     }
   };
@@ -70,7 +77,7 @@ const MyRequests = () => {
     let y = height - 50;
 
     const drawText = (text, size = 12) => {
-      page.drawText(text, { x: 50, y, size, font, color: rgb(0,0,0) });
+      page.drawText(text, { x: 50, y, size, font, color: rgb(0, 0, 0) });
       y -= size + 8;
     };
 
@@ -92,7 +99,9 @@ const MyRequests = () => {
       drawText("Approvals:", 14);
       request.approvals.forEach((a, idx) => {
         drawText(
-          `Level ${a.level} - ${a.status} | Approver: ${a.approverName || "-"} | Dept: ${a.approverDepartment || "-"}`
+          `Level ${a.level} - ${a.status} | Approver: ${a.approverName || "-"} | Dept: ${
+            a.approverDepartment || "-"
+          }`
         );
         if (a.remark) drawText(`Remark: ${a.remark}`);
       });
@@ -112,16 +121,23 @@ const MyRequests = () => {
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
       {/* Header Section */}
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        marginBottom: "20px",
-      }}>
-        <h2 style={{ margin: "0 0 10px 0", fontSize: "28px", color: "#333" }}>
-          Requests History
-        </h2>
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          marginBottom: "20px",
+        }}
+      >
+        <h2 style={{ margin: "0 0 10px 0", fontSize: "28px", color: "#333" }}>Requests History</h2>
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            flexWrap: "wrap",
+            justifyContent: "center",
+          }}
+        >
           <input
             type="text"
             placeholder="Search by type..."
@@ -175,9 +191,7 @@ const MyRequests = () => {
             <h3 style={{ margin: 0 }}>
               {r.requestType} - {r.staffName}
             </h3>
-            <span style={{ fontSize: "20px", color: "#666" }}>
-              {openAccordions[r._id] ? "−" : "+"}
-            </span>
+            <span style={{ fontSize: "20px", color: "#666" }}>{openAccordions[r._id] ? "−" : "+"}</span>
           </div>
 
           <p style={{ margin: "5px 0" }}>
@@ -270,7 +284,7 @@ const MyRequests = () => {
             {/* Recall Button */}
             {r.finalStatus === "Pending" && (
               <button
-                onClick={() => handleRecall(r._id)}
+                onClick={() => handleRecall(r._id, r.finalStatus)}
                 style={{
                   padding: "6px 14px",
                   borderRadius: "20px",
