@@ -43,26 +43,42 @@ const MyRequests = () => {
     .filter((r) => r.requestType?.toLowerCase().includes(search.toLowerCase()))
     .filter((r) => !filter || r.finalStatus === filter);
 
-  // ----------------- Step 3: Recall Function -----------------
-  const handleRecall = async (id, finalStatus) => {
+  // ----------------- Step 3: Recall Function (Updated) -----------------
+const handleRecall = async (id) => {
+  try {
     console.log("Attempting Recall for Request ID:", id);
     console.log("Token:", token);
-    console.log("Request finalStatus before recall:", finalStatus);
 
-    try {
-      const res = await axios.put(
-        `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}/recall`,
-        {}, // body kosong, sesuaikan kalau backend expect body
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      console.log("Recall Success Response:", res.data);
-      alert("Request berjaya direcall!");
-      fetchRequests(); // reload list
-    } catch (err) {
-      console.log("Full Error Response:", err.response);
-      alert(err.response?.data?.message || "Gagal recall request");
+    // 1️⃣ Fetch latest request status from server
+    const resCheck = await axios.get(
+      `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const latestStatus = resCheck.data.finalStatus;
+    console.log("Latest Status from Server:", latestStatus);
+
+    if (latestStatus !== "Pending") {
+      alert(`Request tidak boleh direcall. Status terkini: ${latestStatus}`);
+      return; // stop recall
     }
-  };
+
+    // 2️⃣ Jika status memang pending, baru buat recall
+    const res = await axios.put(
+      `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}/recall`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    console.log("Recall Success:", res.data);
+    alert("Request berjaya direcall!");
+
+    fetchRequests(); // reload list supaya frontend update status
+  } catch (err) {
+    console.log("Full Error Response:", err.response);
+    alert(err.response?.data?.message || "Gagal recall request");
+  }
+};
 
   // ----------------- Step 4: Edit Function -----------------
   const handleEdit = (request) => {
