@@ -43,34 +43,26 @@ const MyRequests = () => {
     .filter((r) => r.requestType?.toLowerCase().includes(search.toLowerCase()))
     .filter((r) => !filter || r.finalStatus === filter);
 
-  // ----------------- Recall Function with case-insensitive check -----------------
+  // ----------------- Fixed Recall Function -----------------
   const handleRecall = async (id) => {
     try {
+      // Cari request dari state
+      const request = requests.find((r) => r._id === id);
+      const status = request?.finalStatus || "";
       console.log("Attempting Recall for Request ID:", id);
+      console.log("Request finalStatus before recall:", status);
       console.log("Token:", token);
 
-      // Step 1: fetch latest status from server
-      const resCheck = await axios.get(
-        `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      const latestStatus = resCheck.data.finalStatus;
-      console.log("Latest Status from Server:", latestStatus);
-
-      // Step 2: check case-insensitive
-      if (latestStatus.toLowerCase() !== "pending") {
-        alert(`Request tidak boleh direcall. Status terkini: ${latestStatus}`);
+      if (status.toLowerCase() !== "pending") {
+        alert("Hanya request dengan status Pending boleh direcall!");
         return;
       }
 
-      // Step 3: do recall
       const res = await axios.put(
         `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}/recall`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       console.log("Recall Success:", res.data);
       alert("Request berjaya direcall!");
       fetchRequests(); // reload list
@@ -80,7 +72,6 @@ const MyRequests = () => {
     }
   };
 
-  // ----------------- Edit Function -----------------
   const handleEdit = (request) => {
     navigate("/edit-request", { state: request });
   };
@@ -93,7 +84,7 @@ const MyRequests = () => {
     let y = height - 50;
 
     const drawText = (text, size = 12) => {
-      page.drawText(text, { x: 50, y, size, font, color: rgb(0,0,0) });
+      page.drawText(text, { x: 50, y, size, font, color: rgb(0, 0, 0) });
       y -= size + 8;
     };
 
@@ -134,17 +125,26 @@ const MyRequests = () => {
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      {/* Header Section */}
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        marginBottom: "20px",
-      }}>
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          marginBottom: "20px",
+        }}
+      >
         <h2 style={{ margin: "0 0 10px 0", fontSize: "28px", color: "#333" }}>
           Requests History
         </h2>
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            flexWrap: "wrap",
+            justifyContent: "center",
+          }}
+        >
           <input
             type="text"
             placeholder="Search by type..."
@@ -212,11 +212,11 @@ const MyRequests = () => {
                 color: "#fff",
                 fontWeight: "bold",
                 backgroundColor:
-                  r.finalStatus === "Pending"
+                  r.finalStatus.toLowerCase() === "pending"
                     ? "orange"
-                    : r.finalStatus === "Recalled"
+                    : r.finalStatus.toLowerCase() === "recalled"
                     ? "blue"
-                    : r.finalStatus === "Approved"
+                    : r.finalStatus.toLowerCase() === "approved"
                     ? "green"
                     : "red",
               }}
@@ -228,7 +228,7 @@ const MyRequests = () => {
             Created At: {new Date(r.createdAt).toLocaleString()}
           </p>
 
-          {/* Collapsible content */}
+          {/* Collapsible */}
           <div
             style={{
               maxHeight: openAccordions[r._id] ? "1000px" : "0",
@@ -289,7 +289,8 @@ const MyRequests = () => {
               Export to PDF
             </button>
 
-            {r.finalStatus?.toLowerCase() === "pending" && (
+            {/* Recall */}
+            {r.finalStatus.toLowerCase() === "pending" && (
               <button
                 onClick={() => handleRecall(r._id)}
                 style={{
@@ -305,7 +306,8 @@ const MyRequests = () => {
               </button>
             )}
 
-            {r.finalStatus?.toLowerCase() === "recalled" && (
+            {/* Edit */}
+            {r.finalStatus.toLowerCase() === "recalled" && (
               <button
                 onClick={() => handleEdit(r)}
                 style={{
