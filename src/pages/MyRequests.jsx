@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { useNavigate } from "react-router-dom"; // step 1 & 2
 
 const MyRequests = () => {
   const [requests, setRequests] = useState([]);
@@ -10,6 +11,7 @@ const MyRequests = () => {
   const [openAccordions, setOpenAccordions] = useState({});
 
   const token = localStorage.getItem("token");
+  const navigate = useNavigate(); // step 2
 
   const fetchRequests = async () => {
     try {
@@ -39,6 +41,26 @@ const MyRequests = () => {
   const filteredRequests = requests
     .filter((r) => r.requestType?.toLowerCase().includes(search.toLowerCase()))
     .filter((r) => !filter || r.finalStatus === filter);
+
+  // ----------------- Step 3: Recall Function -----------------
+  const handleRecall = async (id) => {
+    try {
+      await axios.put(
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}/recall`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("Request berjaya direcall!");
+      fetchRequests(); // reload list
+    } catch (err) {
+      alert(err.response?.data?.message || "Gagal recall request");
+    }
+  };
+
+  // ----------------- Step 4: Edit Function -----------------
+  const handleEdit = (request) => {
+    navigate("/edit-request", { state: request });
+  };
 
   const generatePDF = async (request) => {
     const pdfDoc = await PDFDocument.create();
@@ -125,6 +147,7 @@ const MyRequests = () => {
           >
             <option value="">All Status</option>
             <option value="Pending">Pending</option>
+            <option value="Recalled">Recalled</option>
             <option value="Approved">Approved</option>
             <option value="Rejected">Rejected</option>
           </select>
@@ -168,6 +191,8 @@ const MyRequests = () => {
                 backgroundColor:
                   r.finalStatus === "Pending"
                     ? "orange"
+                    : r.finalStatus === "Recalled"
+                    ? "blue"
                     : r.finalStatus === "Approved"
                     ? "green"
                     : "red",
@@ -180,7 +205,7 @@ const MyRequests = () => {
             Created At: {new Date(r.createdAt).toLocaleString()}
           </p>
 
-          {/* Collapsible content with animation */}
+          {/* Collapsible content */}
           <div
             style={{
               maxHeight: openAccordions[r._id] ? "1000px" : "0",
@@ -222,7 +247,9 @@ const MyRequests = () => {
             )}
           </div>
 
-          <div style={{ marginTop: "10px" }}>
+          {/* ----------------- Step 5: Buttons ----------------- */}
+          <div style={{ marginTop: "10px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            {/* Export PDF */}
             <button
               onClick={() => generatePDF(r)}
               style={{
@@ -234,11 +261,45 @@ const MyRequests = () => {
                 cursor: "pointer",
                 transition: "background-color 0.3s",
               }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = "#0056b3"}
-              onMouseLeave={(e) => e.target.style.backgroundColor = "#007bff"}
+              onMouseEnter={(e) => (e.target.style.backgroundColor = "#0056b3")}
+              onMouseLeave={(e) => (e.target.style.backgroundColor = "#007bff")}
             >
               Export to PDF
             </button>
+
+            {/* Recall Button */}
+            {r.finalStatus === "Pending" && (
+              <button
+                onClick={() => handleRecall(r._id)}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: "20px",
+                  backgroundColor: "orange",
+                  color: "#fff",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                Recall
+              </button>
+            )}
+
+            {/* Edit Button */}
+            {r.finalStatus === "Recalled" && (
+              <button
+                onClick={() => handleEdit(r)}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: "20px",
+                  backgroundColor: "blue",
+                  color: "#fff",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                Edit
+              </button>
+            )}
           </div>
         </div>
       ))}
