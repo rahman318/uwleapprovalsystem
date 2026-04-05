@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { useNavigate } from "react-router-dom"; // step 1 & 2
+import { useNavigate } from "react-router-dom";
 
 const MyRequests = () => {
   const [requests, setRequests] = useState([]);
@@ -11,7 +11,7 @@ const MyRequests = () => {
   const [openAccordions, setOpenAccordions] = useState({});
 
   const token = localStorage.getItem("token");
-  const navigate = useNavigate(); // step 2
+  const navigate = useNavigate();
 
   const fetchRequests = async () => {
     try {
@@ -21,7 +21,7 @@ const MyRequests = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = res.data.requests || res.data || [];
-      console.log("Fetched Requests:", data); // <-- log fetched requests
+      console.log("Fetched Requests:", data);
       setRequests(data);
     } catch (error) {
       console.error("Failed to fetch requests:", error);
@@ -43,44 +43,44 @@ const MyRequests = () => {
     .filter((r) => r.requestType?.toLowerCase().includes(search.toLowerCase()))
     .filter((r) => !filter || r.finalStatus === filter);
 
-  // ----------------- Step 3: Recall Function (Updated) -----------------
-const handleRecall = async (id) => {
-  try {
-    console.log("Attempting Recall for Request ID:", id);
-    console.log("Token:", token);
+  // ----------------- Recall Function with case-insensitive check -----------------
+  const handleRecall = async (id) => {
+    try {
+      console.log("Attempting Recall for Request ID:", id);
+      console.log("Token:", token);
 
-    // 1️⃣ Fetch latest request status from server
-    const resCheck = await axios.get(
-      `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      // Step 1: fetch latest status from server
+      const resCheck = await axios.get(
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    const latestStatus = resCheck.data.finalStatus;
-    console.log("Latest Status from Server:", latestStatus);
+      const latestStatus = resCheck.data.finalStatus;
+      console.log("Latest Status from Server:", latestStatus);
 
-    if (latestStatus !== "Pending") {
-      alert(`Request tidak boleh direcall. Status terkini: ${latestStatus}`);
-      return; // stop recall
+      // Step 2: check case-insensitive
+      if (latestStatus.toLowerCase() !== "pending") {
+        alert(`Request tidak boleh direcall. Status terkini: ${latestStatus}`);
+        return;
+      }
+
+      // Step 3: do recall
+      const res = await axios.put(
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}/recall`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      console.log("Recall Success:", res.data);
+      alert("Request berjaya direcall!");
+      fetchRequests(); // reload list
+    } catch (err) {
+      console.log("Full Error Response:", err.response);
+      alert(err.response?.data?.message || "Gagal recall request");
     }
+  };
 
-    // 2️⃣ Jika status memang pending, baru buat recall
-    const res = await axios.put(
-      `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}/recall`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    console.log("Recall Success:", res.data);
-    alert("Request berjaya direcall!");
-
-    fetchRequests(); // reload list supaya frontend update status
-  } catch (err) {
-    console.log("Full Error Response:", err.response);
-    alert(err.response?.data?.message || "Gagal recall request");
-  }
-};
-
-  // ----------------- Step 4: Edit Function -----------------
+  // ----------------- Edit Function -----------------
   const handleEdit = (request) => {
     navigate("/edit-request", { state: request });
   };
@@ -93,7 +93,7 @@ const handleRecall = async (id) => {
     let y = height - 50;
 
     const drawText = (text, size = 12) => {
-      page.drawText(text, { x: 50, y, size, font, color: rgb(0, 0, 0) });
+      page.drawText(text, { x: 50, y, size, font, color: rgb(0,0,0) });
       y -= size + 8;
     };
 
@@ -115,9 +115,7 @@ const handleRecall = async (id) => {
       drawText("Approvals:", 14);
       request.approvals.forEach((a, idx) => {
         drawText(
-          `Level ${a.level} - ${a.status} | Approver: ${a.approverName || "-"} | Dept: ${
-            a.approverDepartment || "-"
-          }`
+          `Level ${a.level} - ${a.status} | Approver: ${a.approverName || "-"} | Dept: ${a.approverDepartment || "-"}`
         );
         if (a.remark) drawText(`Remark: ${a.remark}`);
       });
@@ -137,23 +135,16 @@ const handleRecall = async (id) => {
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
       {/* Header Section */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          marginBottom: "20px",
-        }}
-      >
-        <h2 style={{ margin: "0 0 10px 0", fontSize: "28px", color: "#333" }}>Requests History</h2>
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            flexWrap: "wrap",
-            justifyContent: "center",
-          }}
-        >
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        marginBottom: "20px",
+      }}>
+        <h2 style={{ margin: "0 0 10px 0", fontSize: "28px", color: "#333" }}>
+          Requests History
+        </h2>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
           <input
             type="text"
             placeholder="Search by type..."
@@ -207,7 +198,9 @@ const handleRecall = async (id) => {
             <h3 style={{ margin: 0 }}>
               {r.requestType} - {r.staffName}
             </h3>
-            <span style={{ fontSize: "20px", color: "#666" }}>{openAccordions[r._id] ? "−" : "+"}</span>
+            <span style={{ fontSize: "20px", color: "#666" }}>
+              {openAccordions[r._id] ? "−" : "+"}
+            </span>
           </div>
 
           <p style={{ margin: "5px 0" }}>
@@ -277,9 +270,8 @@ const handleRecall = async (id) => {
             )}
           </div>
 
-          {/* ----------------- Step 5: Buttons ----------------- */}
+          {/* Buttons */}
           <div style={{ marginTop: "10px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            {/* Export PDF */}
             <button
               onClick={() => generatePDF(r)}
               style={{
@@ -297,10 +289,9 @@ const handleRecall = async (id) => {
               Export to PDF
             </button>
 
-            {/* Recall Button */}
-            {r.finalStatus === "Pending" && (
+            {r.finalStatus?.toLowerCase() === "pending" && (
               <button
-                onClick={() => handleRecall(r._id, r.finalStatus)}
+                onClick={() => handleRecall(r._id)}
                 style={{
                   padding: "6px 14px",
                   borderRadius: "20px",
@@ -314,8 +305,7 @@ const handleRecall = async (id) => {
               </button>
             )}
 
-            {/* Edit Button */}
-            {r.finalStatus === "Recalled" && (
+            {r.finalStatus?.toLowerCase() === "recalled" && (
               <button
                 onClick={() => handleEdit(r)}
                 style={{
