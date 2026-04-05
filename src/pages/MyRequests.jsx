@@ -84,7 +84,7 @@ const MyRequests = () => {
     link.click();
   };
 
-  if (loading) return <p>Loading My Requests...</p>;
+  if (loading) return <p>Loading Requests History...</p>;
   if (!requests.length) return <p>No requests found.</p>;
 
   return (
@@ -97,7 +97,7 @@ const MyRequests = () => {
         marginBottom: "20px",
       }}>
         <h2 style={{ margin: "0 0 10px 0", fontSize: "28px", color: "#333" }}>
-          My Requests History
+          Requests History
         </h2>
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
           <input
