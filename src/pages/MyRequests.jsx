@@ -317,10 +317,11 @@ const MyRequests = () => {
           }}
         >
           <EditForm
-            requestId={editRequestId}
-            onClose={handleEditClose}
-            onUpdated={handleRequestUpdated}
-          />
+  isOpen={true} // 🔥 WAJIB ADA
+  requestId={editRequestId}
+  onClose={handleEditClose}
+  onUpdated={handleRequestUpdated}
+/>
         </div>
       )}
     </div>
