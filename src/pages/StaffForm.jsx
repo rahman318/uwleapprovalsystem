@@ -33,17 +33,19 @@ const SignaturePad = forwardRef((props, ref) => {
 });
 
 // ================= StaffForm =================
-const StaffForm = () => {
+const StaffForm = ({ initialData = null, onClose = null }) => {
   const [staffList, setStaffList] = useState([]);
   const [approversList, setApproversList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState(null);
 
   const navigate = useNavigate();
-
   const signatureRef = useRef(null);
 
-  const [formData, setFormData] = useState({
+  const token = localStorage.getItem("token");
+
+  // ================= Form Data =================
+  const defaultFormData = {
     staffId: "",
     requestType: "CUTI",
     details: {},
@@ -54,10 +56,10 @@ const StaffForm = () => {
       { level: 4, approverId: null, status: "Pending", approverName: "-" },
     ],
     items: [],
-    problemDescription: "", // ✅ new field
-  });
+    problemDescription: "",
+  };
 
-  const token = localStorage.getItem("token");
+  const [formData, setFormData] = useState(initialData || defaultFormData);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -77,6 +79,7 @@ const StaffForm = () => {
     fetchData();
   }, []);
 
+  // ================= Handlers =================
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleDetailsChange = (e) => setFormData({ ...formData, details: { ...formData.details, [e.target.name]: e.target.value } });
 
@@ -111,16 +114,15 @@ const StaffForm = () => {
     setFormData({ ...formData, items: newItems });
   };
 
-  // ================= FIXED Attachment =================
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]); // simpan file di state
+      setFile(e.target.files[0]);
     } else {
       setFile(null);
     }
   };
-  // ====================================================
 
+  // ================= Submit =================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -139,7 +141,6 @@ const StaffForm = () => {
     const signatureData = signatureRef.current?.getSignature() || null;
     const filteredApprovals = formData.approvals.filter(a => a.approverId);
 
-    // 🔥 FormData untuk upload + Supabase
     const payload = new FormData();
     payload.append("userId", staff._id);
     payload.append("staffName", staff.name || staff.username);
@@ -149,11 +150,9 @@ const StaffForm = () => {
     payload.append("approvals", JSON.stringify(filteredApprovals));
     payload.append("signatureStaff", signatureData || "");
     payload.append("staffDepartment", staffDepartment);
-    payload.append("problemDescription", formData.problemDescription); // ✅ new field
+    payload.append("problemDescription", formData.problemDescription);
 
-    if (file) {
-      payload.append("files", file); // ✅ field name sama dengan backend multer
-    }
+    if (file) payload.append("files", file);
 
     try {
       await axios.post("https://backenduwleapprovalsystem.onrender.com/api/requests", payload, {
@@ -162,24 +161,14 @@ const StaffForm = () => {
           Authorization: `Bearer ${token}`,
         },
       });
+
       Swal.fire("Success", "Request berjaya dihantar!", "success");
 
-      // reset form
-      setFormData({
-        staffId: "",
-        requestType: "CUTI",
-        details: {},
-        approvals: [
-          { level: 1, approverId: null, status: "Pending", approverName: "-" },
-          { level: 2, approverId: null, status: "Pending", approverName: "-" },
-          { level: 3, approverId: null, status: "Pending", approverName: "-" },
-          { level: 4, approverId: null, status: "Pending", approverName: "-" },
-        ],
-        items: [],
-        problemDescription: "", // ✅ reset
-      });
+      setFormData(defaultFormData);
       setFile(null);
       signatureRef.current?.clear();
+
+      if (onClose) onClose(); // ✅ close modal jika modal mode
     } catch (err) {
       console.error("❌ Submit Error:", err.response || err);
       Swal.fire("Error", err.response?.data?.message || "Gagal hantar request", "error");
@@ -188,22 +177,24 @@ const StaffForm = () => {
 
   if (loading) return <p className="text-center mt-6 text-gray-600">Loading...</p>;
 
+  // ================= Render =================
   return (
     <div className="max-w-5xl mx-auto mt-10 p-6 bg-gray-50 rounded-xl shadow-lg">
       <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Staff Request Form</h2>
 
-      {/* ========== View Request History Button ========== */}
       <div className="flex justify-end mb-6">
-        <button
-  type="button"
-  onClick={() => navigate("/my-requests")}
-  className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded shadow-md flex items-center gap-2"
->
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
-  </svg>
-  View Request History
-</button>
+        {!onClose && (
+          <button
+            type="button"
+            onClick={() => navigate("/my-requests")}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded shadow-md flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
+            </svg>
+            View Request History
+          </button>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -302,41 +293,16 @@ const StaffForm = () => {
                 <>
                   <tr className="bg-gray-50 border-b">
                     <td className="px-3 py-2 font-semibold text-gray-700">Lokasi Kerosakan</td>
-                    <td className="px-3 py-2">
-                      <input
-                        type="text"
-                        name="location"
-                        value={formData.details.location || ""}
-                        onChange={handleDetailsChange}
-                        className="w-full border px-2 py-1"
-                        placeholder="Contoh: Bilik Mesyuarat, Tandas, Blok A"
-                        required
-                      />
-                    </td>
+                    <td className="px-3 py-2"><input type="text" name="location" value={formData.details.location || ""} onChange={handleDetailsChange} className="w-full border px-2 py-1" placeholder="Contoh: Bilik Mesyuarat, Tandas, Blok A" required/></td>
                   </tr>
                   <tr className="bg-white border-b">
                     <td className="px-3 py-2 font-semibold text-gray-700">Jenis Masalah</td>
-                    <td className="px-3 py-2">
-                      <input
-                        type="text"
-                        name="issueType"
-                        value={formData.details.issueType || ""}
-                        onChange={handleDetailsChange}
-                        className="w-full border px-2 py-1"
-                        placeholder="Contoh: Paip bocor, Lampu rosak"
-                        required
-                      />
-                    </td>
+                    <td className="px-3 py-2"><input type="text" name="issueType" value={formData.details.issueType || ""} onChange={handleDetailsChange} className="w-full border px-2 py-1" placeholder="Contoh: Paip bocor, Lampu rosak" required/></td>
                   </tr>
                   <tr className="bg-gray-50 border-b">
                     <td className="px-3 py-2 font-semibold text-gray-700">Keutamaan</td>
                     <td className="px-3 py-2">
-                      <select
-                        name="priority"
-                        value={formData.details.priority || "Normal"}
-                        onChange={handleDetailsChange}
-                        className="w-full border px-2 py-1"
-                      >
+                      <select name="priority" value={formData.details.priority || "Normal"} onChange={handleDetailsChange} className="w-full border px-2 py-1">
                         <option value="Normal">Normal</option>
                         <option value="High">High</option>
                         <option value="Urgent">Urgent</option>
@@ -345,15 +311,7 @@ const StaffForm = () => {
                   </tr>
                   <tr className="bg-white">
                     <td className="px-3 py-2 font-semibold text-gray-700">Penerangan Masalah</td>
-                    <td className="px-3 py-2">
-                      <textarea
-                        name="description"
-                        value={formData.details.description || ""}
-                        onChange={handleDetailsChange}
-                        className="w-full border px-2 py-1"
-                        placeholder="Terangkan masalah dengan jelas..."
-                      />
-                    </td>
+                    <td className="px-3 py-2"><textarea name="description" value={formData.details.description || ""} onChange={handleDetailsChange} className="w-full border px-2 py-1" placeholder="Terangkan masalah dengan jelas..."/></td>
                   </tr>
                 </>
               )}
@@ -363,54 +321,46 @@ const StaffForm = () => {
 
         {/* Problem Description */}
         <div className="mt-4">
-          <label className="block mb-2 font-semibold text-gray-700">Problem Description</label>
+          <label className="block font-semibold text-gray-700">Additional Description / Notes</label>
           <textarea
             name="problemDescription"
             value={formData.problemDescription}
-            onChange={e => setFormData({ ...formData, problemDescription: e.target.value })}
+            onChange={handleChange}
             className="w-full border px-2 py-1 rounded"
             rows={3}
-            placeholder="Terangkan masalah / penerangan ringkas..."
-            required
           />
         </div>
 
         {/* File Upload */}
-        <div className="mt-4">
-          <label className="block mb-2 font-semibold text-gray-700">Upload File (Optional)</label>
+        <div>
+          <label className="block font-semibold text-gray-700">Attach File (Optional)</label>
           <input type="file" onChange={handleFileChange} className="border px-2 py-1 rounded w-full"/>
           {file && <p className="text-sm mt-1 text-gray-600">Selected: {file.name}</p>}
         </div>
 
-        {/* Multi-Level Approvers */}
-        <div className="mt-4 space-y-2">
-          <label className="block mb-2 font-semibold text-gray-700">Pilih Approvers (Level 1,2,3)</label>
-          {[1,2,3,4].map(level => (
-            <select
-              key={level}
-              value={formData.approvals[level-1]?.approverId || ""}
-              onChange={e => handleApproverChange(level, e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2"
-            >
-              <option value="">-- Level {level} Approver --</option>
-              {approversList.map(a => <option key={a._id} value={a._id}>{a.name} ({a.department})</option>)}
-            </select>
-          ))}
-        </div>
-
-        {/* Signature */}
-        <div className="mt-4">
-          <label className="block mb-2 font-semibold text-gray-700">Signature Staff</label>
-          <div className="border border-gray-300 rounded p-2 bg-white">
-            <SignaturePad ref={signatureRef} />
+        {/* Approvers */}
+        <div>
+          <label className="block font-semibold text-gray-700 mb-2">Approvers</label>
+          <div className="grid grid-cols-2 gap-3">
+            {[1, 2, 3, 4].map(level => (
+              <select key={level} value={formData.approvals[level-1]?.approverId || ""} onChange={e => handleApproverChange(level,e.target.value)} className="w-full border px-2 py-1 rounded">
+                <option value="">-- Level {level} Approver --</option>
+                {approversList.map(a => <option key={a._id} value={a._id}>{a.name} ({a.department})</option>)}
+              </select>
+            ))}
           </div>
         </div>
 
-        {/* Submit */}
-        <div className="mt-6 text-center">
-          <button type="submit" className="bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-bold py-2 px-6 rounded shadow-md">Submit Request</button>
+        {/* Signature */}
+        <div>
+          <label className="block font-semibold text-gray-700 mt-4 mb-2">Signature</label>
+          <SignaturePad ref={signatureRef} />
         </div>
 
+        {/* Submit */}
+        <div className="text-center mt-6">
+          <button type="submit" className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">Submit Request</button>
+        </div>
       </form>
     </div>
   );
