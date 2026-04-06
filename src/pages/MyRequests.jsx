@@ -170,7 +170,7 @@ const MyRequests = () => {
           >
             <option value="">All Status</option>
             <option value="Pending">Pending</option>
-            <option value="Recalled">recalled</option>
+            <option value="Recalled">Recalled</option>
             <option value="Approved">Approved</option>
             <option value="Rejected">Rejected</option>
           </select>
