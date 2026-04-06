@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import EditForm from "./pages/EditForm"; // 🔥 Edit form
+import EditForm from "./EditForm"; // 🔥 Edit form
 import { useNavigate } from "react-router-dom";
 
 const MyRequests = () => {
