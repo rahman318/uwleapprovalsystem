@@ -44,7 +44,7 @@ const StaffForm = ({ initialData = null, onClose = null }) => {
 
   const token = localStorage.getItem("token");
 
-  // ================= Form Data =================
+  // ================= Default Form Data =================
   const defaultFormData = {
     staffId: "",
     requestType: "CUTI",
@@ -59,8 +59,23 @@ const StaffForm = ({ initialData = null, onClose = null }) => {
     problemDescription: "",
   };
 
-  const [formData, setFormData] = useState(initialData || defaultFormData);
+  const [formData, setFormData] = useState(defaultFormData);
 
+  // ================= Update formData from initialData =================
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        staffId: initialData.staffId || "",
+        requestType: initialData.requestType || "CUTI",
+        details: initialData.details || {},
+        approvals: initialData.approvals || defaultFormData.approvals,
+        items: initialData.items || [],
+        problemDescription: initialData.problemDescription || "",
+      });
+    }
+  }, [initialData]);
+
+  // ================= Fetch Staff & Approvers =================
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -77,7 +92,7 @@ const StaffForm = ({ initialData = null, onClose = null }) => {
       }
     };
     fetchData();
-  }, []);
+  }, [token]);
 
   // ================= Handlers =================
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -122,7 +137,7 @@ const StaffForm = ({ initialData = null, onClose = null }) => {
     }
   };
 
-  // ================= Submit =================
+  // ================= Submit Handler =================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -177,7 +192,7 @@ const StaffForm = ({ initialData = null, onClose = null }) => {
 
   if (loading) return <p className="text-center mt-6 text-gray-600">Loading...</p>;
 
-  // ================= Render =================
+  // ================= Render Form =================
   return (
     <div className="max-w-5xl mx-auto mt-10 p-6 bg-gray-50 rounded-xl shadow-lg">
       <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Staff Request Form</h2>
@@ -189,9 +204,6 @@ const StaffForm = ({ initialData = null, onClose = null }) => {
             onClick={() => navigate("/my-requests")}
             className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded shadow-md flex items-center gap-2"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
-            </svg>
             View Request History
           </button>
         )}
