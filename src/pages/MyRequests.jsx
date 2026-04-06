@@ -64,7 +64,7 @@ const MyRequests = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log("Recall Success:", res.data);
-      alert("Request berjaya direcall!");
+      alert("Request recalled successfully!");
       fetchRequests(); // reload list
     } catch (err) {
       console.log("Full Error Response:", err.response);
