@@ -41,8 +41,6 @@ const EditForm = ({ isOpen, onClose, requestId }) => {
   fetchRequest();
 }, [requestId, isOpen, token, onClose]);
 
-  if (!isOpen) return null;
-
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
