@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import StaffForm from "./StaffForm";
-import { Dialog, Transition } from "headlessui";
+import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import Swal from "sweetalert2";
 import axios from "axios";
