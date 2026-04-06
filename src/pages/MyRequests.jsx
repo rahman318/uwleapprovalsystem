@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import EditForm from "./pages/editForm"; // 🔥 Edit form
 import { useNavigate } from "react-router-dom";
 
 const MyRequests = () => {
@@ -9,6 +10,7 @@ const MyRequests = () => {
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [openAccordions, setOpenAccordions] = useState({});
+  const [editRequestId, setEditRequestId] = useState(null);
 
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
@@ -21,7 +23,6 @@ const MyRequests = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = res.data.requests || res.data || [];
-      console.log("Fetched Requests:", data);
       setRequests(data);
     } catch (error) {
       console.error("Failed to fetch requests:", error);
@@ -43,43 +44,48 @@ const MyRequests = () => {
     .filter((r) => r.requestType?.toLowerCase().includes(search.toLowerCase()))
     .filter((r) => !filter || r.finalStatus === filter);
 
-  // ----------------- Fixed Recall Function -----------------
+  // ----------------- Recall Function -----------------
   const handleRecall = async (id) => {
     try {
-      // Cari request dari state
       const request = requests.find((r) => r._id === id);
       const status = request?.finalStatus || "";
-      console.log("Attempting Recall for Request ID:", id);
-      console.log("Request finalStatus before recall:", status);
-      console.log("Token:", token);
-
       if (status.toLowerCase() !== "pending") {
         alert("Hanya request dengan status Pending boleh direcall!");
         return;
       }
 
-      const res = await axios.put(
+      await axios.put(
         `https://backenduwleapprovalsystem.onrender.com/api/requests/${id}/recall`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log("Recall Success:", res.data);
       alert("Request recalled successfully!");
-      fetchRequests(); // reload list
+      fetchRequests();
     } catch (err) {
       console.log("Full Error Response:", err.response);
       alert(err.response?.data?.message || "Gagal recall request");
     }
   };
 
+  // ----------------- Edit Function -----------------
   const handleEdit = (request) => {
-    navigate("/edit-request", { state: request });
+    setEditRequestId(request._id); // 🔥 open modal
   };
 
+  const handleEditClose = () => setEditRequestId(null);
+
+  const handleRequestUpdated = (updatedRequest) => {
+    setRequests((prev) =>
+      prev.map((r) => (r._id === updatedRequest._id ? updatedRequest : r))
+    );
+    handleEditClose();
+  };
+
+  // ----------------- PDF Function -----------------
   const generatePDF = async (request) => {
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([600, 800]);
-    const { width, height } = page.getSize();
+    const { height } = page.getSize();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     let y = height - 50;
 
@@ -97,19 +103,20 @@ const MyRequests = () => {
 
     if (request.items && request.items.length > 0) {
       drawText("Items:", 14);
-      request.items.forEach((i, idx) => {
-        drawText(`${idx + 1}. ${i.itemName} | Qty: ${i.quantity} | Cost: ${i.estimatedCost}`);
-      });
+      request.items.forEach((i, idx) =>
+        drawText(`${idx + 1}. ${i.itemName} | Qty: ${i.quantity} | Cost: ${i.estimatedCost}`)
+      );
     }
 
     if (request.approvals && request.approvals.length > 0) {
       drawText("Approvals:", 14);
-      request.approvals.forEach((a, idx) => {
+      request.approvals.forEach((a, idx) =>
         drawText(
-          `Level ${a.level} - ${a.status} | Approver: ${a.approverName || "-"} | Dept: ${a.approverDepartment || "-"}`
-        );
-        if (a.remark) drawText(`Remark: ${a.remark}`);
-      });
+          `Level ${a.level} - ${a.status} | Approver: ${a.approverName || "-"} | Dept: ${a.approverDepartment || "-"}${
+            a.remark ? ` | Remark: ${a.remark}` : ""
+          }`
+        )
+      );
     }
 
     const pdfBytes = await pdfDoc.save();
@@ -126,47 +133,20 @@ const MyRequests = () => {
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
       {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          marginBottom: "20px",
-        }}
-      >
-        <h2 style={{ margin: "0 0 10px 0", fontSize: "28px", color: "#333" }}>
-          Requests History
-        </h2>
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            flexWrap: "wrap",
-            justifyContent: "center",
-          }}
-        >
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "20px" }}>
+        <h2 style={{ margin: "0 0 10px 0", fontSize: "28px", color: "#333" }}>Requests History</h2>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
           <input
             type="text"
             placeholder="Search by type..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{
-              padding: "8px 12px",
-              borderRadius: "20px",
-              border: "1px solid #ccc",
-              minWidth: "200px",
-              outline: "none",
-            }}
+            style={{ padding: "8px 12px", borderRadius: "20px", border: "1px solid #ccc", minWidth: "200px", outline: "none" }}
           />
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            style={{
-              padding: "8px 12px",
-              borderRadius: "20px",
-              border: "1px solid #ccc",
-              outline: "none",
-            }}
+            style={{ padding: "8px 12px", borderRadius: "20px", border: "1px solid #ccc", outline: "none" }}
           >
             <option value="">All Status</option>
             <option value="Pending">Pending</option>
@@ -198,9 +178,7 @@ const MyRequests = () => {
             <h3 style={{ margin: 0 }}>
               {r.requestType} - {r.staffName}
             </h3>
-            <span style={{ fontSize: "20px", color: "#666" }}>
-              {openAccordions[r._id] ? "−" : "+"}
-            </span>
+            <span style={{ fontSize: "20px", color: "#666" }}>{openAccordions[r._id] ? "−" : "+"}</span>
           </div>
 
           <p style={{ margin: "5px 0" }}>
@@ -224,9 +202,7 @@ const MyRequests = () => {
               {r.finalStatus || "-"}
             </span>
           </p>
-          <p style={{ margin: "5px 0", color: "#555" }}>
-            Created At: {new Date(r.createdAt).toLocaleString()}
-          </p>
+          <p style={{ margin: "5px 0", color: "#555" }}>Created At: {new Date(r.createdAt).toLocaleString()}</p>
 
           {/* Collapsible */}
           <div
@@ -281,10 +257,7 @@ const MyRequests = () => {
                 color: "#fff",
                 border: "none",
                 cursor: "pointer",
-                transition: "background-color 0.3s",
               }}
-              onMouseEnter={(e) => (e.target.style.backgroundColor = "#0056b3")}
-              onMouseLeave={(e) => (e.target.style.backgroundColor = "#007bff")}
             >
               Export to PDF
             </button>
@@ -325,6 +298,31 @@ const MyRequests = () => {
           </div>
         </div>
       ))}
+
+      {/* 🔥 EditForm Modal Overlay */}
+      {editRequestId && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+            padding: "10px",
+          }}
+        >
+          <EditForm
+            requestId={editRequestId}
+            onClose={handleEditClose}
+            onUpdated={handleRequestUpdated}
+          />
+        </div>
+      )}
     </div>
   );
 };
