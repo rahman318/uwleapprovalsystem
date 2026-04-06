@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import axios from "axios";
+import packageJson from "../../package.json"; // 🔥 ambil version dari package.json
 
 export default function Login({ setUser }) {
   const [email, setEmail] = useState("");
@@ -188,6 +189,11 @@ export default function Login({ setUser }) {
           </Link>
         </p>
       </div>
+    </div>
+    {/* Version Info */}
+      <p style={{ marginTop: "15px", fontSize: "12px", color: "#888" }}>
+        Version {packageJson.version}
+      </p>
     </div>
   );
 }
