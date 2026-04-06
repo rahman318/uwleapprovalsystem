@@ -12,26 +12,34 @@ const EditForm = ({ isOpen, onClose, requestId }) => {
 
   // ================= Fetch existing request =================
   useEffect(() => {
-    if (!requestId) return;
+  if (!requestId || !isOpen) return;
 
-    const fetchRequest = async () => {
-      setLoading(true);
-      try {
-        const res = await axios.get(`https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}`, {
+  const fetchRequest = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}`,
+        {
           headers: { Authorization: `Bearer ${token}` },
-        });
-        setRequestData(res.data);
-      } catch (err) {
-        console.error(err);
-        Swal.fire("Error", "Gagal fetch request", "error");
-        onClose();
-      } finally {
-        setLoading(false);
-      }
-    };
+        }
+      );
 
-    if (isOpen) fetchRequest();
-  }, [requestId, isOpen]);
+      console.log("🔥 API RESPONSE:", res.data);
+
+      // ✅ FIX PALING PENTING
+      setRequestData(res.data.request || res.data);
+
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "Gagal fetch request", "error");
+      onClose();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchRequest();
+}, [requestId, isOpen, token, onClose]);
 
   if (!isOpen) return null;
 
