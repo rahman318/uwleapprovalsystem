@@ -7,7 +7,7 @@ import packageJson from "../../package.json"; // 🔥 ambil version dari package
 export default function Login({ setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // ✅ toggle state
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   // ================= SMART ANALYTICS BUTTON =================
@@ -68,7 +68,6 @@ export default function Login({ setUser }) {
         showConfirmButton: false,
       });
 
-      // redirect ikut role
       switch (user.role) {
         case "staff":
           navigate("/staff");
@@ -95,105 +94,111 @@ export default function Login({ setUser }) {
     }
   };
 
-  // ================== UI ==================
   return (
-    <div
-      className="min-h-screen flex flex-col justify-center items-center font-[Inter] bg-cover bg-center"
-      style={{
-        backgroundImage: "url('/images/system.jpg')",
-      }}
-    >
-      {/* semi-transparent overlay supaya form readable */}
-      <div className="absolute inset-0 bg-black/40"></div>
+    <>
+      <div
+        className="min-h-screen flex flex-col justify-center items-center font-[Inter] bg-cover bg-center relative"
+        style={{ backgroundImage: "url('/images/system.jpg')" }}
+      >
+        {/* semi-transparent overlay supaya form readable */}
+        <div className="absolute inset-0 bg-black/40"></div>
 
-      <div className="relative z-10 flex flex-col items-center mb-6">
-        <img
-          src="/company logo.png"
-          alt="Company Logo"
-          className="h-16 w-auto mb-2 z-10"
-        />
-        <h1 className="text-2xl font-bold text-white tracking-wide z-10">
-          E-Approval & Maintenance Portal
-        </h1>
+        <div className="relative z-10 flex flex-col items-center mb-6">
+          <img
+            src="/company logo.png"
+            alt="Company Logo"
+            className="h-16 w-auto mb-2 z-10"
+          />
+          <h1 className="text-2xl font-bold text-white tracking-wide z-10">
+            E-Approval & Maintenance Portal
+          </h1>
 
-        {/* SMART Analytics Button */}
-        <button
-          onClick={handleAnalyticsClick}
-          className="mt-4 bg-purple-600 text-white rounded-lg px-4 py-2 hover:bg-purple-700 transition font-medium shadow-sm z-10"
-        >
-          View Analytics
-        </button>
-      </div>
-
-      {/* Login Card */}
-      <div className="relative z-10 w-full max-w-md bg-white/90 p-6 rounded-2xl shadow-lg border border-blue-100">
-        <h2 className="text-xl font-semibold text-center text-blue-700 mb-4">
-          Log Masuk Akaun
-        </h2>
-
-        <form onSubmit={handleLogin} className="space-y-4">
-          {/* Email */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              autoComplete="email"
-              placeholder="Masukkan emel anda"
-              className="w-full border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 rounded-lg outline-none transition"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-
-          {/* Password with toggle */}
-          <div className="relative">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Kata Laluan
-            </label>
-            <input
-              type={showPassword ? "text" : "password"} // ✅ toggle type
-              id="password"
-              name="password"
-              autoComplete="current-password"
-              placeholder="Masukkan kata laluan"
-              className="w-full border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 rounded-lg outline-none transition pr-10"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-2 top-9 text-gray-500 hover:text-gray-700"
-            >
-              {showPassword ? "❌" : "👁️"}
-            </button>
-          </div>
-
+          {/* SMART Analytics Button */}
           <button
-            type="submit"
-            className="w-full bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 transition font-medium shadow-sm"
+            onClick={handleAnalyticsClick}
+            className="mt-4 bg-purple-600 text-white rounded-lg px-4 py-2 hover:bg-purple-700 transition font-medium shadow-sm z-10"
           >
-            Login
+            View Analytics
           </button>
-        </form>
+        </div>
 
-        <p className="text-center mt-4 text-sm text-gray-600">
-          <Link to="/forgot-password" className="text-blue-600 hover:underline font-medium">
-            Lupa kata laluan?
-          </Link>
-        </p>
+        {/* Login Card */}
+        <div className="relative z-10 w-full max-w-md bg-white/90 p-6 rounded-2xl shadow-lg border border-blue-100">
+          <h2 className="text-xl font-semibold text-center text-blue-700 mb-4">
+            Log Masuk Akaun
+          </h2>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                autoComplete="email"
+                placeholder="Masukkan emel anda"
+                className="w-full border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 rounded-lg outline-none transition"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="relative">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Kata Laluan
+              </label>
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                name="password"
+                autoComplete="current-password"
+                placeholder="Masukkan kata laluan"
+                className="w-full border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 rounded-lg outline-none transition pr-10"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2 top-9 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? "❌" : "👁️"}
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 transition font-medium shadow-sm"
+            >
+              Login
+            </button>
+          </form>
+
+          <p className="text-center mt-4 text-sm text-gray-600">
+            <Link
+              to="/forgot-password"
+              className="text-blue-600 hover:underline font-medium"
+            >
+              Lupa kata laluan?
+            </Link>
+          </p>
+
+          {/* Version Info inside card */}
+          <p className="text-center mt-4 text-xs text-gray-500">
+            Version {packageJson.version}
+          </p>
+        </div>
       </div>
-    </div>
-    {/* Version Info */}
-      <p style={{ marginTop: "15px", fontSize: "12px", color: "#888" }}>
-        Version {packageJson.version}
-      </p>
-    </div>
+    </>
   );
 }
