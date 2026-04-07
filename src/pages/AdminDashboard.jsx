@@ -1,4 +1,4 @@
-// AdminDashboard.jsx - FULL version bossskurrr
+// AdminDashboard.jsx - FULL + Tabs (Dashboard + Analytics)
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -25,6 +25,7 @@ const AnalyticsDashboard = ({ requests }) => {
     setFilteredRequests(filtered);
   }, [filterMonth, requests]);
 
+  // ================== Counts ==================
   const totalRequests = filteredRequests.length;
   const approvedCount = filteredRequests.filter((r) =>
     r.approvals?.every((a) => a.status === "Approved")
@@ -34,47 +35,51 @@ const AnalyticsDashboard = ({ requests }) => {
   ).length;
   const pendingCount = totalRequests - approvedCount - rejectedCount;
 
-  const requestTypesCount = {};
-  const technicianCount = {};
-  const statusCount = {};
+  // ================== Analytics Data ==================
+const requestTypesCount = {};
+const technicianCount = {};
+const statusCount = {};
 
-  filteredRequests.forEach((r) => {
-    requestTypesCount[r.requestType] = (requestTypesCount[r.requestType] || 0) + 1;
+filteredRequests.forEach((r) => {
+  // Request Types
+  requestTypesCount[r.requestType] = (requestTypesCount[r.requestType] || 0) + 1;
 
-    const status =
-      r.maintenanceStatus === "Recalled"
-        ? "Recalled"
-        : r.approvals?.some((a) => a.status === "Rejected")
-        ? "Rejected"
-        : r.approvals?.every((a) => a.status === "Approved")
-        ? "Approved"
-        : "Pending";
-    statusCount[status] = (statusCount[status] || 0) + 1;
+  // Status
+  const status = r.approvals?.some((a) => a.status === "Rejected")
+    ? "Rejected"
+    : r.approvals?.every((a) => a.status === "Approved")
+    ? "Approved"
+    : "Pending";
+  statusCount[status] = (statusCount[status] || 0) + 1;
 
-    let techName;
-    if (!r.assignedTechnician) {
-      techName = "Unassigned";
-    } else if (typeof r.assignedTechnician === "object") {
-      techName = r.assignedTechnician.username || r.assignedTechnician._id || "Unknown";
-    } else {
-      techName = r.assignedTechnician;
-    }
-    technicianCount[techName] = (technicianCount[techName] || 0) + 1;
-  });
+  // Technician Count ✅ with fallback
+  let techName;
+  if (!r.assignedTechnician) {
+    techName = "Unassigned"; // kosong
+  } else if (typeof r.assignedTechnician === "object") {
+    techName = r.assignedTechnician.username || r.assignedTechnician._id || "Unknown";
+  } else {
+    techName = r.assignedTechnician; // ID string fallback
+  }
 
-  const chartRequestTypes = Object.keys(requestTypesCount).map((key) => ({
-    name: key,
-    count: requestTypesCount[key],
-  }));
-  const chartStatus = Object.keys(statusCount).map((key) => ({
-    name: key,
-    count: statusCount[key],
-  }));
-  const chartTechnician = Object.keys(technicianCount).map((key) => ({
-    name: key,
-    count: technicianCount[key],
-  }));
+  technicianCount[techName] = (technicianCount[techName] || 0) + 1;
+});
 
+// Chart Data
+const chartRequestTypes = Object.keys(requestTypesCount).map((key) => ({
+  name: key,
+  count: requestTypesCount[key],
+}));
+const chartStatus = Object.keys(statusCount).map((key) => ({
+  name: key,
+  count: statusCount[key],
+}));
+const chartTechnician = Object.keys(technicianCount).map((key) => ({
+  name: key,
+  count: technicianCount[key],
+}));
+
+  // ================== EXPORT TO EXCEL ==================
   const exportToExcel = () => {
     if (!filteredRequests || filteredRequests.length === 0) return alert("Tiada data untuk dieksport");
 
@@ -84,14 +89,11 @@ const AnalyticsDashboard = ({ requests }) => {
       Department: r.staffDepartment || "-",
       "Request Type": r.requestType || "-",
       Technician: r.assignedTechnician?.username || "-",
-      Status:
-        r.maintenanceStatus === "Recalled"
-          ? "Recalled"
-          : r.approvals?.some((a) => a.status === "Rejected")
-          ? "Rejected"
-          : r.approvals?.every((a) => a.status === "Approved")
-          ? "Approved"
-          : "Pending",
+      Status: r.approvals?.some((a) => a.status === "Rejected")
+        ? "Rejected"
+        : r.approvals?.every((a) => a.status === "Approved")
+        ? "Approved"
+        : "Pending",
       "Created At": r.createdAt ? new Date(r.createdAt).toLocaleString("ms-MY") : "-",
       "Updated At": r.updatedAt ? new Date(r.updatedAt).toLocaleString("ms-MY") : "-",
     }));
@@ -112,7 +114,7 @@ const AnalyticsDashboard = ({ requests }) => {
         className="px-4 py-2 bg-green-600 text-white rounded mb-4"
       >
         Export to Excel
-      </button>
+      </button>     
 
       <h2 className="text-xl font-semibold mb-4">Analytics Dashboard</h2>
 
@@ -124,7 +126,7 @@ const AnalyticsDashboard = ({ requests }) => {
           onChange={(e) => setFilterMonth(e.target.value)}
           className="border p-1 rounded"
         />
-      </div>
+      </div> 
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-blue-100 text-blue-800 p-4 rounded shadow text-center">
@@ -146,6 +148,7 @@ const AnalyticsDashboard = ({ requests }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Requests by Type */}
         <div>
           <h3 className="font-medium mb-2">Requests by Type</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -158,6 +161,7 @@ const AnalyticsDashboard = ({ requests }) => {
           </ResponsiveContainer>
         </div>
 
+        {/* Requests by Status */}
         <div>
           <h3 className="font-medium mb-2">Requests by Status</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -170,6 +174,7 @@ const AnalyticsDashboard = ({ requests }) => {
           </ResponsiveContainer>
         </div>
 
+        {/* Requests per Technician - full width */}
         <div className="md:col-span-2">
           <h3 className="font-medium mb-2">Requests per Technician</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -242,8 +247,6 @@ const AdminDashboard = () => {
     fetchCurrentUser();
     fetchUsers();
     fetchRequests();
-
-    // ================== AUTO REFRESH REQUESTS ==================
     const interval = setInterval(fetchRequests, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -358,14 +361,11 @@ const AdminDashboard = () => {
     }
 
     const dataForExcel = staffRequests.map((r) => {
-      const status =
-        r.maintenanceStatus === "Recalled"
-          ? "Recalled"
-          : r.approvals?.some((a) => a.status === "Rejected")
-          ? "Rejected"
-          : r.approvals?.every((a) => a.status === "Approved")
-          ? "Approved"
-          : "Pending";
+      const status = r.approvals?.some((a) => a.status === "Rejected")
+        ? "Rejected"
+        : r.approvals?.every((a) => a.status === "Approved")
+        ? "Approved"
+        : "Pending";
       return {
         "Serial Number": r.serialNumber || "-",
         "Staff Name": r.staffName || "-",
@@ -394,9 +394,7 @@ const AdminDashboard = () => {
     );
   };
 
-  // ================== STATUS HELPERS ==================
   const getRequestStatus = (request) => {
-    if (request.maintenanceStatus === "Recalled") return "Recalled";
     if (!request.approvals || request.approvals.length === 0) return "Pending";
     const anyRejected = request.approvals.some((a) => a.status === "Rejected");
     const allApproved = request.approvals.every((a) => a.status === "Approved");
@@ -419,12 +417,6 @@ const AdminDashboard = () => {
           ❌ Rejected
         </span>
       );
-    if (status === "Recalled")
-      return (
-        <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">
-          🔄 Recalled
-        </span>
-      );
     return (
       <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs">
         ⏳ Pending
@@ -437,17 +429,16 @@ const AdminDashboard = () => {
     if (status === "Approved") return "bg-green-50";
     if (status === "Rejected") return "bg-red-50";
     if (status === "Pending") return "bg-yellow-50";
-    if (status === "Recalled") return "bg-purple-50";
     return base;
   };
 
+  // ================== FILTER REQUESTS ==================
   const filteredRequests = filterLevel
     ? staffRequests.filter(
         (r) => r.approvals?.some((a) => a.level === filterLevel) || r.level === filterLevel
       )
     : staffRequests;
 
-  // ================== RENDER ==================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-blue-50 p-8">
       <div className="max-w-7xl mx-auto">
@@ -501,7 +492,6 @@ const AdminDashboard = () => {
                 <input
                   className="border p-2 rounded"
                   placeholder="Email"
-                  type="email"
                   value={formData.email}
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
@@ -510,13 +500,21 @@ const AdminDashboard = () => {
                 />
                 <input
                   className="border p-2 rounded"
-                  placeholder="Password"
                   type="password"
+                  placeholder="Password"
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
                   required
+                />
+                <input
+                  className="border p-2 rounded"
+                  placeholder="Department"
+                  value={formData.department}
+                  onChange={(e) =>
+                    setFormData({ ...formData, department: e.target.value })
+                  }
                 />
                 <select
                   className="border p-2 rounded"
@@ -526,180 +524,155 @@ const AdminDashboard = () => {
                   }
                 >
                   <option value="staff">Staff</option>
-                  <option value="technician">Technician</option>
+                  <option value="approver">Approver</option>
                   <option value="admin">Admin</option>
+                  <option value="technician">Technician</option>
                 </select>
-                <input
-                  className="border p-2 rounded"
-                  placeholder="Department"
-                  value={formData.department}
-                  onChange={(e) =>
-                    setFormData({ ...formData, department: e.target.value })
-                  }
-                />
-                <input
-                  className="border p-2 rounded"
-                  placeholder="Level"
-                  value={formData.level}
-                  onChange={(e) =>
-                    setFormData({ ...formData, level: e.target.value })
-                  }
-                />
-                <div className="md:col-span-2">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded"
+                {formData.role === "approver" && (
+                  <select
+                    className="border p-2 rounded"
+                    value={formData.level}
+                    onChange={(e) =>
+                      setFormData({ ...formData, level: e.target.value })
+                    }
                   >
-                    Daftar
-                  </button>
-                </div>
+                    <option value="">Pilih Level</option>
+                    <option value="1">Level 1</option>
+                    <option value="2">Level 2</option>
+                    <option value="3">Level 3</option>
+                    <option value="4">Level 4</option>
+                  </select>
+                )}
+                <button className="bg-blue-600 text-white rounded py-2 font-semibold">
+                  Daftar
+                </button>
               </form>
             </div>
 
-            {/* REGISTERED USERS TABLE */}
-            <div className="bg-white p-6 rounded-xl shadow mb-10">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="font-semibold">Senarai Pengguna Berdaftar</h2>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="min-w-full border">
-                  <thead className="bg-gray-200">
-                    <tr>
-                      <th className="px-3 py-2 border">No</th>
-                      <th className="px-3 py-2 border">Nama</th>
-                      <th className="px-3 py-2 border">Email</th>
-                      <th className="px-3 py-2 border">Role</th>
-                      <th className="px-3 py-2 border">Department</th>
-                      <th className="px-3 py-2 border">Level</th>
-                      <th className="px-3 py-2 border">Actions</th>
+            {/* USERS */}
+            <div className="bg-white p-6 rounded-xl shadow mb-10 overflow-x-auto">
+              <h2 className="font-semibold mb-4">Senarai Pengguna</h2>
+              <table className="w-full text-sm border border-gray-300 border-collapse">
+                <thead>
+                  <tr className="bg-blue-100">
+                    <th className="p-3 border border-gray-300">Nama</th>
+                    <th className="p-3 border border-gray-300">Email</th>
+                                        <th className="p-3 border border-gray-300">Role</th>
+                    <th className="p-3 border border-gray-300">Department</th>
+                    <th className="p-3 border border-gray-300">Level</th>
+                    <th className="p-3 border border-gray-300">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user, index) => (
+                    <tr key={user._id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                      <td className="p-2 border">{user.name}</td>
+                      <td className="p-2 border">{user.email}</td>
+                      <td className="p-2 border">{user.role}</td>
+                      <td className="p-2 border">{user.department || "-"}</td>
+                      <td className="p-2 border">{user.level || "-"}</td>
+                      <td className="p-2 border">
+                        <button
+                          onClick={() => handleDeleteUser(user._id)}
+                          className="bg-red-500 text-white px-2 py-1 rounded text-xs"
+                        >
+                          Delete
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((u, idx) => (
-                      <tr key={u._id} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                        <td className="px-3 py-2 border">{idx + 1}</td>
-                        <td className="px-3 py-2 border">{u.name}</td>
-                        <td className="px-3 py-2 border">{u.email}</td>
-                        <td className="px-3 py-2 border">{u.role}</td>
-                        <td className="px-3 py-2 border">{u.department || "-"}</td>
-                        <td className="px-3 py-2 border">{u.level || "-"}</td>
-                        <td className="px-3 py-2 border">
-                          <button
-                            onClick={() => handleDeleteUser(u._id)}
-                            className="px-2 py-1 bg-red-600 text-white rounded text-xs"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            {/* STAFF REQUESTS TABLE */}
-            <div className="bg-white p-6 rounded-xl shadow mb-10">
+            {/* STAFF REQUESTS */}
+            <div className="bg-white p-6 rounded-xl shadow mb-10 overflow-x-auto">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="font-semibold">Senarai Permohonan Staff</h2>
                 <button
                   onClick={exportRequestsToExcel}
-                  className="px-4 py-2 bg-green-600 text-white rounded"
+                  className="bg-green-600 text-white px-3 py-1 rounded text-sm"
                 >
                   Export Excel
                 </button>
               </div>
 
               <div className="mb-4">
-                <label className="mr-2">Filter Level:</label>
-                <input
-                  type="text"
-                  placeholder="Level..."
+                <label className="mr-2 font-medium">Filter by Level:</label>
+                <select
                   value={filterLevel}
                   onChange={(e) => setFilterLevel(e.target.value)}
                   className="border p-1 rounded"
-                />
+                >
+                  <option value="">Semua</option>
+                  <option value="1">Level 1</option>
+                  <option value="2">Level 2</option>
+                  <option value="3">Level 3</option>
+                </select>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full border">
-                  <thead className="bg-gray-200">
-                    <tr>
-                      <th className="px-3 py-2 border">No</th>
-                      <th className="px-3 py-2 border">Staff</th>
-                      <th className="px-3 py-2 border">Department</th>
-                      <th className="px-3 py-2 border">Type</th>
-                      <th className="px-3 py-2 border">Technician</th>
-                      <th className="px-3 py-2 border">Status</th>
-                      <th className="px-3 py-2 border">Created At</th>
-                      <th className="px-3 py-2 border">Updated At</th>
-                      <th className="px-3 py-2 border">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredRequests.map((r, idx) => {
-                      const status = getRequestStatus(r);
-                      return (
-                        <tr key={r._id} className={getRowColor(status, idx)}>
-                          <td className="px-3 py-2 border">{idx + 1}</td>
-                          <td className="px-3 py-2 border">{r.staffName || "-"}</td>
-                          <td className="px-3 py-2 border">{r.staffDepartment || "-"}</td>
-                          <td className="px-3 py-2 border">{r.requestType || "-"}</td>
-                          <td className="px-3 py-2 border">
-                            {r.assignedTechnician?.username || "Unassigned"}
-                          </td>
-                          <td className="px-3 py-2 border">{getStatusDisplay(status)}</td>
-                          {/* Attachments Column */}
-              <td className="px-3 py-2 border space-x-1">
-                {r.attachments && r.attachments.length > 0 ? (
-                  r.attachments.map((a, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleViewFile(a.fileUrl)}
-                      className="px-2 py-1 bg-gray-600 text-white rounded text-xs mb-1"
-                    >
-                      {a.originalName || `File ${i + 1}`}
-                    </button>
-                  ))
-                ) : (
-                  "-"
-                )}
-              </td>
-                          <td className="px-3 py-2 border">
-                            {r.createdAt ? formatDate(r.createdAt) : "-"}
-                          </td>
-                          <td className="px-3 py-2 border">
-                            {r.updatedAt ? formatDate(r.updatedAt) : "-"}
-                          </td>
-                          <td className="px-3 py-2 border space-x-2">
-                            <button
-                              onClick={() => handleDownloadPDF(r._id)}
-                              className="px-2 py-1 bg-blue-600 text-white rounded text-xs"
-                            >
-                              PDF
-                            </button>
-                            {r.attachments && r.attachments.length > 0 && (
-                              <button
-                                onClick={() => handleViewFile(r.attachments[0].fileUrl)}
-                                className="px-2 py-1 bg-gray-600 text-white rounded text-xs"
-                              >
-                                View
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDeleteRequest(r._id)}
-                              className="px-2 py-1 bg-red-600 text-white rounded text-xs"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <table className="w-full text-sm border border-gray-300 border-collapse">
+                <thead>
+                  <tr className="bg-blue-100">
+                    <th className="p-2 border">Serial</th>
+                    <th className="p-2 border">Staff</th>
+                    <th className="p-2 border">Department</th>
+                    <th className="p-2 border">Request Type</th>
+                    <th className="p-2 border">Status</th>
+                    <th className="p-2 border">Created At</th>
+                    <th className="p-2 border">Updated At</th>
+                    <th className="p-2 border">Attachments</th>
+                    <th className="p-2 border">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRequests.map((req, index) => {
+                    const status = getRequestStatus(req);
+                    return (
+                      <tr key={req._id} className={getRowColor(status, index)}>
+                        <td className="p-2 border">{req.serialNumber || "-"}</td>
+                        <td className="p-2 border">{req.staffName}</td>
+                        <td className="p-2 border">{req.staffDepartment}</td>
+                        <td className="p-2 border">{req.requestType}</td>
+                        <td className="p-2 border">{getStatusDisplay(status)}</td>
+                        <td className="p-2 border">{formatDate(req.createdAt)}</td>
+                        <td className="p-2 border">{formatDate(req.updatedAt)}</td>
+                        <td className="p-2 border">
+                          {req.attachments && req.attachments.length > 0 ? (
+                            req.attachments.map((file, idx) => (
+                              <div key={idx} className="flex items-center space-x-2">
+                                <span>{file.originalName}</span>
+                                <button
+                                  onClick={() => handleViewFile(file.url)}
+                                  className="text-blue-600 underline text-xs"
+                                >
+                                  View
+                                </button>
+                              </div>
+                            ))
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                        <td className="p-2 border space-x-1">
+                          <button
+                            onClick={() => handleDownloadPDF(req._id)}
+                            className="bg-blue-500 text-white px-2 py-1 rounded text-xs"
+                          >
+                            PDF
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRequest(req._id)}
+                            className="bg-red-500 text-white px-2 py-1 rounded text-xs"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </>
         )}
