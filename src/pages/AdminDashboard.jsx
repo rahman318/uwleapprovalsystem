@@ -1,4 +1,4 @@
-// AdminDashboard.jsx - FULL + Tabs (Dashboard + Analytics + Recalled fix)
+// AdminDashboard.jsx - FULL version bossskurrr
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -39,10 +39,8 @@ const AnalyticsDashboard = ({ requests }) => {
   const statusCount = {};
 
   filteredRequests.forEach((r) => {
-    // Request Types
     requestTypesCount[r.requestType] = (requestTypesCount[r.requestType] || 0) + 1;
 
-    // Status
     const status =
       r.maintenanceStatus === "Recalled"
         ? "Recalled"
@@ -53,7 +51,6 @@ const AnalyticsDashboard = ({ requests }) => {
         : "Pending";
     statusCount[status] = (statusCount[status] || 0) + 1;
 
-    // Technician Count
     let techName;
     if (!r.assignedTechnician) {
       techName = "Unassigned";
@@ -247,7 +244,7 @@ const AdminDashboard = () => {
     fetchRequests();
 
     // ================== AUTO REFRESH REQUESTS ==================
-    const interval = setInterval(fetchRequests, 5000); // every 5s
+    const interval = setInterval(fetchRequests, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -440,11 +437,10 @@ const AdminDashboard = () => {
     if (status === "Approved") return "bg-green-50";
     if (status === "Rejected") return "bg-red-50";
     if (status === "Pending") return "bg-yellow-50";
-    if (status === "Recalled") return "bg-purple-50"; // new
+    if (status === "Recalled") return "bg-purple-50";
     return base;
   };
 
-  // ================== FILTER REQUESTS ==================
   const filteredRequests = filterLevel
     ? staffRequests.filter(
         (r) => r.approvals?.some((a) => a.level === filterLevel) || r.level === filterLevel
@@ -558,6 +554,49 @@ const AdminDashboard = () => {
                   </button>
                 </div>
               </form>
+            </div>
+
+            {/* REGISTERED USERS TABLE */}
+            <div className="bg-white p-6 rounded-xl shadow mb-10">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="font-semibold">Senarai Pengguna Berdaftar</h2>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full border">
+                  <thead className="bg-gray-200">
+                    <tr>
+                      <th className="px-3 py-2 border">No</th>
+                      <th className="px-3 py-2 border">Nama</th>
+                      <th className="px-3 py-2 border">Email</th>
+                      <th className="px-3 py-2 border">Role</th>
+                      <th className="px-3 py-2 border">Department</th>
+                      <th className="px-3 py-2 border">Level</th>
+                      <th className="px-3 py-2 border">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u, idx) => (
+                      <tr key={u._id} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                        <td className="px-3 py-2 border">{idx + 1}</td>
+                        <td className="px-3 py-2 border">{u.name}</td>
+                        <td className="px-3 py-2 border">{u.email}</td>
+                        <td className="px-3 py-2 border">{u.role}</td>
+                        <td className="px-3 py-2 border">{u.department || "-"}</td>
+                        <td className="px-3 py-2 border">{u.level || "-"}</td>
+                        <td className="px-3 py-2 border">
+                          <button
+                            onClick={() => handleDeleteUser(u._id)}
+                            className="px-2 py-1 bg-red-600 text-white rounded text-xs"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* STAFF REQUESTS TABLE */}
