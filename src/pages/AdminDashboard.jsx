@@ -650,6 +650,22 @@ const AdminDashboard = () => {
                             {r.assignedTechnician?.username || "Unassigned"}
                           </td>
                           <td className="px-3 py-2 border">{getStatusDisplay(status)}</td>
+                          {/* Attachments Column */}
+              <td className="px-3 py-2 border space-x-1">
+                {r.attachments && r.attachments.length > 0 ? (
+                  r.attachments.map((a, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleViewFile(a.fileUrl)}
+                      className="px-2 py-1 bg-gray-600 text-white rounded text-xs mb-1"
+                    >
+                      {a.originalName || `File ${i + 1}`}
+                    </button>
+                  ))
+                ) : (
+                  "-"
+                )}
+              </td>
                           <td className="px-3 py-2 border">
                             {r.createdAt ? formatDate(r.createdAt) : "-"}
                           </td>
