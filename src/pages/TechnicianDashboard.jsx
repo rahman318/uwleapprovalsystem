@@ -66,7 +66,7 @@ const TechnicianDashboard = () => {
 
   useEffect(() => {
     fetchRequests();
-    const interval = setInterval(fetchRequests, 10000); // refresh 10s
+    const interval = setInterval(fetchRequests, 10000); // refresh every 10s
     return () => clearInterval(interval);
   }, [currentUser]);
 
@@ -112,7 +112,6 @@ const TechnicianDashboard = () => {
       const request = requests.find((r) => r._id === requestId);
       if (!request) return;
 
-      // Tentukan status baru
       let newStatus = "";
       let confirmTitle = "";
       if (request.maintenanceStatus === "Submitted") {
@@ -130,10 +129,9 @@ const TechnicianDashboard = () => {
       });
       if (!confirm.isConfirmed) return;
 
-      // Hantar status ke backend
       const res = await axios.put(
         `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/maintenance`,
-        { status: newStatus }, // <-- NI PENTING BOSSSKURRR
+        { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -148,7 +146,7 @@ const TechnicianDashboard = () => {
     }
   };
 
-  // ================== SAVE REMARK + PROOF IMAGE ==================
+  // ================== SAVE REMARK + PROOF ==================
   const handleSaveRemark = async (requestId) => {
     try {
       const remarkObj = remarks[requestId] || {};
@@ -180,136 +178,137 @@ const TechnicianDashboard = () => {
     }
   };
 
-// TechnicianDashboard.jsx - Updated UI
-<div className="min-h-screen bg-gray-50 p-4 md:p-6">
-  <div className="max-w-7xl mx-auto">
-    {/* HEADER */}
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 md:gap-0">
-      <h1 className="text-3xl font-bold text-blue-700">Technician Dashboard</h1>
-      <div className="bg-black text-green-400 font-mono px-4 py-2 rounded-lg shadow-lg text-lg">
-        {formatClock(currentTime)}
+  // ================== UI ==================
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 md:gap-0">
+          <h1 className="text-3xl font-bold text-blue-700">Technician Dashboard</h1>
+          <div className="bg-black text-green-400 font-mono px-4 py-2 rounded-lg shadow-lg text-lg">
+            {formatClock(currentTime)}
+          </div>
+        </div>
+
+        {/* TABLE */}
+        <div className="overflow-x-auto rounded-lg shadow-md border border-gray-200">
+          <table className="w-full text-sm table-auto border-collapse">
+            <thead className="bg-blue-100">
+              <tr>
+                <th className="p-3 border text-left">Serial</th>
+                <th className="p-3 border text-left">Requestor</th>
+                <th className="p-3 border text-left">Dept</th>
+                <th className="p-3 border text-left">Problem</th>
+                <th className="p-3 border text-left">Status</th>
+                <th className="p-3 border text-left">SLA</th>
+                <th className="p-3 border text-left">Time Taken</th>
+                <th className="p-3 border text-left">Attachments</th>
+                <th className="p-3 border text-left">Remark / Proof</th>
+                <th className="p-3 border text-left">Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {requests.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="text-center p-4 border text-gray-500">Tiada request untuk anda</td>
+                </tr>
+              ) : (
+                requests.map((r) => (
+                  <tr key={r._id} className="hover:bg-gray-50">
+                    <td className="p-3 border font-semibold text-blue-700">{r.serialNumber}</td>
+                    <td className="p-3 border">{r.staffName}</td>
+                    <td className="p-3 border">{r.staffDepartment}</td>
+                    <td className="p-3 border text-gray-700 max-w-xs whitespace-pre-wrap text-sm">{r.problemDescription || <span className="text-gray-400 italic">Tiada deskripsi</span>}</td>
+                    <td className="p-3 border">{getStatusBadge(r)}</td>
+                    <td className="p-3 border">{getSLARemaining(r.assignedAt, r.slaHours, r.maintenanceStatus)}</td>
+                    <td className="p-3 border">{r.maintenanceStatus === "Completed" ? formatTimeTaken(r.timeToComplete) : "-"}</td>
+
+                    {/* ATTACHMENTS */}
+                    <td className="p-3 border">
+                      {r.attachments?.length > 0 ? (
+                        <div className="flex flex-col gap-1">
+                          {r.attachments.map((file, idx) => {
+                            const fileName = file.originalName || file.fileName || "Attachment";
+                            const fileUrl = file.url || (file.filePath ? `https://backenduwleapprovalsystem.onrender.com/${file.filePath}` : null);
+                            if (!fileUrl) return null;
+                            return (
+                              <a
+                                key={idx}
+                                href={fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between bg-gray-100 px-2 py-1 rounded hover:bg-gray-200 text-blue-600 text-sm"
+                              >
+                                📎 {fileName}
+                                <span className="ml-2 text-green-600 font-semibold">View</span>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      ) : <span className="text-gray-400 italic">Tiada fail</span>}
+                    </td>
+
+                    {/* REMARK + PROOF */}
+                    <td className="p-3 border">
+                      <div className="flex flex-col gap-2">
+                        <input
+                          type="text"
+                          value={remarks[r._id]?.text || ""}
+                          onChange={(e) => setRemarks(prev => ({ ...prev, [r._id]: { ...prev[r._id], text: e.target.value } }))}
+                          placeholder="Masukkan remark..."
+                          className="border border-gray-300 p-2 rounded w-full text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                        />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              setRemarks(prev => ({ ...prev, [r._id]: { ...prev[r._id], file } }));
+                            }
+                          }}
+                          className="border border-gray-300 p-2 rounded text-sm"
+                        />
+
+                        {remarks[r._id]?.file && (
+                          <img
+                            src={URL.createObjectURL(remarks[r._id].file)}
+                            alt="Preview"
+                            className="w-24 h-24 object-cover border border-gray-200 rounded shadow-sm"
+                          />
+                        )}
+
+                        <button
+                          onClick={() => handleSaveRemark(r._id)}
+                          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors text-sm"
+                        >
+                          Simpan
+                        </button>
+                      </div>
+                    </td>
+
+                    {/* ACTION */}
+                    <td className="p-3 border">
+                      {r.maintenanceStatus !== "Completed" ? (
+                        <button
+                          onClick={() => handleMarkStatus(r._id)}
+                          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                        >
+                          Update
+                        </button>
+                      ) : (
+                        <span className="text-green-700 font-semibold">Completed</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-
-    {/* TABLE */}
-    <div className="overflow-x-auto rounded-lg shadow-md border border-gray-200">
-      <table className="w-full text-sm table-auto border-collapse">
-        <thead className="bg-blue-100">
-          <tr>
-            <th className="p-3 border text-left">Serial</th>
-            <th className="p-3 border text-left">Requestor</th>
-            <th className="p-3 border text-left">Dept</th>
-            <th className="p-3 border text-left">Problem</th>
-            <th className="p-3 border text-left">Status</th>
-            <th className="p-3 border text-left">SLA</th>
-            <th className="p-3 border text-left">Time Taken</th>
-            <th className="p-3 border text-left">Attachments</th>
-            <th className="p-3 border text-left">Remark / Proof</th>
-            <th className="p-3 border text-left">Action</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {requests.length === 0 ? (
-            <tr>
-              <td colSpan={10} className="text-center p-4 border text-gray-500">Tiada request untuk anda</td>
-            </tr>
-          ) : (
-            requests.map((r) => (
-              <tr key={r._id} className="hover:bg-gray-50">
-                <td className="p-3 border font-semibold text-blue-700">{r.serialNumber}</td>
-                <td className="p-3 border">{r.staffName}</td>
-                <td className="p-3 border">{r.staffDepartment}</td>
-                <td className="p-3 border text-gray-700 max-w-xs whitespace-pre-wrap text-sm">{r.problemDescription || <span className="text-gray-400 italic">Tiada deskripsi</span>}</td>
-                <td className="p-3 border">{getStatusBadge(r)}</td>
-                <td className="p-3 border">{getSLARemaining(r.assignedAt, r.slaHours, r.maintenanceStatus)}</td>
-                <td className="p-3 border">{r.maintenanceStatus === "Completed" ? formatTimeTaken(r.timeToComplete) : "-"}</td>
-
-                {/* ATTACHMENTS */}
-                <td className="p-3 border">
-                  {r.attachments?.length > 0 ? (
-                    <div className="flex flex-col gap-1">
-                      {r.attachments.map((file, idx) => {
-                        const fileName = file.originalName || file.fileName || "Attachment";
-                        const fileUrl = file.url || (file.filePath ? `https://backenduwleapprovalsystem.onrender.com/${file.filePath}` : null);
-                        if (!fileUrl) return null;
-                        return (
-                          <a
-                            key={idx}
-                            href={fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-between bg-gray-100 px-2 py-1 rounded hover:bg-gray-200 text-blue-600 text-sm"
-                          >
-                            📎 {fileName}
-                            <span className="ml-2 text-green-600 font-semibold">View</span>
-                          </a>
-                        );
-                      })}
-                    </div>
-                  ) : <span className="text-gray-400 italic">Tiada fail</span>}
-                </td>
-
-                {/* REMARK + PROOF */}
-                <td className="p-3 border">
-                  <div className="flex flex-col gap-2">
-                    <input
-                      type="text"
-                      value={remarks[r._id]?.text || ""}
-                      onChange={(e) => setRemarks(prev => ({ ...prev, [r._id]: { ...prev[r._id], text: e.target.value } }))}
-                      placeholder="Masukkan remark..."
-                      className="border border-gray-300 p-2 rounded w-full text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                    />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setRemarks(prev => ({ ...prev, [r._id]: { ...prev[r._id], file } }));
-                        }
-                      }}
-                      className="border border-gray-300 p-2 rounded text-sm"
-                    />
-
-                    {remarks[r._id]?.file && (
-                      <img
-                        src={URL.createObjectURL(remarks[r._id].file)}
-                        alt="Preview"
-                        className="w-24 h-24 object-cover border border-gray-200 rounded shadow-sm"
-                      />
-                    )}
-
-                    <button
-                      onClick={() => handleSaveRemark(r._id)}
-                      className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors text-sm"
-                    >
-                      Simpan
-                    </button>
-                  </div>
-                </td>
-
-                {/* ACTION */}
-                <td className="p-3 border">
-                  {r.maintenanceStatus !== "Completed" ? (
-                    <button
-                      onClick={() => handleMarkStatus(r._id)}
-                      className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
-                    >
-                      Update
-                    </button>
-                  ) : (
-                    <span className="text-green-700 font-semibold">Completed</span>
-                  )}
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
   );
 };
 
