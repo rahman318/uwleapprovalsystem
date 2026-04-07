@@ -112,10 +112,16 @@ const TechnicianDashboard = () => {
       const request = requests.find((r) => r._id === requestId);
       if (!request) return;
 
+      // Tentukan status baru
+      let newStatus = "";
       let confirmTitle = "";
-      if (request.maintenanceStatus === "Submitted") confirmTitle = "Mark as In Progress?";
-      else if (request.maintenanceStatus === "In Progress") confirmTitle = "Mark as Completed?";
-      else return;
+      if (request.maintenanceStatus === "Submitted") {
+        newStatus = "In Progress";
+        confirmTitle = "Mark as In Progress?";
+      } else if (request.maintenanceStatus === "In Progress") {
+        newStatus = "Completed";
+        confirmTitle = "Mark as Completed?";
+      } else return;
 
       const confirm = await Swal.fire({
         icon: "question",
@@ -124,9 +130,10 @@ const TechnicianDashboard = () => {
       });
       if (!confirm.isConfirmed) return;
 
+      // Hantar status ke backend
       const res = await axios.put(
         `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/maintenance`,
-        {},
+        { status: newStatus }, // <-- NI PENTING BOSSSKURRR
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -212,17 +219,13 @@ const TechnicianDashboard = () => {
                     <td className="p-3 border">{r.staffName}</td>
                     <td className="p-3 border">{r.staffDepartment}</td>
                     <td
-  className="p-3 border text-gray-700"
-  style={{
-    maxWidth: "250px",
-    whiteSpace: "pre-wrap",
-    fontSize: "13px"
-  }}
->
-  {r.problemDescription || (
-    <span className="text-gray-400 italic">Tiada deskripsi</span>
-  )}
-</td>
+                      className="p-3 border text-gray-700"
+                      style={{ maxWidth: "250px", whiteSpace: "pre-wrap", fontSize: "13px" }}
+                    >
+                      {r.problemDescription || (
+                        <span className="text-gray-400 italic">Tiada deskripsi</span>
+                      )}
+                    </td>
                     <td className="p-3 border">{getStatusBadge(r)}</td>
                     <td className="p-3 border">{getSLARemaining(r.assignedAt, r.slaHours, r.maintenanceStatus)}</td>
                     <td className="p-3 border">{r.maintenanceStatus === "Completed" ? formatTimeTaken(r.timeToComplete) : "-"}</td>
