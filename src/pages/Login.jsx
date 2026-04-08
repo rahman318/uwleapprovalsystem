@@ -105,7 +105,7 @@ export default function Login({ setUser }) {
 
         <div className="relative z-10 flex flex-col items-center mb-6">
           <img
-            src="/company logo.png"
+            src="/company-logo.png"
             alt="Company Logo"
             className="h-16 w-auto mb-2 z-10"
           />
