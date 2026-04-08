@@ -29,6 +29,7 @@
     "recharts": "^3.7.0",
     "sweetalert2": "^11.23.0",
     "tailwind": "^2.3.1",
+    "web-push": "^3.6.7",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
