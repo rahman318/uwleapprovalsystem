@@ -7,7 +7,7 @@ import StaffForm from "./pages/StaffForm";
 import ApproverDashboard from "./pages/ApproverDashboard";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword"
+import ResetPassword from "./pages/ResetPassword";
 
 const AppRoutes = () => {
   const navigate = useNavigate();
@@ -26,9 +26,38 @@ const AppRoutes = () => {
         case "technician": navigate("/technician"); break;
         default: navigate("/login");
       }
+
+      // ================= PWA PUSH SUBSCRIBE =================
+      const subscribeUser = async () => {
+        if ("serviceWorker" in navigator && "PushManager" in window) {
+          try {
+            const reg = await navigator.serviceWorker.register("/service-worker.js");
+
+            const subscription = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(process.env.REACT_APP_VAPID_PUBLIC_KEY),
+            });
+
+            // hantar subscription ke backend
+            await fetch("/api/save-subscription", {
+              method: "POST",
+              body: JSON.stringify(subscription),
+              headers: { "Content-Type": "application/json" },
+            });
+
+            console.log("✅ PWA Push: User subscribed");
+
+          } catch (err) {
+            console.error("❌ PWA Push subscription error:", err);
+          }
+        }
+      };
+
+      subscribeUser();
     }
   }, [user]);
 
+  // Logout function
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
@@ -59,9 +88,7 @@ const AppRoutes = () => {
           path="/staff"
           element={user?.role === "staff" ? <StaffForm /> : <Navigate to="/login" />}
         />
-        <Route
-          path="/my-requests" element={<MyRequests />}
-        />
+        <Route path="/my-requests" element={<MyRequests />} />
         <Route
           path="/approver"
           element={user?.role === "approver" ? <ApproverDashboard /> : <Navigate to="/login" />}
@@ -76,14 +103,20 @@ const AppRoutes = () => {
         />
 
         <Route path="*" element={<Navigate to="/login" />} />
-
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-
       </Routes>
     </>
   );
 };
+
+// Helper convert base64 VAPID public key
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
 
 const App = () => (
   <Router>
