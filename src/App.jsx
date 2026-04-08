@@ -31,7 +31,7 @@ const AppRoutes = () => {
       const subscribeUser = async () => {
         if ("serviceWorker" in navigator && "PushManager" in window) {
           try {
-            const reg = await navigator.serviceWorker.register("/service-worker.js");
+            const reg = await navigator.serviceWorker.register("./service-worker.js");
 
             const subscription = await reg.pushManager.subscribe({
               userVisibleOnly: true,
