@@ -78,8 +78,8 @@ self.addEventListener("push", (event) => {
 
   const options = {
     body: data.body,
-    icon: "/icons/icon-192x192.png",
-    badge: "/icons/icon-192x192.png",
+    icon: "./icons/3615953.png",
+    badge: "./icons/3615953.png",
     data: data.url, // url untuk buka bila click
   };
 
