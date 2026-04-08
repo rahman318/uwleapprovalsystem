@@ -4,9 +4,9 @@ const CACHE_NAME = "e-approval-cache-v1";
 const urlsToCache = [
   "/",                 
   "/index.html",       
-  "./manifest.json",          
-  "./images/company logo.png",
-  "./icons/3615953.png",
+  "/public/manifest.json",          
+  "/public/images/company logo.png",
+  "/public/icons/3615953.png",
   // boleh tambah assets lain seperti CSS / JS / logo
 ];
 
