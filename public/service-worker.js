@@ -5,7 +5,7 @@ const urlsToCache = [
   "/",                 
   "/index.html",       
   "/manifest.json",          
-  "/images/company-logo.png",
+  "/company-logo.png",
   "/icons/3615953.png",
   // boleh tambah assets lain seperti CSS / JS / logo
 ];
