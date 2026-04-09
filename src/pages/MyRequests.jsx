@@ -48,7 +48,11 @@ if (user.role !== "staff") return <Navigate to={`/${user.role}`} />;
 
   const filteredRequests = requests
     .filter((r) => r.requestType?.toLowerCase().includes(search.toLowerCase()))
-    .filter((r) => !filter || r.finalStatus === filter);
+    .filter(
+  (r) =>
+    !filter ||
+    (r.finalStatus || "").toLowerCase() === filter.toLowerCase()
+);
 
   // ----------------- Recall Function -----------------
   const handleRecall = async (id) => {
@@ -159,7 +163,7 @@ if (user.role !== "staff") return <Navigate to={`/${user.role}`} />;
             <option value="Recalled">Recalled</option>
             <option value="Approved">Approved</option>
             <option value="Rejected">Rejected</option>
-            <option value="Rejected">Completed</option>
+            <option value="Completed">Completed</option>
           </select>
         </div>
       </div>
