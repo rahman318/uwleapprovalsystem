@@ -12,7 +12,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
 // ==================== Helper ====================
-// Convert base64 VAPID public key ke Uint8Array
+// Convert base64 VAPID key ke Uint8Array
 function urlBase64ToUint8Array(base64String) {
   if (!base64String) return null;
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -47,25 +47,30 @@ const AppRoutes = () => {
       if (!("serviceWorker" in navigator && "PushManager" in window)) return;
 
       try {
-        // Tunggu SW ready (registered in main.jsx)
+        // Tunggu SW ready dan controlling page
         const reg = await navigator.serviceWorker.ready;
         console.log("✅ Service Worker ready:", reg);
 
-        // Ambil VAPID key dari Vite env
+        // Pastikan SW controlling page
+        if (!navigator.serviceWorker.controller) {
+          console.log("⏳ SW belum controlling page, subscription delay");
+          return;
+        }
+
         const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
         if (!vapidKey) {
           console.warn("❌ VAPID key missing, cannot subscribe user");
           return;
         }
 
-        // Cek kalau user dah subscribed sebelum ini
+        // Check existing subscription
         const existingSub = await reg.pushManager.getSubscription();
         if (existingSub) {
           console.log("ℹ️ User already subscribed:", existingSub);
-          return; // dah ada, tak perlu subscribe lagi
+          return;
         }
 
-        // Subscribe user
+        // Subscribe new user
         const subscription = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(vapidKey),
@@ -73,11 +78,14 @@ const AppRoutes = () => {
         console.log("📡 New subscription object:", subscription);
 
         // Hantar subscription ke backend
-        const res = await fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
-          method: "POST",
-          body: JSON.stringify(subscription),
-          headers: { "Content-Type": "application/json" },
-        });
+        const res = await fetch(
+          "https://uwleapprovalsystem.onrender.com/api/save-subscription",
+          {
+            method: "POST",
+            body: JSON.stringify(subscription),
+            headers: { "Content-Type": "application/json" },
+          }
+        );
 
         const data = await res.json();
         console.log("📥 Backend response:", data);
@@ -87,7 +95,13 @@ const AppRoutes = () => {
       }
     };
 
-    subscribeUser();
+    // Delay subscribe sedikit untuk first-time login supaya SW fully controlling
+    const timeout = setTimeout(() => {
+      subscribeUser();
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+
   }, [user, navigate]);
 
   // ==================== Logout ====================
@@ -101,7 +115,7 @@ const AppRoutes = () => {
   // ==================== Render ====================
   return (
     <>
-      {/* Optional Logout */}
+      {/* Logout button */}
       {user && (
         <div className="p-4 bg-gray-100 text-right">
           <span className="mr-4 font-semibold">{user.username} ({user.role})</span>
