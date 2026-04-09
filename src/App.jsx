@@ -1,3 +1,5 @@
+// src/App.jsx
+
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Login from "./pages/Login";
@@ -9,6 +11,14 @@ import TechnicianDashboard from "./pages/TechnicianDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
+// Helper convert base64 VAPID public key
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String?.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
+
 const AppRoutes = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(() => {
@@ -16,46 +26,56 @@ const AppRoutes = () => {
     return userStr ? JSON.parse(userStr) : null;
   });
 
-  // Auto redirect on page load
+  // Auto redirect & PWA push subscribe
   useEffect(() => {
-    if (user) {
-      switch (user.role) {
-        case "admin": navigate("/admin"); break;
-        case "approver": navigate("/approver"); break;
-        case "staff": navigate("/staff"); break;
-        case "technician": navigate("/technician"); break;
-        default: navigate("/login");
-      }
+    if (!user) return;
 
-      // ================= PWA PUSH SUBSCRIBE =================
-      const subscribeUser = async () => {
-        if ("serviceWorker" in navigator && "PushManager" in window) {
-          try {
-            const reg = await navigator.serviceWorker.register("./service-worker.js");
-
-            const subscription = await reg.pushManager.subscribe({
-  userVisibleOnly: true,
-  applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY),
-});
-
-            // hantar subscription ke backend
-            await fetch("/api/save-subscription", {
-              method: "POST",
-              body: JSON.stringify(subscription),
-              headers: { "Content-Type": "application/json" },
-            });
-
-            console.log("✅ PWA Push: User subscribed");
-
-          } catch (err) {
-            console.error("❌ PWA Push subscription error:", err);
-          }
-        }
-      };
-
-      subscribeUser();
+    // Redirect based on role
+    switch (user.role) {
+      case "admin": navigate("/admin"); break;
+      case "approver": navigate("/approver"); break;
+      case "staff": navigate("/staff"); break;
+      case "technician": navigate("/technician"); break;
+      default: navigate("/login");
     }
-  }, [user]);
+
+    // ======= PWA PUSH SUBSCRIBE =======
+    const subscribeUser = async () => {
+      if (!("serviceWorker" in navigator && "PushManager" in window)) return;
+
+      try {
+        // Register SW
+        const reg = await navigator.serviceWorker.register("/service-worker.js");
+        console.log("✅ Service Worker registered", reg);
+
+        // Get VITE env key
+        const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+        if (!vapidKey) {
+          console.warn("❌ VAPID key missing, cannot subscribe user");
+          return;
+        }
+
+        // Subscribe user
+        const subscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidKey),
+        });
+
+        // Send subscription to backend
+        await fetch("/api/save-subscription", {
+          method: "POST",
+          body: JSON.stringify(subscription),
+          headers: { "Content-Type": "application/json" },
+        });
+
+        console.log("✅ PWA Push: User subscribed");
+      } catch (err) {
+        console.error("❌ PWA Push subscription error:", err);
+      }
+    };
+
+    subscribeUser();
+  }, [user, navigate]);
 
   // Logout function
   const handleLogout = () => {
@@ -67,7 +87,6 @@ const AppRoutes = () => {
 
   return (
     <>
-      {/* Optional Logout button */}
       {user && (
         <div className="p-4 bg-gray-100 text-right">
           <span className="mr-4 font-semibold">{user.username} ({user.role})</span>
@@ -102,21 +121,13 @@ const AppRoutes = () => {
           element={user?.role === "technician" ? <TechnicianDashboard /> : <Navigate to="/login" />}
         />
 
-        <Route path="*" element={<Navigate to="/login" />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </>
   );
 };
-
-// Helper convert base64 VAPID public key
-function urlBase64ToUint8Array(base64String) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
-}
 
 const App = () => (
   <Router>
