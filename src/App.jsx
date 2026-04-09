@@ -11,14 +11,17 @@ import TechnicianDashboard from "./pages/TechnicianDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
-// Helper convert base64 VAPID public key
+// ==================== Helper ====================
+// Convert base64 VAPID public key ke Uint8Array
 function urlBase64ToUint8Array(base64String) {
-  const padding = "=".repeat((4 - (base64String?.length % 4)) % 4);
+  if (!base64String) return null;
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = window.atob(base64);
   return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
 
+// ==================== AppRoutes ====================
 const AppRoutes = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(() => {
@@ -26,7 +29,7 @@ const AppRoutes = () => {
     return userStr ? JSON.parse(userStr) : null;
   });
 
-  // Auto redirect & PWA push subscribe
+  // ==================== Auto redirect & PWA Push ====================
   useEffect(() => {
     if (!user) return;
 
@@ -44,11 +47,11 @@ const AppRoutes = () => {
       if (!("serviceWorker" in navigator && "PushManager" in window)) return;
 
       try {
-        // Register SW
-        const reg = await navigator.serviceWorker.register("/service-worker.js");
-        console.log("✅ Service Worker registered", reg);
+        // Tunggu SW ready (fully activated)
+        const reg = await navigator.serviceWorker.ready;
+        console.log("✅ Service Worker ready:", reg);
 
-        // Get VITE env key
+        // Ambil VAPID key dari Vite env
         const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
         if (!vapidKey) {
           console.warn("❌ VAPID key missing, cannot subscribe user");
@@ -60,15 +63,18 @@ const AppRoutes = () => {
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(vapidKey),
         });
+        console.log("📡 Subscription object:", subscription);
 
-        // Send subscription to backend
-        await fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
+        // Hantar subscription ke backend
+        const res = await fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
           method: "POST",
           body: JSON.stringify(subscription),
           headers: { "Content-Type": "application/json" },
         });
 
-        console.log("✅ PWA Push: User subscribed");
+        const data = await res.json();
+        console.log("📥 Backend response:", data);
+
       } catch (err) {
         console.error("❌ PWA Push subscription error:", err);
       }
@@ -77,7 +83,7 @@ const AppRoutes = () => {
     subscribeUser();
   }, [user, navigate]);
 
-  // Logout function
+  // ==================== Logout ====================
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
@@ -85,8 +91,10 @@ const AppRoutes = () => {
     navigate("/login");
   };
 
+  // ==================== Render ====================
   return (
     <>
+      {/* Optional Logout */}
       {user && (
         <div className="p-4 bg-gray-100 text-right">
           <span className="mr-4 font-semibold">{user.username} ({user.role})</span>
@@ -129,6 +137,7 @@ const AppRoutes = () => {
   );
 };
 
+// ==================== Main App ====================
 const App = () => (
   <Router>
     <AppRoutes />
