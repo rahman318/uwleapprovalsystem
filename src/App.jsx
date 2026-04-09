@@ -62,7 +62,7 @@ const AppRoutes = () => {
         });
 
         // Send subscription to backend
-        await fetch("/api/save-subscription", {
+        await fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
           method: "POST",
           body: JSON.stringify(subscription),
           headers: { "Content-Type": "application/json" },
