@@ -159,6 +159,7 @@ if (user.role !== "staff") return <Navigate to={`/${user.role}`} />;
             <option value="Recalled">Recalled</option>
             <option value="Approved">Approved</option>
             <option value="Rejected">Rejected</option>
+            <option value="Rejected">Completed</option>
           </select>
         </div>
       </div>
