@@ -1,6 +1,7 @@
 // src/App.jsx
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
 import MyRequests from "./pages/MyRequests";
@@ -22,6 +23,7 @@ function urlBase64ToUint8Array(base64String) {
 // ==================== AppRoutes ====================
 const AppRoutes = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(() => {
     const userStr = localStorage.getItem("user");
     return userStr ? JSON.parse(userStr) : null;
@@ -29,9 +31,10 @@ const AppRoutes = () => {
 
   // ==================== Auto redirect & PWA Push ====================
   useEffect(() => {
-    if (!user) return;
+  if (!user) return;
 
-    // Redirect berdasarkan role
+  // ❗ HANYA redirect kalau berada di root atau login sahaja
+  if (location.pathname === "/" || location.pathname === "/login") {
     switch (user.role) {
       case "admin": navigate("/admin"); break;
       case "approver": navigate("/approver"); break;
@@ -39,7 +42,10 @@ const AppRoutes = () => {
       case "technician": navigate("/technician"); break;
       default: navigate("/login");
     }
+  }
 
+}, [user, navigate, location.pathname]);
+  
     // ======= PWA PUSH SUBSCRIBE (background, non-blocking) =======
     const subscribeUser = async () => {
       if (!("serviceWorker" in navigator && "PushManager" in window)) return;
