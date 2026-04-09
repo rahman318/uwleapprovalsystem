@@ -7,7 +7,7 @@ const urlsToCache = [
   "/manifest.json",          
   "/company-logo.png",
   "/icons/3615953.png",
-  // boleh tambah assets lain seperti CSS / JS / logo
+  // tambah assets lain seperti CSS / JS / logo
 ];
 
 // ===================== INSTALL =====================
@@ -43,32 +43,41 @@ self.addEventListener("activate", (event) => {
 // ===================== FETCH =====================
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request)
-      .then((cachedRes) => {
+    (async () => {
+      try {
+        // cuba ambil dari cache dulu
+        const cachedRes = await caches.match(event.request);
         if (cachedRes) return cachedRes;
 
-        return fetch(event.request)
-          .then((networkRes) => {
-            return caches.open(CACHE_NAME).then((cache) => {
-              if (event.request.method === "GET") cache.put(event.request, networkRes.clone());
-              return networkRes;
-            });
-          })
-          .catch((err) => {
-            console.warn("❌ Fetch failed for:", event.request.url, err);
+        // ignore non-GET requests (POST/PUT/DELETE)
+        if (event.request.method !== "GET") return fetch(event.request);
 
-            // fallback jika offline
-            if (event.request.destination === "document") {
-              return caches.match("/index.html");
-            } else if (event.request.destination === "image") {
-              // optional: fallback image
-              return new Response(null, { status: 404 });
-            } else {
-              // default fallback supaya tak crash
-              return new Response("Offline", { status: 503, statusText: "Service Worker Offline" });
-            }
-          });
-      })
+        // fetch dari network
+        const networkRes = await fetch(event.request);
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(event.request, networkRes.clone());
+        return networkRes;
+      } catch (err) {
+        console.warn("❌ Fetch failed for:", event.request.url, err);
+
+        // fallback HTML page
+        if (event.request.destination === "document") {
+          const fallback = await caches.match("/index.html");
+          if (fallback) return fallback;
+        }
+
+        // fallback image
+        if (event.request.destination === "image") {
+          return new Response(null, { status: 404 });
+        }
+
+        // fallback API / other requests
+        return new Response(JSON.stringify({ error: "Offline" }), {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    })()
   );
 });
 
