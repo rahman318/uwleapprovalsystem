@@ -43,23 +43,32 @@ self.addEventListener("activate", (event) => {
 // ===================== FETCH =====================
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then((cachedRes) => {
-      if (cachedRes) return cachedRes;
+    caches.match(event.request)
+      .then((cachedRes) => {
+        if (cachedRes) return cachedRes;
 
-      return fetch(event.request)
-        .then((networkRes) => {
-          return caches.open(CACHE_NAME).then((cache) => {
-            if (event.request.method === "GET") cache.put(event.request, networkRes.clone());
-            return networkRes;
+        return fetch(event.request)
+          .then((networkRes) => {
+            return caches.open(CACHE_NAME).then((cache) => {
+              if (event.request.method === "GET") cache.put(event.request, networkRes.clone());
+              return networkRes;
+            });
+          })
+          .catch((err) => {
+            console.warn("❌ Fetch failed for:", event.request.url, err);
+
+            // fallback jika offline
+            if (event.request.destination === "document") {
+              return caches.match("/index.html");
+            } else if (event.request.destination === "image") {
+              // optional: fallback image
+              return new Response(null, { status: 404 });
+            } else {
+              // default fallback supaya tak crash
+              return new Response("Offline", { status: 503, statusText: "Service Worker Offline" });
+            }
           });
-        })
-        .catch(() => {
-          // fallback jika offline dan tak ada cache
-          if (event.request.destination === "document") {
-            return caches.match("/index.html");
-          }
-        });
-    })
+      })
   );
 });
 
