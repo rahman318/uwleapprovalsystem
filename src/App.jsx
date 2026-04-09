@@ -39,7 +39,7 @@ const AppRoutes = () => {
       default: navigate("/login");
     }
 
-    // ======= PWA PUSH SUBSCRIBE =======
+    // ================= PWA PUSH =================
     const subscribeUser = async () => {
       if (!("serviceWorker" in navigator && "PushManager" in window)) return;
 
@@ -47,7 +47,7 @@ const AppRoutes = () => {
         const reg = await navigator.serviceWorker.ready;
         console.log("✅ Service Worker ready:", reg);
 
-        // pastikan SW controlling page
+        // Pastikan SW controlling page
         if (!navigator.serviceWorker.controller) {
           console.log("⏳ SW belum controlling page, tunggu 1s & retry");
           setTimeout(subscribeUser, 1000);
@@ -60,44 +60,50 @@ const AppRoutes = () => {
           return;
         }
 
-        // check existing subscription
+        // Check existing subscription
         const existingSub = await reg.pushManager.getSubscription();
         if (existingSub) {
           console.log("ℹ️ User already subscribed:", existingSub);
           return;
         }
 
-        // subscribe baru
+        // Subscribe baru
         const subscription = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(vapidKey),
         });
         console.log("📡 New subscription object:", subscription);
 
-        // Convert ke plain JSON sebelum hantar
+        // Convert ke plain JSON
         const subJSON = subscription.toJSON();
 
-        const res = await fetch("https://uwleapprovalsystem.onrender.com/api/save", {
-          method: "POST",
-          body: JSON.stringify(subJSON),
-          headers: { "Content-Type": "application/json" },
-        });
+        // ================= Manual fetch test =================
+        try {
+          console.log("🚀 Manual fetch test ke backend /api/save");
+          const res = await fetch("https://uwleapprovalsystem.onrender.com/api/save", {
+            method: "POST",
+            body: JSON.stringify(subJSON),
+            headers: { "Content-Type": "application/json" },
+          });
 
-        const data = await res.json();
-        console.log("📥 Backend response:", data);
+          const data = await res.json();
+          console.log("📥 Backend response:", data);
+        } catch (err) {
+          console.error("❌ Manual fetch failed:", err);
+        }
+        // =====================================================
 
       } catch (err) {
         console.error("❌ PWA Push subscription error:", err);
       }
     };
 
-    // delay sikit supaya SW controlling page stabil
+    // Delay sikit supaya SW controlling page stabil
     const timeout = setTimeout(() => {
       subscribeUser();
     }, 500);
 
     return () => clearTimeout(timeout);
-
   }, [user, navigate]);
 
   // ==================== Logout ====================
