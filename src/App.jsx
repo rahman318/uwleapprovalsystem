@@ -33,7 +33,7 @@ const AppRoutes = () => {
   useEffect(() => {
   if (!user) return;
 
-  // ❗ HANYA redirect kalau berada di root atau login sahaja
+  // ✅ Redirect hanya di root/login
   if (location.pathname === "/" || location.pathname === "/login") {
     switch (user.role) {
       case "admin": navigate("/admin"); break;
@@ -44,47 +44,45 @@ const AppRoutes = () => {
     }
   }
 
-}, [user, navigate, location.pathname]);
-  
-    // ======= PWA PUSH SUBSCRIBE (background, non-blocking) =======
-    const subscribeUser = async () => {
-      if (!("serviceWorker" in navigator && "PushManager" in window)) return;
+  // ======= PWA PUSH SUBSCRIBE =======
+  const subscribeUser = async () => {
+    if (!("serviceWorker" in navigator && "PushManager" in window)) return;
 
-      try {
-        const reg = await navigator.serviceWorker.ready;
-        const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-        if (!vapidKey) return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      if (!vapidKey) return;
 
-        const existingSub = await reg.pushManager.getSubscription();
-        if (existingSub) {
-          console.log("ℹ️ User already subscribed:", existingSub);
-          return;
-        }
-
-        // Subscribe baru
-        const subscription = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(vapidKey),
-        });
-        console.log("📡 New subscription object:", subscription);
-
-        // Hantar ke backend **tanpa blocking**
-        fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
-          method: "POST",
-          body: JSON.stringify(subscription.toJSON()),
-          headers: { "Content-Type": "application/json" },
-        })
-          .then(res => res.json())
-          .then(data => console.log("📥 Backend response:", data))
-          .catch(err => console.error("❌ Push save failed:", err));
-
-      } catch (err) {
-        console.error("❌ PWA Push subscription error:", err);
+      const existingSub = await reg.pushManager.getSubscription();
+      if (existingSub) {
+        console.log("ℹ️ User already subscribed:", existingSub);
+        return;
       }
-    };
 
-    subscribeUser();
-  }, [user, navigate]);
+      const subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      });
+
+      console.log("📡 New subscription object:", subscription);
+
+      fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
+        method: "POST",
+        body: JSON.stringify(subscription.toJSON()),
+        headers: { "Content-Type": "application/json" },
+      })
+        .then(res => res.json())
+        .then(data => console.log("📥 Backend response:", data))
+        .catch(err => console.error("❌ Push save failed:", err));
+
+    } catch (err) {
+      console.error("❌ PWA Push subscription error:", err);
+    }
+  };
+
+  subscribeUser();
+
+}, [user, navigate, location.pathname]);
 
   // ==================== Logout ====================
   const handleLogout = () => {
