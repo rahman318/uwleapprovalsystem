@@ -15,6 +15,12 @@ const MyRequests = () => {
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
+  // 🔒 Guard Page (WAJIB ADA)
+const user = JSON.parse(localStorage.getItem("user"));
+
+if (!user) return <Navigate to="/login" />;
+if (user.role !== "staff") return <Navigate to={`/${user.role}`} />;
+
   const fetchRequests = async () => {
     try {
       setLoading(true);
