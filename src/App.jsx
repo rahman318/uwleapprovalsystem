@@ -47,7 +47,7 @@ const AppRoutes = () => {
       if (!("serviceWorker" in navigator && "PushManager" in window)) return;
 
       try {
-        // Tunggu SW ready (fully activated)
+        // Tunggu SW ready (registered in main.jsx)
         const reg = await navigator.serviceWorker.ready;
         console.log("✅ Service Worker ready:", reg);
 
@@ -58,12 +58,19 @@ const AppRoutes = () => {
           return;
         }
 
+        // Cek kalau user dah subscribed sebelum ini
+        const existingSub = await reg.pushManager.getSubscription();
+        if (existingSub) {
+          console.log("ℹ️ User already subscribed:", existingSub);
+          return; // dah ada, tak perlu subscribe lagi
+        }
+
         // Subscribe user
         const subscription = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(vapidKey),
         });
-        console.log("📡 Subscription object:", subscription);
+        console.log("📡 New subscription object:", subscription);
 
         // Hantar subscription ke backend
         const res = await fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
