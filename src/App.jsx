@@ -1,18 +1,18 @@
 // src/App.jsx
-import React, { useEffect, useContext } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import { AuthContext, AuthProvider } from "./utils/AuthContext";
 
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
-import ApproverDashboard from "./pages/ApproverDashboard";
-import StaffForm from "./pages/StaffForm";
-import TechnicianDashboard from "./pages/TechnicianDashboard";
 import MyRequests from "./pages/MyRequests";
+import StaffForm from "./pages/StaffForm";
+import ApproverDashboard from "./pages/ApproverDashboard";
+import TechnicianDashboard from "./pages/TechnicianDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
-// Helper
+// ==================== Helper ====================
+// Convert base64 VAPID public key ke Uint8Array
 function urlBase64ToUint8Array(base64String) {
   if (!base64String) return null;
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -21,11 +21,15 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
 
-// AppRoutes
+// ==================== AppRoutes ====================
 const AppRoutes = () => {
   const navigate = useNavigate();
-  const { user, setUser } = useContext(AuthContext);
+  const [user, setUser] = useState(() => {
+    const userStr = localStorage.getItem("user");
+    return userStr ? JSON.parse(userStr) : null;
+  });
 
+  // ==================== Auto redirect & PWA Push ====================
   useEffect(() => {
     if (!user) return;
 
@@ -38,44 +42,48 @@ const AppRoutes = () => {
       default: navigate("/login");
     }
 
-    // ================= PWA PUSH =================
+    // ======= PWA PUSH SUBSCRIBE =======
     const subscribeUser = async () => {
       if (!("serviceWorker" in navigator && "PushManager" in window)) return;
 
       try {
+        // Tunggu SW ready (fully activated)
         const reg = await navigator.serviceWorker.ready;
-        if (!navigator.serviceWorker.controller) {
-          setTimeout(subscribeUser, 1000);
+        console.log("✅ Service Worker ready:", reg);
+
+        // Ambil VAPID key dari Vite env
+        const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+        if (!vapidKey) {
+          console.warn("❌ VAPID key missing, cannot subscribe user");
           return;
         }
 
-        const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-        if (!vapidKey) return;
-
-        const existingSub = await reg.pushManager.getSubscription();
-        if (existingSub) return;
-
+        // Subscribe user
         const subscription = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(vapidKey),
         });
+        console.log("📡 Subscription object:", subscription);
 
-        const subJSON = subscription.toJSON();
-        // Manual fetch test
-        await fetch("https://uwleapprovalsystem.onrender.com/api/save", {
+        // Hantar subscription ke backend
+        const res = await fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
           method: "POST",
-          body: JSON.stringify(subJSON),
+          body: JSON.stringify(subscription),
           headers: { "Content-Type": "application/json" },
         });
+
+        const data = await res.json();
+        console.log("📥 Backend response:", data);
 
       } catch (err) {
         console.error("❌ PWA Push subscription error:", err);
       }
     };
-    setTimeout(subscribeUser, 500);
 
+    subscribeUser();
   }, [user, navigate]);
 
+  // ==================== Logout ====================
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
@@ -83,12 +91,17 @@ const AppRoutes = () => {
     navigate("/login");
   };
 
+  // ==================== Render ====================
   return (
     <>
+      {/* Optional Logout */}
       {user && (
         <div className="p-4 bg-gray-100 text-right">
           <span className="mr-4 font-semibold">{user.username} ({user.role})</span>
-          <button onClick={handleLogout} className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+          >
             Log Keluar
           </button>
         </div>
@@ -97,11 +110,25 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login setUser={setUser} />} />
-        <Route path="/staff" element={user?.role === "staff" ? <StaffForm /> : <Navigate to="/login" />} />
+
+        <Route
+          path="/staff"
+          element={user?.role === "staff" ? <StaffForm /> : <Navigate to="/login" />}
+        />
         <Route path="/my-requests" element={<MyRequests />} />
-        <Route path="/approver" element={user?.role === "approver" ? <ApproverDashboard /> : <Navigate to="/login" />} />
-        <Route path="/admin" element={user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />} />
-        <Route path="/technician" element={user?.role === "technician" ? <TechnicianDashboard /> : <Navigate to="/login" />} />
+        <Route
+          path="/approver"
+          element={user?.role === "approver" ? <ApproverDashboard /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/admin"
+          element={user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/technician"
+          element={user?.role === "technician" ? <TechnicianDashboard /> : <Navigate to="/login" />}
+        />
+
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="*" element={<Navigate to="/login" />} />
@@ -110,13 +137,11 @@ const AppRoutes = () => {
   );
 };
 
-// Main App
+// ==================== Main App ====================
 const App = () => (
-  <AuthProvider>
-    <Router>
-      <AppRoutes />
-    </Router>
-  </AuthProvider>
+  <Router>
+    <AppRoutes />
+  </Router>
 );
 
 export default App;
