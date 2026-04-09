@@ -34,9 +34,9 @@ const AppRoutes = () => {
             const reg = await navigator.serviceWorker.register("./service-worker.js");
 
             const subscription = await reg.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: urlBase64ToUint8Array(process.env.REACT_APP_VAPID_PUBLIC_KEY),
-            });
+  userVisibleOnly: true,
+  applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY),
+});
 
             // hantar subscription ke backend
             await fetch("/api/save-subscription", {
