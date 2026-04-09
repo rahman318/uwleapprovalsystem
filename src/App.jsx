@@ -77,7 +77,7 @@ const AppRoutes = () => {
         // Convert ke plain JSON sebelum hantar
         const subJSON = subscription.toJSON();
 
-        const res = await fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
+        const res = await fetch("https://uwleapprovalsystem.onrender.com/api/save", {
           method: "POST",
           body: JSON.stringify(subJSON),
           headers: { "Content-Type": "application/json" },
