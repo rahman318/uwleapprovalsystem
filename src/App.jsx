@@ -1,5 +1,4 @@
 // src/App.jsx
-
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Login from "./pages/Login";
@@ -12,7 +11,6 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
 // ==================== Helper ====================
-// Convert base64 VAPID public key ke Uint8Array
 function urlBase64ToUint8Array(base64String) {
   if (!base64String) return null;
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -33,7 +31,7 @@ const AppRoutes = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Redirect based on role
+    // Redirect berdasarkan role
     switch (user.role) {
       case "admin": navigate("/admin"); break;
       case "approver": navigate("/approver"); break;
@@ -42,38 +40,37 @@ const AppRoutes = () => {
       default: navigate("/login");
     }
 
-    // ======= PWA PUSH SUBSCRIBE =======
+    // ======= PWA PUSH SUBSCRIBE (background, non-blocking) =======
     const subscribeUser = async () => {
       if (!("serviceWorker" in navigator && "PushManager" in window)) return;
 
       try {
-        // Tunggu SW ready (fully activated)
         const reg = await navigator.serviceWorker.ready;
-        console.log("✅ Service Worker ready:", reg);
-
-        // Ambil VAPID key dari Vite env
         const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-        if (!vapidKey) {
-          console.warn("❌ VAPID key missing, cannot subscribe user");
+        if (!vapidKey) return;
+
+        const existingSub = await reg.pushManager.getSubscription();
+        if (existingSub) {
+          console.log("ℹ️ User already subscribed:", existingSub);
           return;
         }
 
-        // Subscribe user
+        // Subscribe baru
         const subscription = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(vapidKey),
         });
-        console.log("📡 Subscription object:", subscription);
+        console.log("📡 New subscription object:", subscription);
 
-        // Hantar subscription ke backend
-        const res = await fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
+        // Hantar ke backend **tanpa blocking**
+        fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
           method: "POST",
-          body: JSON.stringify(subscription),
+          body: JSON.stringify(subscription.toJSON()),
           headers: { "Content-Type": "application/json" },
-        });
-
-        const data = await res.json();
-        console.log("📥 Backend response:", data);
+        })
+          .then(res => res.json())
+          .then(data => console.log("📥 Backend response:", data))
+          .catch(err => console.error("❌ Push save failed:", err));
 
       } catch (err) {
         console.error("❌ PWA Push subscription error:", err);
@@ -94,7 +91,6 @@ const AppRoutes = () => {
   // ==================== Render ====================
   return (
     <>
-      {/* Optional Logout */}
       {user && (
         <div className="p-4 bg-gray-100 text-right">
           <span className="mr-4 font-semibold">{user.username} ({user.role})</span>
@@ -110,25 +106,11 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login setUser={setUser} />} />
-
-        <Route
-          path="/staff"
-          element={user?.role === "staff" ? <StaffForm /> : <Navigate to="/login" />}
-        />
+        <Route path="/staff" element={user?.role === "staff" ? <StaffForm /> : <Navigate to="/login" />} />
         <Route path="/my-requests" element={<MyRequests />} />
-        <Route
-          path="/approver"
-          element={user?.role === "approver" ? <ApproverDashboard /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/admin"
-          element={user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/technician"
-          element={user?.role === "technician" ? <TechnicianDashboard /> : <Navigate to="/login" />}
-        />
-
+        <Route path="/approver" element={user?.role === "approver" ? <ApproverDashboard /> : <Navigate to="/login" />} />
+        <Route path="/admin" element={user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />} />
+        <Route path="/technician" element={user?.role === "technician" ? <TechnicianDashboard /> : <Navigate to="/login" />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="*" element={<Navigate to="/login" />} />
