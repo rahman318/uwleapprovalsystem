@@ -1,6 +1,13 @@
 // src/App.jsx
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -15,7 +22,10 @@ import ResetPassword from "./pages/ResetPassword";
 function urlBase64ToUint8Array(base64String) {
   if (!base64String) return null;
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const base64 = (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
   const rawData = window.atob(base64);
   return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
@@ -44,17 +54,16 @@ const AppRoutes = () => {
       const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
       if (!vapidKey) {
-        console.log("❌ No VAPID KEY");
+        console.log("❌ Missing VAPID KEY");
         return;
       }
 
-      // 🔍 check existing subscription
       let subscription = await reg.pushManager.getSubscription();
 
+      // 🔥 sync existing subscription
       if (subscription) {
         console.log("ℹ️ Already subscribed");
 
-        // 🔥 SYNC BACKEND (IMPORTANT)
         await fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -70,7 +79,7 @@ const AppRoutes = () => {
       // 🔔 request permission
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        console.log("❌ Notification permission denied");
+        console.log("❌ Notification denied");
         return;
       }
 
@@ -80,9 +89,9 @@ const AppRoutes = () => {
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
 
-      console.log("📡 New subscription:", subscription);
+      console.log("📡 New subscription created");
 
-      // 💾 save to backend
+      // 💾 save backend
       await fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -99,44 +108,56 @@ const AppRoutes = () => {
     }
   };
 
-  // ==================== AUTO RUN ====================
+  // ==================== AUTO LOGIN FLOW ====================
   useEffect(() => {
     if (!user) return;
 
-    // ✅ redirect ikut role
+    // 🔀 auto redirect ikut role
     if (location.pathname === "/" || location.pathname === "/login") {
       switch (user.role) {
-        case "admin": navigate("/admin"); break;
-        case "approver": navigate("/approver"); break;
-        case "staff": navigate("/staff"); break;
-        case "technician": navigate("/technician"); break;
-        default: navigate("/login");
+        case "admin":
+          navigate("/admin");
+          break;
+        case "approver":
+          navigate("/approver");
+          break;
+        case "staff":
+          navigate("/staff");
+          break;
+        case "technician":
+          navigate("/technician");
+          break;
+        default:
+          navigate("/login");
       }
     }
 
-    // 🚀 run push subscribe
+    // 🚀 push subscribe
     subscribeUser();
 
-  }, [user, location.pathname]);
+  }, [user]); // 🔥 FIX: removed location.pathname
 
   // ==================== UNSUBSCRIBE ====================
-  const unsubscribePush = async () => {
+  const unsubscribePush = () => {
     try {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-
-      if (sub) {
-        await sub.unsubscribe();
-        console.log("🧹 Unsubscribed push");
-      }
+      navigator.serviceWorker.ready.then(async (reg) => {
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await sub.unsubscribe();
+          console.log("🧹 Push unsubscribed");
+        }
+      });
     } catch (err) {
       console.error("❌ Unsubscribe error:", err);
     }
   };
 
   // ==================== LOGOUT ====================
-  const handleLogout = async () => {
-    await unsubscribePush();
+  const handleLogout = () => {
+    console.log("🚪 Logout clicked");
+
+    // 🔥 non-blocking
+    unsubscribePush();
 
     localStorage.removeItem("user");
     localStorage.removeItem("token");
@@ -153,6 +174,7 @@ const AppRoutes = () => {
           <span className="mr-4 font-semibold">
             {user.username} ({user.role})
           </span>
+
           <button
             onClick={handleLogout}
             className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
@@ -165,20 +187,39 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login setUser={setUser} />} />
-        <Route path="/staff" element={user?.role === "staff" ? <StaffForm /> : <Navigate to="/login" />} />
+
+        <Route
+          path="/staff"
+          element={user?.role === "staff" ? <StaffForm /> : <Navigate to="/login" />}
+        />
+
         <Route path="/my-requests" element={<MyRequests user={user} />} />
-        <Route path="/approver" element={user?.role === "approver" ? <ApproverDashboard /> : <Navigate to="/login" />} />
-        <Route path="/admin" element={user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />} />
-        <Route path="/technician" element={user?.role === "technician" ? <TechnicianDashboard /> : <Navigate to="/login" />} />
+
+        <Route
+          path="/approver"
+          element={user?.role === "approver" ? <ApproverDashboard /> : <Navigate to="/login" />}
+        />
+
+        <Route
+          path="/admin"
+          element={user?.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />}
+        />
+
+        <Route
+          path="/technician"
+          element={user?.role === "technician" ? <TechnicianDashboard /> : <Navigate to="/login" />}
+        />
+
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </>
   );
 };
 
-// ==================== MAIN ====================
+// ==================== MAIN APP ====================
 const App = () => (
   <Router>
     <AppRoutes />
