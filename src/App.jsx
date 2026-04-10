@@ -1,7 +1,7 @@
 // src/App.jsx
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import { useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
 import MyRequests from "./pages/MyRequests";
@@ -24,80 +24,135 @@ function urlBase64ToUint8Array(base64String) {
 const AppRoutes = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
   const [user, setUser] = useState(() => {
     const userStr = localStorage.getItem("user");
     return userStr ? JSON.parse(userStr) : null;
   });
 
-  // ==================== Auto redirect & PWA Push ====================
-  useEffect(() => {
-  if (!user) return;
-
-  // ✅ Redirect hanya di root/login
-  if (location.pathname === "/" || location.pathname === "/login") {
-    switch (user.role) {
-      case "admin": navigate("/admin"); break;
-      case "approver": navigate("/approver"); break;
-      case "staff": navigate("/staff"); break;
-      case "technician": navigate("/technician"); break;
-      default: navigate("/login");
-    }
-  }
-
-  // ======= PWA PUSH SUBSCRIBE =======
+  // ==================== PUSH SUBSCRIBE ====================
   const subscribeUser = async () => {
-    if (!("serviceWorker" in navigator && "PushManager" in window)) return;
+    if (!user) return;
+
+    if (!("serviceWorker" in navigator && "PushManager" in window)) {
+      console.log("❌ Push not supported");
+      return;
+    }
 
     try {
       const reg = await navigator.serviceWorker.ready;
       const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-      if (!vapidKey) return;
 
-      const existingSub = await reg.pushManager.getSubscription();
-      if (existingSub) {
-        console.log("ℹ️ User already subscribed:", existingSub);
+      if (!vapidKey) {
+        console.log("❌ No VAPID KEY");
         return;
       }
 
-      const subscription = await reg.pushManager.subscribe({
+      // 🔍 check existing subscription
+      let subscription = await reg.pushManager.getSubscription();
+
+      if (subscription) {
+        console.log("ℹ️ Already subscribed");
+
+        // 🔥 SYNC BACKEND (IMPORTANT)
+        await fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user._id,
+            subscription: subscription.toJSON(),
+          }),
+        });
+
+        return;
+      }
+
+      // 🔔 request permission
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        console.log("❌ Notification permission denied");
+        return;
+      }
+
+      // 📡 subscribe
+      subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
 
-      console.log("📡 New subscription object:", subscription);
+      console.log("📡 New subscription:", subscription);
 
-      fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
+      // 💾 save to backend
+      await fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
         method: "POST",
-        body: JSON.stringify(subscription.toJSON()),
         headers: { "Content-Type": "application/json" },
-      })
-        .then(res => res.json())
-        .then(data => console.log("📥 Backend response:", data))
-        .catch(err => console.error("❌ Push save failed:", err));
+        body: JSON.stringify({
+          userId: user._id,
+          subscription: subscription.toJSON(),
+        }),
+      });
+
+      console.log("✅ Subscription saved");
 
     } catch (err) {
-      console.error("❌ PWA Push subscription error:", err);
+      console.error("❌ Push subscription error:", err);
     }
   };
 
-  subscribeUser();
+  // ==================== AUTO RUN ====================
+  useEffect(() => {
+    if (!user) return;
 
-}, [user, navigate, location.pathname]);
+    // ✅ redirect ikut role
+    if (location.pathname === "/" || location.pathname === "/login") {
+      switch (user.role) {
+        case "admin": navigate("/admin"); break;
+        case "approver": navigate("/approver"); break;
+        case "staff": navigate("/staff"); break;
+        case "technician": navigate("/technician"); break;
+        default: navigate("/login");
+      }
+    }
 
-  // ==================== Logout ====================
-  const handleLogout = () => {
+    // 🚀 run push subscribe
+    subscribeUser();
+
+  }, [user, location.pathname]);
+
+  // ==================== UNSUBSCRIBE ====================
+  const unsubscribePush = async () => {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+
+      if (sub) {
+        await sub.unsubscribe();
+        console.log("🧹 Unsubscribed push");
+      }
+    } catch (err) {
+      console.error("❌ Unsubscribe error:", err);
+    }
+  };
+
+  // ==================== LOGOUT ====================
+  const handleLogout = async () => {
+    await unsubscribePush();
+
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+
     setUser(null);
     navigate("/login");
   };
 
-  // ==================== Render ====================
+  // ==================== UI ====================
   return (
     <>
       {user && (
         <div className="p-4 bg-gray-100 text-right">
-          <span className="mr-4 font-semibold">{user.username} ({user.role})</span>
+          <span className="mr-4 font-semibold">
+            {user.username} ({user.role})
+          </span>
           <button
             onClick={handleLogout}
             className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
@@ -123,7 +178,7 @@ const AppRoutes = () => {
   );
 };
 
-// ==================== Main App ====================
+// ==================== MAIN ====================
 const App = () => (
   <Router>
     <AppRoutes />
