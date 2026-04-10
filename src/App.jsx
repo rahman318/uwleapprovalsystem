@@ -77,7 +77,7 @@ const AppRoutes = () => {
       if (subscription) {
         console.log("ℹ️ Already subscribed");
 
-        await fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
+        await fetch("https://backenduwleapprovalsystem.onrender.com/api/save-subscription", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -105,7 +105,7 @@ const AppRoutes = () => {
       console.log("📡 New subscription created");
 
       // 💾 save backend
-      await fetch("https://uwleapprovalsystem.onrender.com/api/save-subscription", {
+      await fetch("https://backenduwleapprovalsystem.onrender.com/api/save-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
