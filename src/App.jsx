@@ -40,6 +40,19 @@ const AppRoutes = () => {
     return userStr ? JSON.parse(userStr) : null;
   });
 
+  useEffect(() => {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("/service-worker.js")
+      .then((reg) => {
+        console.log("🔥 SERVICE WORKER REGISTERED:", reg);
+      })
+      .catch((err) => {
+        console.error("❌ SERVICE WORKER FAILED:", err);
+      });
+  }
+}, []);
+
   // ==================== PUSH SUBSCRIBE ====================
   const subscribeUser = async () => {
     if (!user) return;
