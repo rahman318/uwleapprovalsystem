@@ -98,6 +98,13 @@ self.addEventListener("push", (event) => {
   );
 });
 
+//===================== LOG ===========================//
+self.addEventListener("push", (event) => {
+  console.log("🔥 PUSH EVENT TRIGGERED");
+
+  console.log("RAW DATA:", event.data?.text());
+});
+
 // ===================== NOTIFICATION CLICK =====================
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
