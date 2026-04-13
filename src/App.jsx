@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -20,7 +21,6 @@ import ResetPassword from "./pages/ResetPassword";
 // ==================== Helper ====================
 function urlBase64ToUint8Array(base64String) {
   if (!base64String) return null;
-
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding)
     .replace(/-/g, "+")
@@ -40,115 +40,92 @@ const AppRoutes = () => {
     return userStr ? JSON.parse(userStr) : null;
   });
 
-  // ==================== REGISTER SERVICE WORKER ====================
   useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-
+  if ("serviceWorker" in navigator) {
     navigator.serviceWorker
       .register("/service-worker.js")
       .then((reg) => {
-        console.log("🔥 SW REGISTERED:", reg.scope);
+        console.log("🔥 SERVICE WORKER REGISTERED:", reg);
       })
       .catch((err) => {
-        console.error("❌ SW REGISTER FAILED:", err);
+        console.error("❌ SERVICE WORKER FAILED:", err);
       });
-  }, []);
-
- // ==================== PUSH SUBSCRIBE (FIXED + DEBUG INJECTED) ====================
-const subscribeUser = async () => {
-  console.log("🔥 STEP 0: subscribeUser CALLED");
-
-  if (!user) {
-    console.log("❌ STEP 0.1: NO USER");
-    return;
   }
+}, []);
 
-  try {
-    console.log("🚀 STEP 1: PUSH FLOW START");
+  // ==================== PUSH SUBSCRIBE ====================
+  const subscribeUser = async () => {
+    if (!user) return;
 
     if (!("serviceWorker" in navigator && "PushManager" in window)) {
-      console.log("❌ STEP 1.1: Push not supported");
+      console.log("❌ Push not supported");
       return;
     }
 
-    const reg = await navigator.serviceWorker.ready;
-    console.log("🚀 STEP 2: SW READY =", reg);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
-    if (!reg) {
-      console.log("❌ STEP 2.1: SW NOT READY");
-      return;
-    }
+      if (!vapidKey) {
+        console.log("❌ Missing VAPID KEY");
+        return;
+      }
 
-    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-    if (!vapidKey) {
-      console.log("❌ STEP 2.2: MISSING VAPID KEY");
-      return;
-    }
+      let subscription = await reg.pushManager.getSubscription();
 
-    let subscription = await reg.pushManager.getSubscription();
+      // 🔥 sync existing subscription
+      if (subscription) {
+        console.log("ℹ️ Already subscribed");
 
-    if (subscription) {
-      console.log("ℹ️ STEP 3: ALREADY SUBSCRIBED");
-
-      await fetch(
-        "https://uwleapprovalsystem.onrender.com/api/subscription/save-subscription",
-        {
+        await fetch("https://backenduwleapprovalsystem.onrender.com/api/subscription/save-subscription", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId: user._id,
             subscription: subscription.toJSON(),
           }),
-        }
-      );
+        });
 
-      console.log("💾 STEP 3.1: EXISTING SUB SYNCED");
-      return;
-    }
+        return;
+      }
 
-    console.log("🔔 STEP 3: REQUESTING PERMISSION");
-    const permission = await Notification.requestPermission();
+      // 🔔 request permission
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        console.log("❌ Notification denied");
+        return;
+      }
 
-    if (permission !== "granted") {
-      console.log("❌ STEP 3.1: PERMISSION DENIED");
-      return;
-    }
+      // 📡 subscribe
+      subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      });
 
-    console.log("📡 STEP 4: CREATING SUBSCRIPTION");
+      console.log("📡 New subscription created");
 
-    subscription = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidKey),
-    });
-
-    console.log("🔥 STEP 5: SUB CREATED =", subscription);
-
-    console.log("📤 STEP 6: SENDING TO BACKEND");
-
-    const res = await fetch(
-      "https://uwleapprovalsystem.onrender.com/api/subscription/save-subscription",
-      {
+      // 💾 save backend
+      await fetch("https://backenduwleapprovalsystem.onrender.com/api/subscription/save-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user._id,
           subscription: subscription.toJSON(),
         }),
-      }
-    );
+      });
 
-    console.log("🚀 STEP 7: BACKEND RESPONSE =", res);
+      console.log("✅ Subscription saved");
 
-  } catch (err) {
-    console.log("❌ STEP ERROR:", err);
-  }
-};
+    } catch (err) {
+      console.error("❌ Push subscription error:", err);
+    }
+  };
 
-  // ==================== AUTO LOGIN + PUSH INIT ====================
+  // ==================== AUTO LOGIN FLOW ====================
   useEffect(() => {
     if (!user) return;
 
-    // 🔀 role redirect
+    // 🔀 auto redirect ikut role
     if (location.pathname === "/" || location.pathname === "/login") {
       switch (user.role) {
         case "admin":
@@ -168,34 +145,32 @@ const subscribeUser = async () => {
       }
     }
 
-    // 🔥 FIX: delay to ensure SW fully ready
-    const timer = setTimeout(() => {
-      subscribeUser();
-    }, 2000);
+    // 🚀 push subscribe
+    subscribeUser();
 
-    return () => clearTimeout(timer);
-  }, [user]);
+  }, [user]); // 🔥 FIX: removed location.pathname
 
   // ==================== UNSUBSCRIBE ====================
-  const unsubscribePush = async () => {
+  const unsubscribePush = () => {
     try {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-
-      if (sub) {
-        await sub.unsubscribe();
-        console.log("🧹 Push unsubscribed");
-      }
+      navigator.serviceWorker.ready.then(async (reg) => {
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await sub.unsubscribe();
+          console.log("🧹 Push unsubscribed");
+        }
+      });
     } catch (err) {
       console.error("❌ Unsubscribe error:", err);
     }
   };
 
   // ==================== LOGOUT ====================
-  const handleLogout = async () => {
-    console.log("🚪 Logout");
+  const handleLogout = () => {
+    console.log("🚪 Logout clicked");
 
-    await unsubscribePush();
+    // 🔥 non-blocking
+    unsubscribePush();
 
     localStorage.removeItem("user");
     localStorage.removeItem("token");
@@ -215,7 +190,7 @@ const subscribeUser = async () => {
 
           <button
             onClick={handleLogout}
-            className="bg-red-600 text-white px-3 py-1 rounded"
+            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
           >
             Log Keluar
           </button>
