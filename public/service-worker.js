@@ -1,120 +1,115 @@
 // public/service-worker.js
 
-const CACHE_NAME = "e-approval-cache-v1";
+const CACHE_NAME = "e-approval-cache-v2";
+
+// hanya static assets (JANGAN cache API)
 const urlsToCache = [
-  "/",                 
-  "/index.html",       
-  "/manifest.json",          
+  "/",
+  "/index.html",
+  "/manifest.json",
   "/company-logo.png",
   "/icons/3615953.png",
-  // tambah assets lain seperti CSS / JS / logo
 ];
 
 // ===================== INSTALL =====================
 self.addEventListener("install", (event) => {
-  console.log("Service Worker: Installing...");
+  console.log("🔥 Service Worker Installing...");
+
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log("Service Worker: Caching files...");
       return cache.addAll(urlsToCache);
     })
   );
+
   self.skipWaiting();
 });
 
 // ===================== ACTIVATE =====================
 self.addEventListener("activate", (event) => {
-  console.log("Service Worker: Activated");
+  console.log("✅ Service Worker Activated");
+
   event.waitUntil(
-    caches.keys().then((cacheNames) =>
+    caches.keys().then((keys) =>
       Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            console.log("Service Worker: Clearing old cache", cache);
-            return caches.delete(cache);
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
           }
         })
       )
     )
   );
+
   self.clients.claim();
 });
 
-// ===================== FETCH =====================
+// ===================== FETCH (FIXED - NO API CACHE) =====================
 self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
+
+  // ❌ NEVER CACHE API REQUESTS
+  if (url.pathname.startsWith("/api/")) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // ❌ ONLY HANDLE GET REQUESTS
+  if (event.request.method !== "GET") {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // ✅ CACHE ONLY STATIC FILES
   event.respondWith(
-    (async () => {
-      try {
-        // cuba ambil dari cache dulu
-        const cachedRes = await caches.match(event.request);
-        if (cachedRes) return cachedRes;
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
 
-        // ignore non-GET requests (POST/PUT/DELETE)
-        if (event.request.method !== "GET") return fetch(event.request);
-
-        // fetch dari network
-        const networkRes = await fetch(event.request);
-        const cache = await caches.open(CACHE_NAME);
-        cache.put(event.request, networkRes.clone());
-        return networkRes;
-      } catch (err) {
-        console.warn("❌ Fetch failed for:", event.request.url, err);
-
-        // fallback HTML page
+      return fetch(event.request).catch(() => {
         if (event.request.destination === "document") {
-          const fallback = await caches.match("/index.html");
-          if (fallback) return fallback;
+          return caches.match("/index.html");
         }
-
-        // fallback image
-        if (event.request.destination === "image") {
-          return new Response(null, { status: 404 });
-        }
-
-        // fallback API / other requests
-        return new Response(JSON.stringify({ error: "Offline" }), {
-          status: 503,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-    })()
+      });
+    })
   );
 });
 
 // ===================== PUSH NOTIFICATION =====================
 self.addEventListener("push", (event) => {
-  console.log("Service Worker: Push Received");
-  let data = { title: "New Notification", body: "You have a new update", url: "/" };
+  console.log("📩 Push Received");
+
+  let data = {
+    title: "New Notification",
+    body: "You have an update",
+    url: "/",
+  };
 
   if (event.data) {
     try {
       data = event.data.json();
-    } catch (err) {
-      console.error("Push data parse error:", err);
-    }
+    } catch (e) {}
   }
 
-  const options = {
-    body: data.body,
-    icon: "./icons/3615953.png",
-    badge: "./icons/3615953.png",
-    data: data.url, // url untuk buka bila click
-  };
-
-  event.waitUntil(self.registration.showNotification(data.title, options));
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/icons/3615953.png",
+      data: data.url,
+    })
+  );
 });
 
 // ===================== NOTIFICATION CLICK =====================
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+
   event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        // jika dah ada tab terbuka, fokuskan
-        if (client.url === event.notification.data && "focus" in client) return client.focus();
+    clients.matchAll({ type: "window" }).then((clientsArr) => {
+      for (const client of clientsArr) {
+        if (client.focus) return client.focus();
       }
-      // kalau tak ada, buka tab baru
-      if (clients.openWindow) return clients.openWindow(event.notification.data);
+      if (clients.openWindow) {
+        return clients.openWindow(event.notification.data || "/");
+      }
     })
   );
 });
