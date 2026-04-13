@@ -54,72 +54,42 @@ const AppRoutes = () => {
       });
   }, []);
 
-  // ==================== PUSH SUBSCRIBE (FIXED) ====================
-  const subscribeUser = async () => {
-    if (!user) return;
+ // ==================== PUSH SUBSCRIBE (FIXED + DEBUG INJECTED) ====================
+const subscribeUser = async () => {
+  console.log("🔥 STEP 0: subscribeUser CALLED");
 
-    try {
-      console.log("🚀 PUSH FLOW START");
+  if (!user) {
+    console.log("❌ STEP 0.1: NO USER");
+    return;
+  }
 
-      if (!("serviceWorker" in navigator && "PushManager" in window)) {
-        console.log("❌ Push not supported");
-        return;
-      }
+  try {
+    console.log("🚀 STEP 1: PUSH FLOW START");
 
-      // 🔥 IMPORTANT: ensure SW is ready
-      const reg = await navigator.serviceWorker.ready;
+    if (!("serviceWorker" in navigator && "PushManager" in window)) {
+      console.log("❌ STEP 1.1: Push not supported");
+      return;
+    }
 
-      if (!reg) {
-        console.log("❌ Service Worker not ready");
-        return;
-      }
+    const reg = await navigator.serviceWorker.ready;
+    console.log("🚀 STEP 2: SW READY =", reg);
 
-      console.log("✅ SW READY");
+    if (!reg) {
+      console.log("❌ STEP 2.1: SW NOT READY");
+      return;
+    }
 
-      const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-      if (!vapidKey) {
-        console.log("❌ Missing VAPID KEY");
-        return;
-      }
+    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+    if (!vapidKey) {
+      console.log("❌ STEP 2.2: MISSING VAPID KEY");
+      return;
+    }
 
-      // 🔍 check existing subscription
-      let subscription = await reg.pushManager.getSubscription();
+    let subscription = await reg.pushManager.getSubscription();
 
-      if (subscription) {
-        console.log("ℹ️ Already subscribed");
+    if (subscription) {
+      console.log("ℹ️ STEP 3: ALREADY SUBSCRIBED");
 
-        await fetch(
-          "https://backenduwleapprovalsystem.onrender.com/api/subscription/save-subscription",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: user._id,
-              subscription: subscription.toJSON(),
-            }),
-          }
-        );
-
-        console.log("💾 Synced existing subscription");
-        return;
-      }
-
-      // 🔔 permission
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        console.log("❌ Notification denied");
-        return;
-      }
-
-      // 📡 create subscription
-      subscription = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
-      });
-
-      console.log("🔥 NEW SUB CREATED");
-
-      // 💾 save backend
       await fetch(
         "https://backenduwleapprovalsystem.onrender.com/api/subscription/save-subscription",
         {
@@ -132,11 +102,47 @@ const AppRoutes = () => {
         }
       );
 
-      console.log("🚀 SUBSCRIPTION SAVED TO BACKEND");
-    } catch (err) {
-      console.error("❌ PUSH ERROR:", err);
+      console.log("💾 STEP 3.1: EXISTING SUB SYNCED");
+      return;
     }
-  };
+
+    console.log("🔔 STEP 3: REQUESTING PERMISSION");
+    const permission = await Notification.requestPermission();
+
+    if (permission !== "granted") {
+      console.log("❌ STEP 3.1: PERMISSION DENIED");
+      return;
+    }
+
+    console.log("📡 STEP 4: CREATING SUBSCRIPTION");
+
+    subscription = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidKey),
+    });
+
+    console.log("🔥 STEP 5: SUB CREATED =", subscription);
+
+    console.log("📤 STEP 6: SENDING TO BACKEND");
+
+    const res = await fetch(
+      "https://backenduwleapprovalsystem.onrender.com/api/subscription/save-subscription",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user._id,
+          subscription: subscription.toJSON(),
+        }),
+      }
+    );
+
+    console.log("🚀 STEP 7: BACKEND RESPONSE =", res);
+
+  } catch (err) {
+    console.log("❌ STEP ERROR:", err);
+  }
+};
 
   // ==================== AUTO LOGIN + PUSH INIT ====================
   useEffect(() => {
