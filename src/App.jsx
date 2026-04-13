@@ -91,7 +91,7 @@ const subscribeUser = async () => {
       console.log("ℹ️ STEP 3: ALREADY SUBSCRIBED");
 
       await fetch(
-        "https://backenduwleapprovalsystem.onrender.com/api/save-subscription",
+        "https://backenduwleapprovalsystem.onrender.com/api/subscription",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
