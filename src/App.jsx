@@ -207,15 +207,23 @@ const AppRoutes = () => {
 };
   
   // ==================== LOGOUT ====================
-  const handleLogout = () => {
-    console.log("🚪 Logout clicked");
+  const handleLogout = async () => {
+  try {
+    // ❌ NO unsubscribePush()
 
-    localStorage.removeItem("user");
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
 
-    setUser(null);
+    sessionStorage.clear();
+
+    console.log("🚪 Logout success");
+
     navigate("/login");
-  };
+
+  } catch (err) {
+    console.error("❌ Logout error:", err);
+  }
+};
 
   // ==================== UI ====================
   return (
