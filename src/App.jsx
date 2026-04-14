@@ -40,133 +40,116 @@ const AppRoutes = () => {
     return userStr ? JSON.parse(userStr) : null;
   });
 
+  // ==================== SERVICE WORKER ====================
   useEffect(() => {
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker
-      .register("/service-worker.js")
-      .then((reg) => {
-        console.log("🔥 SERVICE WORKER REGISTERED:", reg);
-      })
-      .catch((err) => {
-        console.error("❌ SERVICE WORKER FAILED:", err);
-      });
-  }
-}, []);
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/service-worker.js")
+        .then((reg) => {
+          console.log("🔥 SERVICE WORKER REGISTERED:", reg);
+
+          navigator.serviceWorker.ready.then(() => {
+            console.log("✅ Service Worker READY");
+          });
+        })
+        .catch((err) => {
+          console.error("❌ SERVICE WORKER FAILED:", err);
+        });
+    }
+  }, []);
 
   // ==================== PUSH SUBSCRIBE ====================
   const subscribeUser = async () => {
-  if (!user) return;
+    if (!user) return;
 
-  if (!("serviceWorker" in navigator && "PushManager" in window)) {
-    console.log("❌ Push not supported");
-    return;
-  }
-
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-
-    if (!vapidKey) {
-      console.log("❌ Missing VAPID KEY");
+    if (!("serviceWorker" in navigator && "PushManager" in window)) {
+      console.log("❌ Push not supported");
       return;
     }
 
-    // 🔥 DEVICE ID FIX
-    let deviceId = localStorage.getItem("deviceId");
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
-    if (!deviceId) {
-      deviceId = crypto.randomUUID();
-      localStorage.setItem("deviceId", deviceId);
-    }
+      if (!vapidKey) {
+        console.log("❌ Missing VAPID KEY");
+        return;
+      }
 
-    let subscription = await reg.pushManager.getSubscription();
+      // 🔥 DEVICE ID
+      let deviceId = localStorage.getItem("deviceId");
 
-    // 🔥 sync existing subscription
-    if (subscription) {
-      console.log("ℹ️ Already subscribed");
+      if (!deviceId) {
+        deviceId = crypto.randomUUID();
+        localStorage.setItem("deviceId", deviceId);
+      }
+
+      let subscription = await reg.pushManager.getSubscription();
+
+      // 🔥 VALIDATE EXISTING SUB
+      if (subscription) {
+        const subJSON = subscription.toJSON();
+
+        if (!subJSON.endpoint || !subJSON.keys?.p256dh || !subJSON.keys?.auth) {
+          console.log("⚠️ Invalid subscription, recreating...");
+          await subscription.unsubscribe();
+          subscription = null;
+        } else {
+          console.log("ℹ️ Using existing subscription");
+
+          await fetch("https://backenduwleapprovalsystem.onrender.com/api/subscription/save-subscription", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: user._id,
+              role: user.role,
+              deviceId,
+              subscription: subJSON,
+            }),
+          });
+
+          return;
+        }
+      }
+
+      // 🔔 request permission
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        console.log("❌ Notification denied");
+        return;
+      }
+
+      // 📡 create new subscription
+      subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      });
+
+      console.log("📡 New subscription created");
 
       await fetch("https://backenduwleapprovalsystem.onrender.com/api/subscription/save-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user._id,
-          role: user.role,          // 🔥 ADD THIS
-          deviceId,                // 🔥 ADD THIS
+          role: user.role,
+          deviceId,
           subscription: subscription.toJSON(),
         }),
       });
 
-      return;
+      console.log("✅ Subscription saved");
+
+    } catch (err) {
+      console.error("❌ Push subscription error:", err);
     }
+  };
 
-    // 🔔 request permission
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      console.log("❌ Notification denied");
-      return;
-    }
-
-    // 📡 subscribe
-    subscription = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidKey),
-    });
-
-    console.log("📡 New subscription created");
-
-    // 💾 save backend
-    await fetch("https://backenduwleapprovalsystem.onrender.com/api/subscription/save-subscription", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: user._id,
-        role: user.role,        // 🔥 ADD THIS
-        deviceId,              // 🔥 ADD THIS
-        subscription: subscription.toJSON(),
-      }),
-    });
-
-    console.log("✅ Subscription saved");
-
-  } catch (err) {
-    console.error("❌ Push subscription error:", err);
-  }
-};
-
-  //===================== FORCE RESUBSCRIBE ==================
-  const subscribePush = async () => {
-  const registration = await navigator.serviceWorker.ready;
-
-  // 🔥 unsubscribe lama dulu
-  const existingSub = await registration.pushManager.getSubscription();
-  if (existingSub) {
-    await existingSub.unsubscribe();
-    console.log("♻️ Old subscription removed");
-  }
-
-  // 🔥 subscribe baru
-  const newSub = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: "<VAPID_PUBLIC_KEY>"
-  });
-
-  console.log("✅ New subscription:", newSub);
-
-  // hantar ke backend
-  await fetch("/api/push/subscribe", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(newSub)
-  });
-};
-
-  // ==================== AUTO LOGIN FLOW ====================
+  // ==================== AUTO LOGIN + AUTO REFRESH ====================
   useEffect(() => {
     if (!user) return;
 
-    // 🔀 auto redirect ikut role
+    // 🔀 redirect ikut role
     if (location.pathname === "/" || location.pathname === "/login") {
       switch (user.role) {
         case "admin":
@@ -186,44 +169,37 @@ const AppRoutes = () => {
       }
     }
 
-    // 🚀 push subscribe
+    // 🔥 subscribe + refresh loop
     subscribeUser();
 
-  }, [user]); // 🔥 FIX: removed location.pathname
+    const interval = setInterval(() => {
+      console.log("🔄 Refreshing subscription...");
+      subscribeUser();
+    }, 30000); // every 30s
 
-  // ==================== UNSUBSCRIBE ====================
-  const unsubscribePush = async () => {
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
+    return () => clearInterval(interval);
 
-    if (sub) {
-      await sub.unsubscribe();
-      console.log("🧹 Push unsubscribed (manual only)");
-    }
-  } catch (err) {
-    console.error("❌ Unsubscribe error:", err);
-  }
-};
-  
+  }, [user]);
+
   // ==================== LOGOUT ====================
   const handleLogout = async () => {
-  try {
-    // ❌ NO unsubscribePush()
+    try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+      // 🔥 reset deviceId (avoid cross-user conflict)
+      localStorage.removeItem("deviceId");
 
-    sessionStorage.clear();
+      sessionStorage.clear();
 
-    console.log("🚪 Logout success");
+      console.log("🚪 Logout success");
 
-    navigate("/login");
+      navigate("/login");
 
-  } catch (err) {
-    console.error("❌ Logout error:", err);
-  }
-};
+    } catch (err) {
+      console.error("❌ Logout error:", err);
+    }
+  };
 
   // ==================== UI ====================
   return (
