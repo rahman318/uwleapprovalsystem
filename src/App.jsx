@@ -121,6 +121,35 @@ const AppRoutes = () => {
     }
   };
 
+  //===================== FORCE RESUBSCRIBE ==================
+  const subscribePush = async () => {
+  const registration = await navigator.serviceWorker.ready;
+
+  // 🔥 unsubscribe lama dulu
+  const existingSub = await registration.pushManager.getSubscription();
+  if (existingSub) {
+    await existingSub.unsubscribe();
+    console.log("♻️ Old subscription removed");
+  }
+
+  // 🔥 subscribe baru
+  const newSub = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: "<VAPID_PUBLIC_KEY>"
+  });
+
+  console.log("✅ New subscription:", newSub);
+
+  // hantar ke backend
+  await fetch("/api/push/subscribe", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(newSub)
+  });
+};
+
   // ==================== AUTO LOGIN FLOW ====================
   useEffect(() => {
     if (!user) return;
