@@ -192,26 +192,23 @@ const AppRoutes = () => {
   }, [user]); // 🔥 FIX: removed location.pathname
 
   // ==================== UNSUBSCRIBE ====================
-  const unsubscribePush = () => {
-    try {
-      navigator.serviceWorker.ready.then(async (reg) => {
-        const sub = await reg.pushManager.getSubscription();
-        if (sub) {
-          await sub.unsubscribe();
-          console.log("🧹 Push unsubscribed");
-        }
-      });
-    } catch (err) {
-      console.error("❌ Unsubscribe error:", err);
-    }
-  };
+  const unsubscribePush = async () => {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
 
+    if (sub) {
+      await sub.unsubscribe();
+      console.log("🧹 Push unsubscribed (manual only)");
+    }
+  } catch (err) {
+    console.error("❌ Unsubscribe error:", err);
+  }
+};
+  
   // ==================== LOGOUT ====================
   const handleLogout = () => {
     console.log("🚪 Logout clicked");
-
-    // 🔥 non-blocking
-    unsubscribePush();
 
     localStorage.removeItem("user");
     localStorage.removeItem("token");
