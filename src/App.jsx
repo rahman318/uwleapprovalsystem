@@ -55,71 +55,83 @@ const AppRoutes = () => {
 
   // ==================== PUSH SUBSCRIBE ====================
   const subscribeUser = async () => {
-    if (!user) return;
+  if (!user) return;
 
-    if (!("serviceWorker" in navigator && "PushManager" in window)) {
-      console.log("❌ Push not supported");
+  if (!("serviceWorker" in navigator && "PushManager" in window)) {
+    console.log("❌ Push not supported");
+    return;
+  }
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+
+    if (!vapidKey) {
+      console.log("❌ Missing VAPID KEY");
       return;
     }
 
-    try {
-      const reg = await navigator.serviceWorker.ready;
-      const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+    // 🔥 DEVICE ID FIX
+    let deviceId = localStorage.getItem("deviceId");
 
-      if (!vapidKey) {
-        console.log("❌ Missing VAPID KEY");
-        return;
-      }
+    if (!deviceId) {
+      deviceId = crypto.randomUUID();
+      localStorage.setItem("deviceId", deviceId);
+    }
 
-      let subscription = await reg.pushManager.getSubscription();
+    let subscription = await reg.pushManager.getSubscription();
 
-      // 🔥 sync existing subscription
-      if (subscription) {
-        console.log("ℹ️ Already subscribed");
+    // 🔥 sync existing subscription
+    if (subscription) {
+      console.log("ℹ️ Already subscribed");
 
-        await fetch("https://backenduwleapprovalsystem.onrender.com/api/subscription/save-subscription", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user._id,
-            subscription: subscription.toJSON(),
-          }),
-        });
-
-        return;
-      }
-
-      // 🔔 request permission
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        console.log("❌ Notification denied");
-        return;
-      }
-
-      // 📡 subscribe
-      subscription = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
-      });
-
-      console.log("📡 New subscription created");
-
-      // 💾 save backend
       await fetch("https://backenduwleapprovalsystem.onrender.com/api/subscription/save-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user._id,
+          role: user.role,          // 🔥 ADD THIS
+          deviceId,                // 🔥 ADD THIS
           subscription: subscription.toJSON(),
         }),
       });
 
-      console.log("✅ Subscription saved");
-
-    } catch (err) {
-      console.error("❌ Push subscription error:", err);
+      return;
     }
-  };
+
+    // 🔔 request permission
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      console.log("❌ Notification denied");
+      return;
+    }
+
+    // 📡 subscribe
+    subscription = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidKey),
+    });
+
+    console.log("📡 New subscription created");
+
+    // 💾 save backend
+    await fetch("https://backenduwleapprovalsystem.onrender.com/api/subscription/save-subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: user._id,
+        role: user.role,        // 🔥 ADD THIS
+        deviceId,              // 🔥 ADD THIS
+        subscription: subscription.toJSON(),
+      }),
+    });
+
+    console.log("✅ Subscription saved");
+
+  } catch (err) {
+    console.error("❌ Push subscription error:", err);
+  }
+};
 
   //===================== FORCE RESUBSCRIBE ==================
   const subscribePush = async () => {
