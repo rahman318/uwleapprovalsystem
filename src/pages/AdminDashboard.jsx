@@ -53,16 +53,18 @@ filteredRequests.forEach((r) => {
   statusCount[status] = (statusCount[status] || 0) + 1;
 
   // Technician Count ✅ with fallback
-  let techName;
-  if (!r.assignedTechnician) {
-    techName = "Unassigned"; // kosong
-  } else if (typeof r.assignedTechnician === "object") {
-    techName = r.assignedTechnician.name || r.assignedTechnician._id || "Unknown";
-  } else {
-    techName = r.assignedTechnician; // ID string fallback
-  }
+  let techName = "Unassigned";
 
-  technicianCount[techName] = (technicianCount[techName] || 0) + 1;
+if (r.assignedTechnician) {
+  if (typeof r.assignedTechnician === "object") {
+    techName = r.assignedTechnician.name || "Unknown";
+  } else {
+    techName = "Unknown"; // fallback kalau masih ObjectId string
+  }
+}
+
+technicianCount[techName] =
+  (technicianCount[techName] || 0) + 1;
 });
 
 // Chart Data
