@@ -57,7 +57,7 @@ filteredRequests.forEach((r) => {
   if (!r.assignedTechnician) {
     techName = "Unassigned"; // kosong
   } else if (typeof r.assignedTechnician === "object") {
-    techName = r.assignedTechnician.username || r.assignedTechnician._id || "Unknown";
+    techName = r.assignedTechnician.name || r.assignedTechnician._id || "Unknown";
   } else {
     techName = r.assignedTechnician; // ID string fallback
   }
