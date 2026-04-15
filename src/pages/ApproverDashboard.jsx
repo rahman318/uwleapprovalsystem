@@ -214,24 +214,30 @@ const ApproverDashboard = () => {
 
   // ================= ASSIGN TECHNICIAN =================
   const handleAssignTechnician = async (requestId, techId) => {
-    try {
-      await axios.put(
-        `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/assign-technician`,
-        { technicianId: techId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      // Update local state supaya dropdown nama terus muncul
-      setSelectedRequest((prev) => ({
-        ...prev,
-        assignedTechnician: techId
-      }));
-      Swal.fire({ icon: "success", title: "Technician Assigned", timer: 1200, showConfirmButton: false });
-      fetchRequests();
-    } catch (err) {
-      console.error(err);
-      Swal.fire("Error", "Gagal assign technician", "error");
-    }
-  };
+  try {
+    await axios.put(
+      `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/assign-technician`,
+      { technicianId: techId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    // ❌ NO MORE OVERWRITE LOCAL STATE
+    // sebab data sebenar akan datang dari fetchRequests()
+
+    Swal.fire({
+      icon: "success",
+      title: "Technician Assigned",
+      timer: 1200,
+      showConfirmButton: false,
+    });
+
+    // 🔥 refresh data dari backend (SOURCE OF TRUTH)
+    await fetchRequests();
+  } catch (err) {
+    console.error(err);
+    Swal.fire("Error", "Gagal assign technician", "error");
+  }
+};
 
   // ================= RENDER =================
   if (loading) return <p>Loading...</p>;
