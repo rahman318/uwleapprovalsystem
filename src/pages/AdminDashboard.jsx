@@ -42,15 +42,16 @@ const AnalyticsDashboard = ({ requests }) => {
   const pendingCount =
     totalRequests - approvedCount - rejectedCount;
 
-  // ================== ANALYTICS DATA ==================
+  // ================== ANALYTICS MAP ==================
   const requestTypesCount = {};
   const technicianCount = {};
   const statusCount = {};
 
   filteredRequests.forEach((r) => {
     // ================== REQUEST TYPE ==================
-    requestTypesCount[r.requestType] =
-      (requestTypesCount[r.requestType] || 0) + 1;
+    const type = r.requestType || "Unknown";
+    requestTypesCount[type] =
+      (requestTypesCount[type] || 0) + 1;
 
     // ================== STATUS ==================
     const status = r.approvals?.some((a) => a.status === "Rejected")
@@ -61,17 +62,16 @@ const AnalyticsDashboard = ({ requests }) => {
 
     statusCount[status] = (statusCount[status] || 0) + 1;
 
-    // ================== TECHNICIAN (FIXED) ==================
-    if (!r.assignedTechnician) return;
+    // ================== TECHNICIAN (FIXED CLEAN VERSION) ==================
+    const isMaintenance =
+      r.requestType?.toLowerCase() === "maintenance";
 
-    // 🔥 FILTER ONLY MAINTENANCE REQUEST
-    if (r.requestType?.toLowerCase() !== "maintenance") return;
+    const techName = r.assignedTechnician?.username;
 
-    const techName =
-      r.assignedTechnician?.name || "Unassigned";
-
-    technicianCount[techName] =
-      (technicianCount[techName] || 0) + 1;
+    if (isMaintenance && techName) {
+      technicianCount[techName] =
+        (technicianCount[techName] || 0) + 1;
+    }
   });
 
   // ================== CHART DATA ==================
@@ -101,9 +101,8 @@ const AnalyticsDashboard = ({ requests }) => {
       Department: r.staffDepartment || "-",
       "Request Type": r.requestType || "-",
 
-      // 🔥 FIX UNKNOWN ISSUE
-      Technician:
-        r.assignedTechnician?.username || "Unassigned",
+      // ================== TECH FIX ==================
+      Technician: r.assignedTechnician?.username || "-",
 
       Status: r.approvals?.some((a) => a.status === "Rejected")
         ? "Rejected"
@@ -122,6 +121,7 @@ const AnalyticsDashboard = ({ requests }) => {
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
+
     XLSX.utils.book_append_sheet(
       wb,
       ws,
@@ -195,7 +195,7 @@ const AnalyticsDashboard = ({ requests }) => {
 
       {/* CHARTS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* TYPE */}
+        {/* REQUEST TYPE */}
         <div>
           <h3 className="font-medium mb-2">
             Requests by Type
