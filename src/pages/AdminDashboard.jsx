@@ -48,7 +48,7 @@ const AnalyticsDashboard = ({ requests }) => {
   const statusCount = {};
 
   filteredRequests.forEach((r) => {
-    // ================== REQUEST TYPE ==================
+    // ================== REQUEST TYPE (SAFE) ==================
     const type = r.requestType || "Unknown";
     requestTypesCount[type] =
       (requestTypesCount[type] || 0) + 1;
@@ -60,18 +60,29 @@ const AnalyticsDashboard = ({ requests }) => {
       ? "Approved"
       : "Pending";
 
-    statusCount[status] = (statusCount[status] || 0) + 1;
+    statusCount[status] =
+      (statusCount[status] || 0) + 1;
 
-    // ================== TECHNICIAN (FIXED CLEAN VERSION) ==================
+    // ================== TECHNICIAN (ROBUST FIX) ==================
+
+    // 👉 ONLY count maintenance request (but SAFE)
     const isMaintenance =
-      r.requestType?.toLowerCase() === "maintenance";
+      (r.requestType || "")
+        .toLowerCase()
+        .includes("maintenance");
 
-    const techName = r.assignedTechnician?.username;
+    if (!isMaintenance) return;
 
-    if (isMaintenance && techName) {
-      technicianCount[techName] =
-        (technicianCount[techName] || 0) + 1;
-    }
+    // 👉 handle BOTH populated object & plain ObjectId
+    const tech =
+      typeof r.assignedTechnician === "object"
+        ? r.assignedTechnician?.username
+        : null;
+
+    if (!tech) return;
+
+    technicianCount[tech] =
+      (technicianCount[tech] || 0) + 1;
   });
 
   // ================== CHART DATA ==================
@@ -101,8 +112,10 @@ const AnalyticsDashboard = ({ requests }) => {
       Department: r.staffDepartment || "-",
       "Request Type": r.requestType || "-",
 
-      // ================== TECH FIX ==================
-      Technician: r.assignedTechnician?.username || "-",
+      Technician:
+        typeof r.assignedTechnician === "object"
+          ? r.assignedTechnician?.username
+          : "-",
 
       Status: r.approvals?.some((a) => a.status === "Rejected")
         ? "Rejected"
@@ -149,7 +162,7 @@ const AnalyticsDashboard = ({ requests }) => {
         Analytics Dashboard
       </h2>
 
-      {/* FILTER MONTH */}
+      {/* FILTER */}
       <div className="mb-4">
         <label className="font-medium mr-2">
           Filter by Month:
@@ -195,7 +208,7 @@ const AnalyticsDashboard = ({ requests }) => {
 
       {/* CHARTS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* REQUEST TYPE */}
+        {/* TYPE */}
         <div>
           <h3 className="font-medium mb-2">
             Requests by Type
