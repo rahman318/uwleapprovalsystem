@@ -68,7 +68,7 @@ const AnalyticsDashboard = ({ requests }) => {
     if (r.requestType?.toLowerCase() !== "maintenance") return;
 
     const techName =
-      r.assignedTechnician?.username || "Unassigned";
+      r.assignedTechnician?.name || "Unassigned";
 
     technicianCount[techName] =
       (technicianCount[techName] || 0) + 1;
