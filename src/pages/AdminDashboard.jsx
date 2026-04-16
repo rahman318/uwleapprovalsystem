@@ -20,92 +20,119 @@ const AnalyticsDashboard = ({ requests }) => {
 
   useEffect(() => {
     const filtered = filterMonth
-      ? requests.filter((r) => r.createdAt?.startsWith(filterMonth))
+      ? requests.filter((r) =>
+          r.createdAt?.startsWith(filterMonth)
+        )
       : requests;
+
     setFilteredRequests(filtered);
   }, [filterMonth, requests]);
 
-  // ================== Counts ==================
+  // ================== COUNTS ==================
   const totalRequests = filteredRequests.length;
+
   const approvedCount = filteredRequests.filter((r) =>
     r.approvals?.every((a) => a.status === "Approved")
   ).length;
+
   const rejectedCount = filteredRequests.filter((r) =>
     r.approvals?.some((a) => a.status === "Rejected")
   ).length;
-  const pendingCount = totalRequests - approvedCount - rejectedCount;
 
-  // ================== Analytics Data ==================
-const requestTypesCount = {};
-const technicianCount = {};
-const statusCount = {};
+  const pendingCount =
+    totalRequests - approvedCount - rejectedCount;
 
-filteredRequests.forEach((r) => {
-  // Request Types
-  requestTypesCount[r.requestType] = (requestTypesCount[r.requestType] || 0) + 1;
+  // ================== ANALYTICS DATA ==================
+  const requestTypesCount = {};
+  const technicianCount = {};
+  const statusCount = {};
 
-  // Status
-  const status = r.approvals?.some((a) => a.status === "Rejected")
-    ? "Rejected"
-    : r.approvals?.every((a) => a.status === "Approved")
-    ? "Approved"
-    : "Pending";
-  statusCount[status] = (statusCount[status] || 0) + 1;
+  filteredRequests.forEach((r) => {
+    // ================== REQUEST TYPE ==================
+    requestTypesCount[r.requestType] =
+      (requestTypesCount[r.requestType] || 0) + 1;
 
-  // Technician Count ✅ with fallback
-  let techName = "Unassigned";
+    // ================== STATUS ==================
+    const status = r.approvals?.some((a) => a.status === "Rejected")
+      ? "Rejected"
+      : r.approvals?.every((a) => a.status === "Approved")
+      ? "Approved"
+      : "Pending";
 
-if (r.assignedTechnician) {
-  if (typeof r.assignedTechnician === "object") {
-    techName = r.assignedTechnician.name || "Unknown";
-  } else {
-    techName = "Unknown"; // fallback kalau masih ObjectId string
-  }
-}
+    statusCount[status] = (statusCount[status] || 0) + 1;
 
-technicianCount[techName] =
-  (technicianCount[techName] || 0) + 1;
-});
+    // ================== TECHNICIAN (FIXED) ==================
+    if (!r.assignedTechnician) return;
 
-// Chart Data
-const chartRequestTypes = Object.keys(requestTypesCount).map((key) => ({
-  name: key,
-  count: requestTypesCount[key],
-}));
-const chartStatus = Object.keys(statusCount).map((key) => ({
-  name: key,
-  count: statusCount[key],
-}));
-const chartTechnician = Object.keys(technicianCount).map((key) => ({
-  name: key,
-  count: technicianCount[key],
-}));
+    // 🔥 FILTER ONLY MAINTENANCE REQUEST
+    if (r.requestType?.toLowerCase() !== "maintenance") return;
 
-  // ================== EXPORT TO EXCEL ==================
+    const techName =
+      r.assignedTechnician?.username || "Unassigned";
+
+    technicianCount[techName] =
+      (technicianCount[techName] || 0) + 1;
+  });
+
+  // ================== CHART DATA ==================
+  const chartRequestTypes = Object.keys(requestTypesCount).map((key) => ({
+    name: key,
+    count: requestTypesCount[key],
+  }));
+
+  const chartStatus = Object.keys(statusCount).map((key) => ({
+    name: key,
+    count: statusCount[key],
+  }));
+
+  const chartTechnician = Object.keys(technicianCount).map((key) => ({
+    name: key,
+    count: technicianCount[key],
+  }));
+
+  // ================== EXPORT EXCEL ==================
   const exportToExcel = () => {
-    if (!filteredRequests || filteredRequests.length === 0) return alert("Tiada data untuk dieksport");
+    if (!filteredRequests?.length)
+      return alert("Tiada data untuk dieksport");
 
     const data = filteredRequests.map((r, i) => ({
       No: i + 1,
       "Staff Name": r.staffName || "-",
       Department: r.staffDepartment || "-",
       "Request Type": r.requestType || "-",
-      Technician: r.assignedTechnician?.username || "-",
+
+      // 🔥 FIX UNKNOWN ISSUE
+      Technician:
+        r.assignedTechnician?.username || "Unassigned",
+
       Status: r.approvals?.some((a) => a.status === "Rejected")
         ? "Rejected"
         : r.approvals?.every((a) => a.status === "Approved")
         ? "Approved"
         : "Pending",
-      "Created At": r.createdAt ? new Date(r.createdAt).toLocaleString("ms-MY") : "-",
-      "Updated At": r.updatedAt ? new Date(r.updatedAt).toLocaleString("ms-MY") : "-",
+
+      "Created At": r.createdAt
+        ? new Date(r.createdAt).toLocaleString("ms-MY")
+        : "-",
+
+      "Updated At": r.updatedAt
+        ? new Date(r.updatedAt).toLocaleString("ms-MY")
+        : "-",
     }));
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Analytics Requests");
+    XLSX.utils.book_append_sheet(
+      wb,
+      ws,
+      "Analytics Requests"
+    );
+
     XLSX.writeFile(
       wb,
-      `Analytics_Requests_${filterMonth || "all"}_${new Date().toISOString().slice(0, 10)}.xlsx`
+      `Analytics_Requests_${filterMonth || "all"}_${
+        new Date().toISOString().slice(0, 10)
+      }.xlsx`
     );
   };
 
@@ -116,43 +143,63 @@ const chartTechnician = Object.keys(technicianCount).map((key) => ({
         className="px-4 py-2 bg-green-600 text-white rounded mb-4"
       >
         Export to Excel
-      </button>     
+      </button>
 
-      <h2 className="text-xl font-semibold mb-4">Analytics Dashboard</h2>
+      <h2 className="text-xl font-semibold mb-4">
+        Analytics Dashboard
+      </h2>
 
+      {/* FILTER MONTH */}
       <div className="mb-4">
-        <label className="font-medium mr-2">Filter by Month:</label>
+        <label className="font-medium mr-2">
+          Filter by Month:
+        </label>
         <input
           type="month"
           value={filterMonth}
           onChange={(e) => setFilterMonth(e.target.value)}
           className="border p-1 rounded"
         />
-      </div> 
+      </div>
 
+      {/* STATS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-blue-100 text-blue-800 p-4 rounded shadow text-center">
-          <div className="font-bold text-lg">{totalRequests}</div>
+          <div className="font-bold text-lg">
+            {totalRequests}
+          </div>
           <div>Total Requests</div>
         </div>
+
         <div className="bg-green-100 text-green-800 p-4 rounded shadow text-center">
-          <div className="font-bold text-lg">{approvedCount}</div>
+          <div className="font-bold text-lg">
+            {approvedCount}
+          </div>
           <div>Approved</div>
         </div>
+
         <div className="bg-red-100 text-red-800 p-4 rounded shadow text-center">
-          <div className="font-bold text-lg">{rejectedCount}</div>
+          <div className="font-bold text-lg">
+            {rejectedCount}
+          </div>
           <div>Rejected</div>
         </div>
+
         <div className="bg-yellow-100 text-yellow-800 p-4 rounded shadow text-center">
-          <div className="font-bold text-lg">{pendingCount}</div>
+          <div className="font-bold text-lg">
+            {pendingCount}
+          </div>
           <div>Pending</div>
         </div>
       </div>
 
+      {/* CHARTS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Requests by Type */}
+        {/* TYPE */}
         <div>
-          <h3 className="font-medium mb-2">Requests by Type</h3>
+          <h3 className="font-medium mb-2">
+            Requests by Type
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartRequestTypes}>
               <XAxis dataKey="name" />
@@ -163,9 +210,11 @@ const chartTechnician = Object.keys(technicianCount).map((key) => ({
           </ResponsiveContainer>
         </div>
 
-        {/* Requests by Status */}
+        {/* STATUS */}
         <div>
-          <h3 className="font-medium mb-2">Requests by Status</h3>
+          <h3 className="font-medium mb-2">
+            Requests by Status
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartStatus}>
               <XAxis dataKey="name" />
@@ -176,9 +225,11 @@ const chartTechnician = Object.keys(technicianCount).map((key) => ({
           </ResponsiveContainer>
         </div>
 
-        {/* Requests per Technician - full width */}
+        {/* TECHNICIAN */}
         <div className="md:col-span-2">
-          <h3 className="font-medium mb-2">Requests per Technician</h3>
+          <h3 className="font-medium mb-2">
+            Requests per Technician (Maintenance Only)
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartTechnician}>
               <XAxis dataKey="name" />
