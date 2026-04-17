@@ -31,44 +31,95 @@ const TechnicianDashboard = () => {
     }
   };
 
-  // ================== FETCH REQUESTS ==================
-  const fetchRequests = async () => {
-    if (!currentUser) return;
-    try {
-      const res = await axios.get(
-        "https://backenduwleapprovalsystem.onrender.com/api/requests",
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  // ================== FETCH CURRENT USER ==================
+const fetchCurrentUser = async () => {
+  try {
+    console.log("🚀 Fetching current user...");
 
-      const myRequests = res.data.filter(
-        (r) =>
-          r.assignedTechnician &&
-          r.assignedTechnician.toString() === currentUser._id.toString() &&
-          r.requestType === "Maintenance"
-      );
+    const res = await axios.get(
+      "https://backenduwleapprovalsystem.onrender.com/api/users/me",
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      setRequests(myRequests);
+    console.log("👤 CURRENT USER:", res.data);
 
-      // initialize remarks state
-      const initialRemarks = {};
-      myRequests.forEach((r) => {
-        initialRemarks[r._id] = { text: r.technicianRemark || "", file: null };
-      });
-      setRemarks(initialRemarks);
-    } catch (err) {
-      console.error("❌ Fetch requests error:", err);
-    }
-  };
+    setCurrentUser(res.data);
+  } catch (err) {
+    console.error("❌ Fetch current user error:", err);
+  }
+};
 
-  useEffect(() => {
-    fetchCurrentUser();
-  }, []);
+// ================== FETCH TECHNICIAN REQUESTS ==================
+const fetchRequests = async () => {
+  if (!currentUser?._id) {
+    console.log("⏳ Skipped fetch - user not ready yet");
+    return;
+  }
 
-  useEffect(() => {
+  try {
+    console.log("📡 Fetching technician requests...");
+
+    const res = await axios.get(
+      "https://backenduwleapprovalsystem.onrender.com/api/requests/technician",
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    console.log("📦 RAW RESPONSE:", res.data);
+
+    // ================== FILTER (SAFE ONLY MAINTENANCE) ==================
+    const myRequests = res.data.filter((r) => {
+      const isMaintenance = r.requestType === "Maintenance";
+      return isMaintenance;
+    });
+
+    console.log("🛠 FILTERED TECH REQUESTS:", myRequests);
+
+    setRequests(myRequests);
+
+    // ================== INIT REMARKS ==================
+    const initialRemarks = {};
+
+    myRequests.forEach((r) => {
+      console.log("🔍 INIT REMARK:", r._id, r.requestType);
+
+      initialRemarks[r._id] = {
+        text: r.technicianRemark || "",
+        file: null,
+      };
+    });
+
+    setRemarks(initialRemarks);
+
+    console.log("✅ REMARK STATE READY");
+  } catch (err) {
+    console.error("❌ Fetch requests error:", err);
+  }
+};
+
+// ================== FETCH USER FIRST ==================
+useEffect(() => {
+  fetchCurrentUser();
+}, []);
+
+// ================== FETCH REQUESTS AFTER USER READY ==================
+useEffect(() => {
+  if (!currentUser?._id) {
+    console.log("⏳ Waiting for currentUser...");
+    return;
+  }
+
+  fetchRequests();
+
+  const interval = setInterval(() => {
+    console.log("🔄 Auto refresh requests...");
     fetchRequests();
-    const interval = setInterval(fetchRequests, 10000); // refresh every 10s
-    return () => clearInterval(interval);
-  }, [currentUser]);
+  }, 10000);
+
+  return () => {
+    console.log("🧹 Clearing interval...");
+    clearInterval(interval);
+  };
+}, [currentUser]);
 
   // ================== FORMAT TIME TAKEN ==================
   const formatTimeTaken = (minutes) => {
