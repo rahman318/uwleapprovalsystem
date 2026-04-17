@@ -17,17 +17,13 @@ import {
 const AnalyticsDashboard = ({ requests }) => {
   const [filterMonth, setFilterMonth] = useState("");
   const [filteredRequests, setFilteredRequests] = useState([]);
-  const [darkMode, setDarkMode] = useState(false); // 🌙 DARK MODE STATE
+  const [darkMode, setDarkMode] = useState(false);
 
-  // ================== FILTER EFFECT ==================
+  // ================== FILTER ==================
   useEffect(() => {
     const filtered = filterMonth
-      ? requests.filter((r) =>
-          r.createdAt?.startsWith(filterMonth)
-        )
+      ? requests.filter((r) => r.createdAt?.startsWith(filterMonth))
       : requests;
-
-    console.log("📊 FILTERED REQUESTS:", filtered);
 
     setFilteredRequests(filtered);
   }, [filterMonth, requests]);
@@ -43,8 +39,7 @@ const AnalyticsDashboard = ({ requests }) => {
     r.approvals?.some((a) => a.status === "Rejected")
   ).length;
 
-  const pendingCount =
-    totalRequests - approvedCount - rejectedCount;
+  const pendingCount = totalRequests - approvedCount - rejectedCount;
 
   // ================== ANALYTICS MAP ==================
   const requestTypesCount = {};
@@ -52,45 +47,39 @@ const AnalyticsDashboard = ({ requests }) => {
   const statusCount = {};
 
   filteredRequests.forEach((r) => {
+    // ---------- REQUEST TYPE ----------
     const type = r.requestType || "Unknown";
     requestTypesCount[type] =
       (requestTypesCount[type] || 0) + 1;
 
+    // ---------- STATUS ----------
     const status = r.approvals?.some((a) => a.status === "Rejected")
       ? "Rejected"
       : r.approvals?.every((a) => a.status === "Approved")
       ? "Approved"
       : "Pending";
 
-    statusCount[status] =
-      (statusCount[status] || 0) + 1;
+    statusCount[status] = (statusCount[status] || 0) + 1;
 
-    const isMaintenance =
-      (r.requestType || "")
-        .toLowerCase()
-        .includes("maintenance");
+    // ---------- TECHNICIAN (FIXED ARRAY SUPPORT) ----------
+    if (Array.isArray(r.assignedTechnician) && r.assignedTechnician.length > 0) {
+      r.assignedTechnician.forEach((tech) => {
+        const techName =
+          tech?.name ||
+          tech?.username ||
+          tech?.email ||
+          "Unknown";
 
-    if (!isMaintenance) return;
-
-    let techName = "Unassigned";
-
-    if (
-      typeof r.assignedTechnician === "object" &&
-      r.assignedTechnician !== null
-    ) {
-      techName =
-        r.assignedTechnician.username ||
-        r.assignedTechnician.name ||
-        r.assignedTechnician.email ||
-        "Unknown";
-    } else if (typeof r.assignedTechnician === "string") {
-      techName = "Unknown";
+        technicianCount[techName] =
+          (technicianCount[techName] || 0) + 1;
+      });
+    } else {
+      technicianCount["Unassigned"] =
+        (technicianCount["Unassigned"] || 0) + 1;
     }
-
-    technicianCount[techName] =
-      (technicianCount[techName] || 0) + 1;
   });
 
+  // ================== CHART DATA ==================
   const chartRequestTypes = Object.keys(requestTypesCount).map((key) => ({
     name: key,
     count: requestTypesCount[key],
@@ -117,13 +106,12 @@ const AnalyticsDashboard = ({ requests }) => {
       Department: r.staffDepartment || "-",
       "Request Type": r.requestType || "-",
 
-      Technician:
-        typeof r.assignedTechnician === "object"
-          ? r.assignedTechnician?.username ||
-            r.assignedTechnician?.name ||
-            r.assignedTechnician?.email ||
-            "-"
-          : "-",
+      // ---------- FIXED ARRAY EXPORT ----------
+      Technician: Array.isArray(r.assignedTechnician)
+        ? r.assignedTechnician
+            .map((t) => t?.name || t?.username || t?.email || "Unknown")
+            .join(", ")
+        : "-",
 
       Status: r.approvals?.some((a) => a.status === "Rejected")
         ? "Rejected"
@@ -162,17 +150,13 @@ const AnalyticsDashboard = ({ requests }) => {
           : "bg-gray-50 text-gray-900 p-3 sm:p-6 rounded-xl shadow mb-10 min-h-screen"
       }
     >
-
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-
         <h2 className="text-lg sm:text-xl font-bold">
           📊 Analytics Dashboard
         </h2>
 
         <div className="flex gap-2">
-
-          {/* DARK MODE TOGGLE */}
           <button
             onClick={() => setDarkMode(!darkMode)}
             className="px-3 py-2 rounded-lg shadow bg-gray-200 text-black"
@@ -186,13 +170,11 @@ const AnalyticsDashboard = ({ requests }) => {
           >
             ⬇ Export
           </button>
-
         </div>
       </div>
 
       {/* FILTER */}
       <div className={darkMode ? "bg-gray-800 p-3 rounded-lg mb-4" : "bg-white p-3 rounded-lg mb-4"}>
-
         <label className="font-medium block mb-2">
           Filter Month:
         </label>
@@ -207,31 +189,28 @@ const AnalyticsDashboard = ({ requests }) => {
 
       {/* STATS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-
-        {[ 
-          { label: "Total", value: totalRequests, color: "blue" },
-          { label: "Approved", value: approvedCount, color: "green" },
-          { label: "Rejected", value: rejectedCount, color: "red" },
-          { label: "Pending", value: pendingCount, color: "yellow" }
+        {[
+          { label: "Total", value: totalRequests },
+          { label: "Approved", value: approvedCount },
+          { label: "Rejected", value: rejectedCount },
+          { label: "Pending", value: pendingCount },
         ].map((item, i) => (
           <div
             key={i}
             className={
               darkMode
                 ? "bg-gray-800 p-3 rounded-xl text-center"
-                : `bg-${item.color}-100 p-3 rounded-xl text-center`
+                : "bg-blue-100 p-3 rounded-xl text-center"
             }
           >
             <div className="text-xl font-bold">{item.value}</div>
             <div className="text-xs">{item.label}</div>
           </div>
         ))}
-
       </div>
 
       {/* CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
         <div className={darkMode ? "bg-gray-800 p-3 rounded-xl" : "bg-white p-3 rounded-xl shadow"}>
           <h3 className="font-semibold mb-2">By Type</h3>
           <ResponsiveContainer width="100%" height={260}>
@@ -267,7 +246,6 @@ const AnalyticsDashboard = ({ requests }) => {
             </BarChart>
           </ResponsiveContainer>
         </div>
-
       </div>
     </div>
   );
