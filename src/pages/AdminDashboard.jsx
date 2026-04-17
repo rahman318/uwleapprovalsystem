@@ -25,6 +25,8 @@ const AnalyticsDashboard = ({ requests }) => {
         )
       : requests;
 
+    console.log("📊 FILTERED REQUESTS:", filtered); // ✅ DEBUG
+
     setFilteredRequests(filtered);
   }, [filterMonth, requests]);
 
@@ -47,8 +49,10 @@ const AnalyticsDashboard = ({ requests }) => {
   const technicianCount = {};
   const statusCount = {};
 
-  filteredRequests.forEach((r) => {
-    // ================== REQUEST TYPE (SAFE) ==================
+  filteredRequests.forEach((r, index) => {
+    console.log(`🔍 PROCESSING REQUEST #${index + 1}`, r); // ✅ DEBUG FULL OBJECT
+
+    // ================== REQUEST TYPE ==================
     const type = r.requestType || "Unknown";
     requestTypesCount[type] =
       (requestTypesCount[type] || 0) + 1;
@@ -63,27 +67,56 @@ const AnalyticsDashboard = ({ requests }) => {
     statusCount[status] =
       (statusCount[status] || 0) + 1;
 
-    // ================== TECHNICIAN (ROBUST FIX) ==================
+    // ================== TECHNICIAN (FULL ROBUST FIX) ==================
 
-    // 👉 ONLY count maintenance request (but SAFE)
     const isMaintenance =
       (r.requestType || "")
         .toLowerCase()
         .includes("maintenance");
 
-    if (!isMaintenance) return;
+    if (!isMaintenance) {
+      console.log("⏭️ SKIP (Not Maintenance):", r.requestType);
+      return;
+    }
 
-    // 👉 handle BOTH populated object & plain ObjectId
-    const tech =
-      typeof r.assignedTechnician === "object"
-        ? r.assignedTechnician?.username
-        : null;
+    let techName = "Unassigned";
 
-    if (!tech) return;
+    console.log("🧪 Technician RAW:", r.assignedTechnician); // ✅ DEBUG
 
-    technicianCount[tech] =
-      (technicianCount[tech] || 0) + 1;
+    // ✅ CASE 1: populated object
+    if (
+      typeof r.assignedTechnician === "object" &&
+      r.assignedTechnician !== null
+    ) {
+      techName =
+        r.assignedTechnician.username ||
+        r.assignedTechnician.name ||
+        r.assignedTechnician.email ||
+        "Unknown";
+
+      console.log("✅ POPULATED Technician:", techName);
+    }
+
+    // ❌ CASE 2: ObjectId sahaja
+    else if (typeof r.assignedTechnician === "string") {
+      techName = "Unknown";
+      console.log("⚠️ Technician NOT populated (ObjectId only)");
+    }
+
+    // ❌ CASE 3: null / undefined
+    else {
+      techName = "Unassigned";
+      console.log("❌ No technician assigned");
+    }
+
+    // OPTIONAL: skip unknown kalau nak bersih
+    // if (techName === "Unknown") return;
+
+    technicianCount[techName] =
+      (technicianCount[techName] || 0) + 1;
   });
+
+  console.log("📊 FINAL technicianCount:", technicianCount); // ✅ DEBUG RESULT
 
   // ================== CHART DATA ==================
   const chartRequestTypes = Object.keys(requestTypesCount).map((key) => ({
@@ -101,6 +134,8 @@ const AnalyticsDashboard = ({ requests }) => {
     count: technicianCount[key],
   }));
 
+  console.log("📈 CHART TECHNICIAN DATA:", chartTechnician); // ✅ DEBUG CHART
+
   // ================== EXPORT EXCEL ==================
   const exportToExcel = () => {
     if (!filteredRequests?.length)
@@ -114,7 +149,10 @@ const AnalyticsDashboard = ({ requests }) => {
 
       Technician:
         typeof r.assignedTechnician === "object"
-          ? r.assignedTechnician?.username
+          ? r.assignedTechnician?.username ||
+            r.assignedTechnician?.name ||
+            r.assignedTechnician?.email ||
+            "-"
           : "-",
 
       Status: r.approvals?.some((a) => a.status === "Rejected")
