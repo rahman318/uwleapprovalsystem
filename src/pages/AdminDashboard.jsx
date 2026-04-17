@@ -17,6 +17,7 @@ import {
 const AnalyticsDashboard = ({ requests }) => {
   const [filterMonth, setFilterMonth] = useState("");
   const [filteredRequests, setFilteredRequests] = useState([]);
+  const [darkMode, setDarkMode] = useState(false); // 🌙 DARK MODE STATE
 
   // ================== FILTER EFFECT ==================
   useEffect(() => {
@@ -64,7 +65,6 @@ const AnalyticsDashboard = ({ requests }) => {
     statusCount[status] =
       (statusCount[status] || 0) + 1;
 
-    // ================== TECHNICIAN ==================
     const isMaintenance =
       (r.requestType || "")
         .toLowerCase()
@@ -91,7 +91,6 @@ const AnalyticsDashboard = ({ requests }) => {
       (technicianCount[techName] || 0) + 1;
   });
 
-  // ================== CHART DATA ==================
   const chartRequestTypes = Object.keys(requestTypesCount).map((key) => ({
     name: key,
     count: requestTypesCount[key],
@@ -107,7 +106,7 @@ const AnalyticsDashboard = ({ requests }) => {
     count: technicianCount[key],
   }));
 
-  // ================== EXPORT EXCEL ==================
+  // ================== EXPORT ==================
   const exportToExcel = () => {
     if (!filteredRequests?.length)
       return alert("Tiada data untuk dieksport");
@@ -144,11 +143,7 @@ const AnalyticsDashboard = ({ requests }) => {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
 
-    XLSX.utils.book_append_sheet(
-      wb,
-      ws,
-      "Analytics Requests"
-    );
+    XLSX.utils.book_append_sheet(wb, ws, "Analytics");
 
     XLSX.writeFile(
       wb,
@@ -158,26 +153,46 @@ const AnalyticsDashboard = ({ requests }) => {
     );
   };
 
-  // ================== RETURN UI ==================
+  // ================== UI ==================
   return (
-    <div className="bg-gray-50 p-3 sm:p-6 rounded-xl shadow mb-10">
+    <div
+      className={
+        darkMode
+          ? "bg-gray-900 text-white p-3 sm:p-6 rounded-xl shadow mb-10 min-h-screen"
+          : "bg-gray-50 text-gray-900 p-3 sm:p-6 rounded-xl shadow mb-10 min-h-screen"
+      }
+    >
 
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-800">
+
+        <h2 className="text-lg sm:text-xl font-bold">
           📊 Analytics Dashboard
         </h2>
 
-        <button
-          onClick={exportToExcel}
-          className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg shadow"
-        >
-          ⬇ Export Excel
-        </button>
+        <div className="flex gap-2">
+
+          {/* DARK MODE TOGGLE */}
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="px-3 py-2 rounded-lg shadow bg-gray-200 text-black"
+          >
+            {darkMode ? "☀ Light" : "🌙 Dark"}
+          </button>
+
+          <button
+            onClick={exportToExcel}
+            className="px-3 py-2 bg-green-600 text-white rounded-lg shadow"
+          >
+            ⬇ Export
+          </button>
+
+        </div>
       </div>
 
       {/* FILTER */}
-      <div className="bg-white p-3 rounded-lg shadow mb-4">
+      <div className={darkMode ? "bg-gray-800 p-3 rounded-lg mb-4" : "bg-white p-3 rounded-lg mb-4"}>
+
         <label className="font-medium block mb-2">
           Filter Month:
         </label>
@@ -186,38 +201,38 @@ const AnalyticsDashboard = ({ requests }) => {
           type="month"
           value={filterMonth}
           onChange={(e) => setFilterMonth(e.target.value)}
-          className="border p-2 rounded w-full"
+          className="border p-2 rounded w-full text-black"
         />
       </div>
 
       {/* STATS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
 
-        <div className="bg-blue-100 p-3 rounded-xl text-center">
-          <div className="text-xl font-bold">{totalRequests}</div>
-          <div className="text-xs">Total</div>
-        </div>
+        {[ 
+          { label: "Total", value: totalRequests, color: "blue" },
+          { label: "Approved", value: approvedCount, color: "green" },
+          { label: "Rejected", value: rejectedCount, color: "red" },
+          { label: "Pending", value: pendingCount, color: "yellow" }
+        ].map((item, i) => (
+          <div
+            key={i}
+            className={
+              darkMode
+                ? "bg-gray-800 p-3 rounded-xl text-center"
+                : `bg-${item.color}-100 p-3 rounded-xl text-center`
+            }
+          >
+            <div className="text-xl font-bold">{item.value}</div>
+            <div className="text-xs">{item.label}</div>
+          </div>
+        ))}
 
-        <div className="bg-green-100 p-3 rounded-xl text-center">
-          <div className="text-xl font-bold">{approvedCount}</div>
-          <div className="text-xs">Approved</div>
-        </div>
-
-        <div className="bg-red-100 p-3 rounded-xl text-center">
-          <div className="text-xl font-bold">{rejectedCount}</div>
-          <div className="text-xs">Rejected</div>
-        </div>
-
-        <div className="bg-yellow-100 p-3 rounded-xl text-center">
-          <div className="text-xl font-bold">{pendingCount}</div>
-          <div className="text-xs">Pending</div>
-        </div>
       </div>
 
       {/* CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        <div className="bg-white p-3 rounded-xl shadow">
+        <div className={darkMode ? "bg-gray-800 p-3 rounded-xl" : "bg-white p-3 rounded-xl shadow"}>
           <h3 className="font-semibold mb-2">By Type</h3>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={chartRequestTypes}>
@@ -229,7 +244,7 @@ const AnalyticsDashboard = ({ requests }) => {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white p-3 rounded-xl shadow">
+        <div className={darkMode ? "bg-gray-800 p-3 rounded-xl" : "bg-white p-3 rounded-xl shadow"}>
           <h3 className="font-semibold mb-2">By Status</h3>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={chartStatus}>
@@ -241,7 +256,7 @@ const AnalyticsDashboard = ({ requests }) => {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white p-3 rounded-xl shadow lg:col-span-2">
+        <div className={darkMode ? "bg-gray-800 p-3 rounded-xl lg:col-span-2" : "bg-white p-3 rounded-xl lg:col-span-2 shadow"}>
           <h3 className="font-semibold mb-2">By Technician</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartTechnician}>
