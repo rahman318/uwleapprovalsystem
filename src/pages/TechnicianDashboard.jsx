@@ -19,19 +19,6 @@ const TechnicianDashboard = () => {
   const formatClock = (date) => date.toLocaleTimeString();
 
   // ================== FETCH CURRENT USER ==================
-  const fetchCurrentUser = async () => {
-    try {
-      const res = await axios.get(
-        "https://backenduwleapprovalsystem.onrender.com/api/users/me",
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setCurrentUser(res.data);
-    } catch (err) {
-      console.error("❌ Fetch current user error:", err);
-    }
-  };
-
-  // ================== FETCH CURRENT USER ==================
 const fetchCurrentUser = async () => {
   try {
     console.log("🚀 Fetching current user...");
