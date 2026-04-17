@@ -188,70 +188,71 @@ const AnalyticsDashboard = ({ requests }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow mb-10">
-      <button
-        onClick={exportToExcel}
-        className="px-4 py-2 bg-green-600 text-white rounded mb-4"
-      >
-        Export to Excel
-      </button>
+  <div className="bg-gray-50 p-3 sm:p-6 rounded-xl shadow mb-10">
 
-      <h2 className="text-xl font-semibold mb-4">
-        Analytics Dashboard
+    {/* HEADER */}
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+      <h2 className="text-lg sm:text-xl font-bold text-gray-800">
+        📊 Analytics Dashboard
       </h2>
 
-      {/* FILTER */}
-      <div className="mb-4">
-        <label className="font-medium mr-2">
-          Filter by Month:
-        </label>
-        <input
-          type="month"
-          value={filterMonth}
-          onChange={(e) => setFilterMonth(e.target.value)}
-          className="border p-1 rounded"
-        />
+      <button
+        onClick={exportToExcel}
+        className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition"
+      >
+        ⬇ Export Excel
+      </button>
+    </div>
+
+    {/* FILTER */}
+    <div className="bg-white p-3 rounded-lg shadow mb-4 flex flex-col sm:flex-row sm:items-center gap-2">
+      <label className="font-medium text-sm sm:text-base">
+        Filter Month:
+      </label>
+
+      <input
+        type="month"
+        value={filterMonth}
+        onChange={(e) => setFilterMonth(e.target.value)}
+        className="border p-2 rounded w-full sm:w-auto"
+      />
+    </div>
+
+    {/* STATS CARDS */}
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+
+      <div className="bg-blue-100 p-3 sm:p-4 rounded-xl text-center shadow">
+        <div className="text-lg sm:text-2xl font-bold">{totalRequests}</div>
+        <div className="text-xs sm:text-sm">Total</div>
       </div>
 
-      {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-blue-100 text-blue-800 p-4 rounded shadow text-center">
-          <div className="font-bold text-lg">
-            {totalRequests}
-          </div>
-          <div>Total Requests</div>
-        </div>
-
-        <div className="bg-green-100 text-green-800 p-4 rounded shadow text-center">
-          <div className="font-bold text-lg">
-            {approvedCount}
-          </div>
-          <div>Approved</div>
-        </div>
-
-        <div className="bg-red-100 text-red-800 p-4 rounded shadow text-center">
-          <div className="font-bold text-lg">
-            {rejectedCount}
-          </div>
-          <div>Rejected</div>
-        </div>
-
-        <div className="bg-yellow-100 text-yellow-800 p-4 rounded shadow text-center">
-          <div className="font-bold text-lg">
-            {pendingCount}
-          </div>
-          <div>Pending</div>
-        </div>
+      <div className="bg-green-100 p-3 sm:p-4 rounded-xl text-center shadow">
+        <div className="text-lg sm:text-2xl font-bold">{approvedCount}</div>
+        <div className="text-xs sm:text-sm">Approved</div>
       </div>
 
-      {/* CHARTS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* TYPE */}
-        <div>
-          <h3 className="font-medium mb-2">
-            Requests by Type
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
+      <div className="bg-red-100 p-3 sm:p-4 rounded-xl text-center shadow">
+        <div className="text-lg sm:text-2xl font-bold">{rejectedCount}</div>
+        <div className="text-xs sm:text-sm">Rejected</div>
+      </div>
+
+      <div className="bg-yellow-100 p-3 sm:p-4 rounded-xl text-center shadow">
+        <div className="text-lg sm:text-2xl font-bold">{pendingCount}</div>
+        <div className="text-xs sm:text-sm">Pending</div>
+      </div>
+    </div>
+
+    {/* CHARTS */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+      {/* TYPE CHART */}
+      <div className="bg-white p-3 sm:p-4 rounded-xl shadow">
+        <h3 className="font-semibold mb-2 text-sm sm:text-base">
+          Requests by Type
+        </h3>
+
+        <div className="w-full overflow-x-auto">
+          <ResponsiveContainer width="100%" height={260}>
             <BarChart data={chartRequestTypes}>
               <XAxis dataKey="name" />
               <YAxis allowDecimals={false} />
@@ -260,40 +261,43 @@ const AnalyticsDashboard = ({ requests }) => {
             </BarChart>
           </ResponsiveContainer>
         </div>
-
-        {/* STATUS */}
-        <div>
-          <h3 className="font-medium mb-2">
-            Requests by Status
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartStatus}>
-              <XAxis dataKey="name" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Bar dataKey="count" fill="#10b981" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* TECHNICIAN */}
-        <div className="md:col-span-2">
-          <h3 className="font-medium mb-2">
-            Requests per Technician (Maintenance Only)
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartTechnician}>
-              <XAxis dataKey="name" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Bar dataKey="count" fill="#f59e0b" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
       </div>
+
+      {/* STATUS CHART */}
+      <div className="bg-white p-3 sm:p-4 rounded-xl shadow">
+        <h3 className="font-semibold mb-2 text-sm sm:text-base">
+          Requests by Status
+        </h3>
+
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={chartStatus}>
+            <XAxis dataKey="name" />
+            <YAxis allowDecimals={false} />
+            <Tooltip />
+            <Bar dataKey="count" fill="#10b981" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* TECHNICIAN CHART FULL WIDTH */}
+      <div className="bg-white p-3 sm:p-4 rounded-xl shadow lg:col-span-2">
+        <h3 className="font-semibold mb-2 text-sm sm:text-base">
+          Requests per Technician
+        </h3>
+
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={chartTechnician}>
+            <XAxis dataKey="name" />
+            <YAxis allowDecimals={false} />
+            <Tooltip />
+            <Bar dataKey="count" fill="#f59e0b" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
     </div>
-  );
-};
+  </div>
+);
 
 // ================== AdminDashboard ==================
 const AdminDashboard = () => {
