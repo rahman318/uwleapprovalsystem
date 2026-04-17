@@ -47,7 +47,7 @@ const fetchRequests = async () => {
     console.log("📡 Fetching technician requests...");
 
     const res = await axios.get(
-      "https://backenduwleapprovalsystem.onrender.com/api/requests/technician",
+      "https://backenduwleapprovalsystem.onrender.com/api/requests",
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
