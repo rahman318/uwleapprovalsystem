@@ -18,6 +18,7 @@ const AnalyticsDashboard = ({ requests }) => {
   const [filterMonth, setFilterMonth] = useState("");
   const [filteredRequests, setFilteredRequests] = useState([]);
 
+  // ================== FILTER EFFECT ==================
   useEffect(() => {
     const filtered = filterMonth
       ? requests.filter((r) =>
@@ -25,7 +26,7 @@ const AnalyticsDashboard = ({ requests }) => {
         )
       : requests;
 
-    console.log("📊 FILTERED REQUESTS:", filtered); // ✅ DEBUG
+    console.log("📊 FILTERED REQUESTS:", filtered);
 
     setFilteredRequests(filtered);
   }, [filterMonth, requests]);
@@ -49,15 +50,11 @@ const AnalyticsDashboard = ({ requests }) => {
   const technicianCount = {};
   const statusCount = {};
 
-  filteredRequests.forEach((r, index) => {
-    console.log(`🔍 PROCESSING REQUEST #${index + 1}`, r); // ✅ DEBUG FULL OBJECT
-
-    // ================== REQUEST TYPE ==================
+  filteredRequests.forEach((r) => {
     const type = r.requestType || "Unknown";
     requestTypesCount[type] =
       (requestTypesCount[type] || 0) + 1;
 
-    // ================== STATUS ==================
     const status = r.approvals?.some((a) => a.status === "Rejected")
       ? "Rejected"
       : r.approvals?.every((a) => a.status === "Approved")
@@ -67,23 +64,16 @@ const AnalyticsDashboard = ({ requests }) => {
     statusCount[status] =
       (statusCount[status] || 0) + 1;
 
-    // ================== TECHNICIAN (FULL ROBUST FIX) ==================
-
+    // ================== TECHNICIAN ==================
     const isMaintenance =
       (r.requestType || "")
         .toLowerCase()
         .includes("maintenance");
 
-    if (!isMaintenance) {
-      console.log("⏭️ SKIP (Not Maintenance):", r.requestType);
-      return;
-    }
+    if (!isMaintenance) return;
 
     let techName = "Unassigned";
 
-    console.log("🧪 Technician RAW:", r.assignedTechnician); // ✅ DEBUG
-
-    // ✅ CASE 1: populated object
     if (
       typeof r.assignedTechnician === "object" &&
       r.assignedTechnician !== null
@@ -93,30 +83,13 @@ const AnalyticsDashboard = ({ requests }) => {
         r.assignedTechnician.name ||
         r.assignedTechnician.email ||
         "Unknown";
-
-      console.log("✅ POPULATED Technician:", techName);
-    }
-
-    // ❌ CASE 2: ObjectId sahaja
-    else if (typeof r.assignedTechnician === "string") {
+    } else if (typeof r.assignedTechnician === "string") {
       techName = "Unknown";
-      console.log("⚠️ Technician NOT populated (ObjectId only)");
     }
-
-    // ❌ CASE 3: null / undefined
-    else {
-      techName = "Unassigned";
-      console.log("❌ No technician assigned");
-    }
-
-    // OPTIONAL: skip unknown kalau nak bersih
-    // if (techName === "Unknown") return;
 
     technicianCount[techName] =
       (technicianCount[techName] || 0) + 1;
   });
-
-  console.log("📊 FINAL technicianCount:", technicianCount); // ✅ DEBUG RESULT
 
   // ================== CHART DATA ==================
   const chartRequestTypes = Object.keys(requestTypesCount).map((key) => ({
@@ -133,8 +106,6 @@ const AnalyticsDashboard = ({ requests }) => {
     name: key,
     count: technicianCount[key],
   }));
-
-  console.log("📈 CHART TECHNICIAN DATA:", chartTechnician); // ✅ DEBUG CHART
 
   // ================== EXPORT EXCEL ==================
   const exportToExcel = () => {
@@ -181,77 +152,73 @@ const AnalyticsDashboard = ({ requests }) => {
 
     XLSX.writeFile(
       wb,
-      `Analytics_Requests_${filterMonth || "all"}_${
-        new Date().toISOString().slice(0, 10)
-      }.xlsx`
+      `Analytics_${filterMonth || "all"}_${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`
     );
   };
 
+  // ================== RETURN UI ==================
   return (
-  <div className="bg-gray-50 p-3 sm:p-6 rounded-xl shadow mb-10">
+    <div className="bg-gray-50 p-3 sm:p-6 rounded-xl shadow mb-10">
 
-    {/* HEADER */}
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-      <h2 className="text-lg sm:text-xl font-bold text-gray-800">
-        📊 Analytics Dashboard
-      </h2>
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-800">
+          📊 Analytics Dashboard
+        </h2>
 
-      <button
-        onClick={exportToExcel}
-        className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition"
-      >
-        ⬇ Export Excel
-      </button>
-    </div>
-
-    {/* FILTER */}
-    <div className="bg-white p-3 rounded-lg shadow mb-4 flex flex-col sm:flex-row sm:items-center gap-2">
-      <label className="font-medium text-sm sm:text-base">
-        Filter Month:
-      </label>
-
-      <input
-        type="month"
-        value={filterMonth}
-        onChange={(e) => setFilterMonth(e.target.value)}
-        className="border p-2 rounded w-full sm:w-auto"
-      />
-    </div>
-
-    {/* STATS CARDS */}
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-
-      <div className="bg-blue-100 p-3 sm:p-4 rounded-xl text-center shadow">
-        <div className="text-lg sm:text-2xl font-bold">{totalRequests}</div>
-        <div className="text-xs sm:text-sm">Total</div>
+        <button
+          onClick={exportToExcel}
+          className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg shadow"
+        >
+          ⬇ Export Excel
+        </button>
       </div>
 
-      <div className="bg-green-100 p-3 sm:p-4 rounded-xl text-center shadow">
-        <div className="text-lg sm:text-2xl font-bold">{approvedCount}</div>
-        <div className="text-xs sm:text-sm">Approved</div>
+      {/* FILTER */}
+      <div className="bg-white p-3 rounded-lg shadow mb-4">
+        <label className="font-medium block mb-2">
+          Filter Month:
+        </label>
+
+        <input
+          type="month"
+          value={filterMonth}
+          onChange={(e) => setFilterMonth(e.target.value)}
+          className="border p-2 rounded w-full"
+        />
       </div>
 
-      <div className="bg-red-100 p-3 sm:p-4 rounded-xl text-center shadow">
-        <div className="text-lg sm:text-2xl font-bold">{rejectedCount}</div>
-        <div className="text-xs sm:text-sm">Rejected</div>
+      {/* STATS */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+
+        <div className="bg-blue-100 p-3 rounded-xl text-center">
+          <div className="text-xl font-bold">{totalRequests}</div>
+          <div className="text-xs">Total</div>
+        </div>
+
+        <div className="bg-green-100 p-3 rounded-xl text-center">
+          <div className="text-xl font-bold">{approvedCount}</div>
+          <div className="text-xs">Approved</div>
+        </div>
+
+        <div className="bg-red-100 p-3 rounded-xl text-center">
+          <div className="text-xl font-bold">{rejectedCount}</div>
+          <div className="text-xs">Rejected</div>
+        </div>
+
+        <div className="bg-yellow-100 p-3 rounded-xl text-center">
+          <div className="text-xl font-bold">{pendingCount}</div>
+          <div className="text-xs">Pending</div>
+        </div>
       </div>
 
-      <div className="bg-yellow-100 p-3 sm:p-4 rounded-xl text-center shadow">
-        <div className="text-lg sm:text-2xl font-bold">{pendingCount}</div>
-        <div className="text-xs sm:text-sm">Pending</div>
-      </div>
-    </div>
+      {/* CHARTS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-    {/* CHARTS */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-      {/* TYPE CHART */}
-      <div className="bg-white p-3 sm:p-4 rounded-xl shadow">
-        <h3 className="font-semibold mb-2 text-sm sm:text-base">
-          Requests by Type
-        </h3>
-
-        <div className="w-full overflow-x-auto">
+        <div className="bg-white p-3 rounded-xl shadow">
+          <h3 className="font-semibold mb-2">By Type</h3>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={chartRequestTypes}>
               <XAxis dataKey="name" />
@@ -261,43 +228,35 @@ const AnalyticsDashboard = ({ requests }) => {
             </BarChart>
           </ResponsiveContainer>
         </div>
+
+        <div className="bg-white p-3 rounded-xl shadow">
+          <h3 className="font-semibold mb-2">By Status</h3>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={chartStatus}>
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#10b981" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-white p-3 rounded-xl shadow lg:col-span-2">
+          <h3 className="font-semibold mb-2">By Technician</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartTechnician}>
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#f59e0b" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
       </div>
-
-      {/* STATUS CHART */}
-      <div className="bg-white p-3 sm:p-4 rounded-xl shadow">
-        <h3 className="font-semibold mb-2 text-sm sm:text-base">
-          Requests by Status
-        </h3>
-
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={chartStatus}>
-            <XAxis dataKey="name" />
-            <YAxis allowDecimals={false} />
-            <Tooltip />
-            <Bar dataKey="count" fill="#10b981" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* TECHNICIAN CHART FULL WIDTH */}
-      <div className="bg-white p-3 sm:p-4 rounded-xl shadow lg:col-span-2">
-        <h3 className="font-semibold mb-2 text-sm sm:text-base">
-          Requests per Technician
-        </h3>
-
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartTechnician}>
-            <XAxis dataKey="name" />
-            <YAxis allowDecimals={false} />
-            <Tooltip />
-            <Bar dataKey="count" fill="#f59e0b" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
     </div>
-  </div>
-);
+  );
+};
 
 // ================== AdminDashboard ==================
 const AdminDashboard = () => {
