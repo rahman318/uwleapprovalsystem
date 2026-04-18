@@ -164,6 +164,7 @@ const ApproverDashboard = () => {
               <th className="border px-3 py-2">Tempoh</th>
               <th className="border px-3 py-2">Date</th>
               <th className="border px-3 py-2">Problem</th>
+              <th className="border px-3 py-2">Attachment</th> {/* 🔥 FIXED */}
               <th className="border px-3 py-2">Status</th>
               <th className="border px-3 py-2">Technician</th>
               <th className="border px-3 py-2">Action</th>
@@ -180,14 +181,37 @@ const ApproverDashboard = () => {
               >
                 <td className="border px-3 py-2">{r.staffName}</td>
                 <td className="border px-3 py-2">{r.requestType}</td>
+
                 <td className="border px-3 py-2">
                   {r.requestType === "cuti" ? getTempohCuti(r) : "-"}
                 </td>
+
                 <td className="border px-3 py-2">
                   {formatDateTime(r.createdAt)}
                 </td>
+
                 <td className="border px-3 py-2 max-w-[200px] truncate">
                   {r.problemDescription || "-"}
+                </td>
+
+                {/* 🔥 ATTACHMENT FIX */}
+                <td className="border px-3 py-2">
+                  {r.attachments?.length > 0 ? (
+                    r.attachments.map((file, i) => (
+                      <div key={i}>
+                        <a
+                          href={file.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline"
+                        >
+                          View File
+                        </a>
+                      </div>
+                    ))
+                  ) : (
+                    "-"
+                  )}
                 </td>
 
                 <td className="border px-3 py-2">
@@ -196,7 +220,7 @@ const ApproverDashboard = () => {
                   </span>
                 </td>
 
-                {/* 🔥 TECH BADGE */}
+                {/* 🔥 TECHNICIAN BADGE */}
                 <td className="border px-3 py-2">
                   {r.assignedTechnician?.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
