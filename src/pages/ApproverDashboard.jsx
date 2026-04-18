@@ -11,11 +11,14 @@ const ApproverDashboard = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [technicians, setTechnicians] = useState([]);
-  const intervalRef = useRef(null);
 
+  // ✅ NEW STATE (MULTI TECH)
+  const [selectedTechnicians, setSelectedTechnicians] = useState({});
+
+  const intervalRef = useRef(null);
   const token = localStorage.getItem("token");
 
-  // ================= DATE HELPERS =================
+  // ================= DATE =================
   const formatDateTime = (date) =>
     date
       ? new Date(date).toLocaleString("ms-MY", {
@@ -29,72 +32,38 @@ const ApproverDashboard = () => {
 
   const formatDate = (date) =>
     date
-      ? new Date(date).toLocaleDateString("ms-MY", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        })
+      ? new Date(date).toLocaleDateString("ms-MY")
       : "-";
 
-  // ================= Tempoh CUTI =================
+  // ================= CUTI =================
   const getTempohCuti = (request) => {
     let detailsObj = {};
-    if (request.details) {
-      try {
-        detailsObj =
-          typeof request.details === "string"
-            ? JSON.parse(request.details)
-            : request.details;
-      } catch {
-        detailsObj = {};
-      }
-    }
+    try {
+      detailsObj =
+        typeof request.details === "string"
+          ? JSON.parse(request.details)
+          : request.details || {};
+    } catch {}
 
-    if (request.items && request.items.length > 0) {
-      const item = request.items[0];
-      const start = item.startDate || item.leaveDate;
-      const end = item.endDate || item.leaveDate;
-      if (start && end) return `${formatDate(start)} - ${formatDate(end)}`;
-    }
+    const start =
+      detailsObj.startDate || request.startDate || request.leaveDate;
+    const end =
+      detailsObj.endDate || request.endDate || request.leaveDate;
 
-    const start = detailsObj.startDate || detailsObj.leaveDate;
-    const end = detailsObj.endDate || detailsObj.leaveDate;
-    if (start && end) return `${formatDate(start)} - ${formatDate(end)}`;
-
-    const rootStart = request.startDate || request.leaveDate;
-    const rootEnd = request.endDate || request.leaveDate;
-    if (rootStart && rootEnd)
-      return `${formatDate(rootStart)} - ${formatDate(rootEnd)}`;
-
-    return "-";
-  };
-  
-  // ================= PROBLEM DESCRIPTION =================
-  const getProblemDescription = (request) => {
-    if (request.problemDescription && request.problemDescription.trim() !== "") {
-      return request.problemDescription;
-    }
-    return "-";
+    return start && end ? `${formatDate(start)} - ${formatDate(end)}` : "-";
   };
 
-  // ================= STATUS BADGE =================
+  // ================= PROBLEM =================
+  const getProblemDescription = (request) =>
+    request.problemDescription?.trim() || "-";
+
+  // ================= STATUS =================
   const getStatusBadge = (status) => {
     if (status === "Approved")
       return "bg-green-600 text-white px-2 py-1 rounded text-xs";
-
     if (status === "Rejected")
       return "bg-red-600 text-white px-2 py-1 rounded text-xs";
-
     return "bg-yellow-500 text-white px-2 py-1 rounded text-xs";
-  };
-
-  // ================= ROW COLOR =================
-  const getRowColor = (request) => {
-    if (request.finalStatus === "Approved") return "bg-green-50";
-    if (request.finalStatus === "Rejected") return "bg-red-50";
-    if (request.requestType?.toLowerCase() === "maintenance" && !request.assignedTechnician)
-      return "bg-yellow-50";
-    return "bg-white";
   };
 
   // ================= FETCH =================
@@ -107,8 +76,7 @@ const ApproverDashboard = () => {
       setRequests(res.data || []);
       setLoading(false);
     } catch (err) {
-      console.error(err);
-      setError("Gagal fetch request staff!");
+      setError("Gagal fetch request!");
       setLoading(false);
     }
   };
@@ -121,7 +89,7 @@ const ApproverDashboard = () => {
       );
       setTechnicians(res.data || []);
     } catch (err) {
-      console.error("Gagal fetch technicians", err);
+      console.error(err);
     }
   };
 
@@ -137,9 +105,6 @@ const ApproverDashboard = () => {
     if (!signatureApprover)
       return Swal.fire("Error", "Sila tanda sebelum approve!", "error");
 
-    if (selectedRequest.finalStatus !== "Pending")
-      return Swal.fire("Info", "Request telah dikunci!", "info");
-
     try {
       await axios.put(
         `https://backenduwleapprovalsystem.onrender.com/api/requests/approve-level/${selectedRequest._id}`,
@@ -147,212 +112,200 @@ const ApproverDashboard = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      Swal.fire({ icon: "success", title: "Request Approved", timer: 1500, showConfirmButton: false });
+      Swal.fire("Success", "Approved", "success");
       setShowApproveModal(false);
       setSignatureApprover("");
       fetchRequests();
     } catch {
-      Swal.fire("Error", "Gagal approve request", "error");
+      Swal.fire("Error", "Gagal approve", "error");
     }
   };
 
   // ================= REJECT =================
   const handleReject = async () => {
-  if (!signatureApprover)
-    return Swal.fire("Error", "Sila tanda sebelum reject!", "error");
+    if (!signatureApprover)
+      return Swal.fire("Error", "Sila tanda sebelum reject!", "error");
 
-  if (selectedRequest.finalStatus !== "Pending")
-    return Swal.fire("Info", "Request telah dikunci!", "info");
-
-  // 🔥 POPUP REMARK
-  const { value: remark } = await Swal.fire({
-    title: "Reject Request",
-    input: "textarea",
-    inputLabel: "Sebab / Remark",
-    inputPlaceholder: "Masukkan sebab reject...",
-    inputAttributes: {
-      "aria-label": "Type your remark here"
-    },
-    showCancelButton: true,
-    confirmButtonText: "Reject",
-    cancelButtonText: "Cancel"
-  });
-
-  // kalau user cancel
-  if (remark === undefined) return;
-
-  // kalau kosong
-  if (!remark || remark.trim() === "") {
-    return Swal.fire("Error", "Remark wajib diisi!", "error");
-  }
-
-  try {
-    await axios.put(
-      `https://backenduwleapprovalsystem.onrender.com/api/requests/reject-level/${selectedRequest._id}`,
-      {
-        signatureApprover,
-        remark // 🔥 hantar ke backend
-      },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    Swal.fire({
-      icon: "success",
-      title: "Request Rejected",
-      timer: 1500,
-      showConfirmButton: false
+    const { value: remark } = await Swal.fire({
+      title: "Reject",
+      input: "textarea",
+      showCancelButton: true,
     });
 
-    setShowApproveModal(false);
-    setSignatureApprover("");
-    fetchRequests();
+    if (!remark) return;
 
-  } catch {
-    Swal.fire("Error", "Gagal reject request", "error");
-  }
-};
+    try {
+      await axios.put(
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/reject-level/${selectedRequest._id}`,
+        { signatureApprover, remark },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-  // ================= ASSIGN TECHNICIAN =================
-  const handleAssignTechnician = async (requestId, techId) => {
-  try {
-    await axios.put(
-      `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/assign-technician`,
-      {
-        technicianIds: [techId], // ✅ FIX HERE (ARRAY)
-      },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      Swal.fire("Rejected", "", "success");
+      setShowApproveModal(false);
+      fetchRequests();
+    } catch {
+      Swal.fire("Error", "Gagal reject", "error");
+    }
+  };
 
-    setSelectedRequest((prev) => ({
-      ...prev,
-      assignedTechnician: [techId], // ✅ also array
-    }));
+  // ================= MULTI ASSIGN =================
+  const handleAssignTechnician = async (requestId) => {
+    const techIds = selectedTechnicians[requestId] || [];
 
-    Swal.fire({
-      icon: "success",
-      title: "Technician Assigned",
-      timer: 1200,
-      showConfirmButton: false,
-    });
+    if (techIds.length === 0) {
+      return Swal.fire("Error", "Pilih technician dulu!", "error");
+    }
 
-    fetchRequests();
-  } catch (err) {
-    console.error(err);
-    Swal.fire("Error", "Gagal assign technician", "error");
-  }
-};
+    try {
+      await axios.put(
+        `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/assign-technician`,
+        { technicianIds: techIds },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      Swal.fire("Success", "Technician Assigned", "success");
+      fetchRequests();
+    } catch {
+      Swal.fire("Error", "Gagal assign", "error");
+    }
+  };
 
   // ================= RENDER =================
   if (loading) return <p>Loading...</p>;
-  if (error) return <p className="text-red-600">{error}</p>;
+  if (error) return <p>{error}</p>;
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6 text-blue-700">Approver Dashboard</h1>
+      <h1 className="text-2xl font-bold mb-6 text-blue-700">
+        Approver Dashboard
+      </h1>
 
-      <div className="overflow-x-auto shadow-lg rounded-lg">
-        <table className="min-w-full border border-gray-300">
-          <thead className="bg-blue-100 text-blue-800">
-            <tr>
-              <th className="border px-3 py-2">Staff</th>
-              <th className="border px-3 py-2">Request Type</th>
-              <th className="border px-3 py-2">Tempoh Cuti</th>
-              <th className="border px-3 py-2">Submit Date</th>
-              <th className="border px-3 py-2">Problem Description</th>
-              <th className="border px-3 py-2">Status</th>
-              <th className="border px-3 py-2">Attachment</th>
-              <th className="border px-3 py-2">Action</th>
+      <table className="min-w-full border">
+        <thead className="bg-blue-100">
+          <tr>
+            <th>Staff</th>
+            <th>Type</th>
+            <th>Tempoh</th>
+            <th>Date</th>
+            <th>Problem</th>
+            <th>Status</th>
+            <th>Technician</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {requests.map((r) => (
+            <tr key={r._id}>
+              <td>{r.staffName}</td>
+              <td>{r.requestType}</td>
+              <td>
+                {r.requestType === "cuti" ? getTempohCuti(r) : "-"}
+              </td>
+              <td>{formatDateTime(r.createdAt)}</td>
+              <td>{getProblemDescription(r)}</td>
+              <td>
+                <span className={getStatusBadge(r.finalStatus)}>
+                  {r.finalStatus || "Pending"}
+                </span>
+              </td>
+
+              {/* ✅ DISPLAY MULTIPLE TECH */}
+              <td>
+                {r.assignedTechnician?.length > 0
+                  ? r.assignedTechnician.map((t) => t.name).join(", ")
+                  : "-"}
+              </td>
+
+              <td>
+                <button
+                  className="bg-green-600 text-white px-2 py-1"
+                  onClick={() => {
+                    setSelectedRequest(r);
+
+                    // ✅ AUTO LOAD EXISTING TECH
+                    setSelectedTechnicians({
+                      ...selectedTechnicians,
+                      [r._id]:
+                        r.assignedTechnician?.map((t) => t._id) || [],
+                    });
+
+                    setShowApproveModal(true);
+                  }}
+                >
+                  Open
+                </button>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {requests.map((r) => (
-              <tr key={r._id} className={getRowColor(r)}>
-                <td className="border px-3 py-2">{r.staffName}</td>
-                <td className="border px-3 py-2">{r.requestType}</td>
-                <td className="border px-3 py-2">{r.requestType?.toLowerCase() === "cuti" ? getTempohCuti(r) : "-"}</td>
-                <td className="border px-3 py-2">{formatDateTime(r.createdAt)}</td>
-                <td className="border px-3 py-2">{getProblemDescription(r)}</td>
-                <td className="border px-3 py-2">
-                  <span className={getStatusBadge(r.finalStatus)}>{r.finalStatus || "Pending"}</span>
-                </td>
-                <td className="border px-3 py-2">
-                  {r.attachments?.length > 0 ? (
-                    r.attachments.map((file, i) => (
-                      <div key={i}>
-                        <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View File</a>
-                      </div>
-                    ))
-                  ) : "No File"}
-                </td>
-                <td className="border px-3 py-2">
-                  {r.finalStatus === "Pending" ? (
-                    <button
-                      className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-                      onClick={() => {
-                        setSelectedRequest(r);
-                        setShowApproveModal(true);
-                      }}
-                    >
-                      Approve / Reject
-                    </button>
-                  ) : (
-                    <span className="text-gray-500 italic font-semibold">{r.finalStatus}</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
 
       {/* MODAL */}
       {showApproveModal && selectedRequest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded w-[500px] max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Approve / Reject Request</h2>
-            <p><b>Staff:</b> {selectedRequest.staffName}</p>
-            <p><b>Problem:</b> {getProblemDescription(selectedRequest)}</p>
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+          <div className="bg-white p-6 rounded w-[500px]">
+            <h2 className="font-bold text-lg mb-3">
+              Assign Technician
+            </h2>
 
-            {selectedRequest.requestType?.toLowerCase() === "maintenance" && (
-              <div className="mt-3">
-                <label className="font-semibold">Assign Technician</label>
-                <select
-                  className="border w-full mt-1 p-2"
-                  value={selectedRequest.assignedTechnician || ""}
-                  onChange={(e) => handleAssignTechnician(selectedRequest._id, e.target.value)}
-                >
-                  <option value="">Select Technician</option>
-                  {technicians.map((t) => (
-                    <option key={t._id} value={t._id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            {/* ✅ MULTI SELECT */}
+            <select
+              multiple
+              className="border w-full p-2 h-32"
+              value={selectedTechnicians[selectedRequest._id] || []}
+              onChange={(e) => {
+                const values = Array.from(
+                  e.target.selectedOptions
+                ).map((o) => o.value);
 
-            <ApproverSignaturePad onChange={(sig) => setSignatureApprover(sig)} />
+                setSelectedTechnicians({
+                  ...selectedTechnicians,
+                  [selectedRequest._id]: values,
+                });
+              }}
+            >
+              {technicians.map((t) => (
+                <option key={t._id} value={t._id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
 
-            <div className="flex justify-end gap-3 mt-4">
+            <button
+              className="bg-blue-600 text-white px-3 py-1 mt-2"
+              onClick={() =>
+                handleAssignTechnician(selectedRequest._id)
+              }
+            >
+              Assign
+            </button>
+
+            <ApproverSignaturePad
+              onChange={(sig) => setSignatureApprover(sig)}
+            />
+
+            <div className="flex gap-2 mt-4">
               <button
-                className={`px-4 py-2 rounded text-white ${selectedRequest.finalStatus !== "Pending" ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
+                className="bg-green-600 text-white px-3 py-1"
                 onClick={handleApprove}
-                disabled={selectedRequest.finalStatus !== "Pending"}
               >
                 Approve
               </button>
 
               <button
-                className={`px-4 py-2 rounded text-white ${selectedRequest.finalStatus !== "Pending" ? "bg-gray-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"}`}
+                className="bg-red-600 text-white px-3 py-1"
                 onClick={handleReject}
-                disabled={selectedRequest.finalStatus !== "Pending"}
               >
                 Reject
               </button>
 
               <button
-                className="bg-gray-500 text-white px-4 py-2 rounded"
+                className="bg-gray-500 text-white px-3 py-1"
                 onClick={() => setShowApproveModal(false)}
               >
-                Cancel
+                Close
               </button>
             </div>
           </div>
