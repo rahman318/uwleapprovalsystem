@@ -145,44 +145,90 @@ useEffect(() => {
   };
 
   // ================== UPDATE STATUS ==================
-  const handleMarkStatus = async (requestId) => {
-    try {
-      const request = requests.find((r) => r._id === requestId);
-      if (!request) return;
+const handleMarkStatus = async (requestId) => {
+  try {
+    console.log("🚀 [STATUS FLOW] Clicked requestId:", requestId);
 
-      let newStatus = "";
-      let confirmTitle = "";
-      if (request.maintenanceStatus === "Submitted") {
-        newStatus = "In Progress";
-        confirmTitle = "Mark as In Progress?";
-      } else if (request.maintenanceStatus === "In Progress") {
-        newStatus = "Completed";
-        confirmTitle = "Mark as Completed?";
-      } else return;
+    const request = requests.find((r) => r._id === requestId);
 
-      const confirm = await Swal.fire({
-        icon: "question",
-        title: confirmTitle,
-        showCancelButton: true,
-      });
-      if (!confirm.isConfirmed) return;
-
-      const res = await axios.put(
-        `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/maintenance`,
-        { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      Swal.fire({ icon: "success", title: "Status updated", timer: 1500, showConfirmButton: false });
-
-      setRequests((prev) =>
-        prev.map((r) => (r._id === requestId ? { ...r, ...res.data.request } : r))
-      );
-    } catch (err) {
-      console.error("❌ Update status error:", err);
-      Swal.fire({ icon: "error", title: "Gagal kemaskini status" });
+    if (!request) {
+      console.log("❌ [STATUS FLOW] Request not found in state");
+      return;
     }
-  };
+
+    console.log("📦 [STATUS FLOW] Current Request:", request);
+
+    // 🔥 SAFE STATUS (support old + new field)
+    const currentStatus = request.maintenanceStatus || request.status;
+
+    console.log("🔍 [STATUS FLOW] Current Status:", currentStatus);
+
+    let newStatus = "";
+    let confirmTitle = "";
+
+    if (currentStatus === "Submitted") {
+      newStatus = "In Progress";
+      confirmTitle = "Mark as In Progress?";
+    } else if (currentStatus === "In Progress") {
+      newStatus = "Completed";
+      confirmTitle = "Mark as Completed?";
+    } else {
+      console.log("⚠️ [STATUS FLOW] Status not allowed to change");
+      return;
+    }
+
+    console.log("➡️ [STATUS FLOW] New Status to update:", newStatus);
+
+    // ================= CONFIRMATION =================
+    const confirm = await Swal.fire({
+      icon: "question",
+      title: confirmTitle,
+      showCancelButton: true,
+      confirmButtonText: "Yes",
+      cancelButtonText: "No",
+    });
+
+    if (!confirm.isConfirmed) {
+      console.log("❌ [STATUS FLOW] User cancelled update");
+      return;
+    }
+
+    console.log("📡 [STATUS FLOW] Sending API request...");
+
+    // ================= API CALL =================
+    const res = await axios.put(
+      `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/maintenance`,
+      { maintenanceStatus: newStatus }, // 🔥 FIXED FIELD
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    console.log("✅ [STATUS FLOW] API Response:", res.data);
+
+    Swal.fire({
+      icon: "success",
+      title: "Status updated",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+
+    // ================= UPDATE STATE =================
+    setRequests((prev) =>
+      prev.map((r) =>
+        r._id === requestId ? { ...r, ...res.data.request } : r
+      )
+    );
+
+    console.log("🔄 [STATUS FLOW] State updated successfully");
+  } catch (err) {
+    console.error("❌ [STATUS FLOW] Update status error:", err);
+    console.error("❌ [STATUS FLOW] Backend response:", err?.response?.data);
+
+    Swal.fire({
+      icon: "error",
+      title: "Gagal kemaskini status",
+    });
+  }
+};
 
   // ================== SAVE REMARK + PROOF ==================
   const handleSaveRemark = async (requestId) => {
