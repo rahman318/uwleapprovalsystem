@@ -198,7 +198,7 @@ const handleMarkStatus = async (requestId) => {
     // ================= API CALL =================
     const res = await axios.put(
       `https://backenduwleapprovalsystem.onrender.com/api/requests/${requestId}/maintenance`,
-      { maintenanceStatus: newStatus }, // 🔥 FIXED FIELD
+      { status: newStatus }, // 🔥 FIXED FIELD
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
