@@ -276,26 +276,41 @@ const ApproverDashboard = () => {
           <div className="bg-white p-6 rounded-xl w-[500px]">
             <h2 className="text-lg font-bold mb-3">Assign Technician</h2>
 
-            <select
-              multiple
-              className="border w-full p-2 h-32"
-              value={selectedTechnicians[selectedRequest._id] || []}
-              onChange={(e) => {
-                const values = Array.from(e.target.selectedOptions).map(
-                  (o) => o.value
-                );
-                setSelectedTechnicians({
-                  ...selectedTechnicians,
-                  [selectedRequest._id]: values,
-                });
-              }}
-            >
-              {technicians.map((t) => (
-                <option key={t._id} value={t._id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
+            <div className="border p-3 rounded h-40 overflow-y-auto">
+  {technicians.map((t) => {
+    const selectedList = selectedTechnicians[selectedRequest._id] || [];
+
+    return (
+      <label
+        key={t._id}
+        className={`flex items-center gap-2 p-2 rounded cursor-pointer transition 
+        ${selectedList.includes(t._id) ? "bg-blue-100" : "hover:bg-gray-100"}`}
+      >
+        <input
+          type="checkbox"
+          value={t._id}
+          checked={selectedList.includes(t._id)}
+          onChange={(e) => {
+            let updated = [...selectedList];
+
+            if (e.target.checked) {
+              updated.push(t._id);
+            } else {
+              updated = updated.filter((id) => id !== t._id);
+            }
+
+            setSelectedTechnicians({
+              ...selectedTechnicians,
+              [selectedRequest._id]: updated,
+            });
+          }}
+        />
+
+        <span className="text-sm">{t.name}</span>
+      </label>
+    );
+  })}
+</div>
 
             <button
               className="bg-blue-600 text-white px-3 py-1 mt-2 rounded"
