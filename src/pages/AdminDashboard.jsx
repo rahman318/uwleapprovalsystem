@@ -22,7 +22,9 @@ const AnalyticsDashboard = ({ requests }) => {
   // ================== FILTER ==================
   useEffect(() => {
     const filtered = filterMonth
-      ? requests.filter((r) => r.createdAt?.startsWith(filterMonth))
+      ? requests.filter((r) =>
+          r.createdAt?.startsWith(filterMonth)
+        )
       : requests;
 
     setFilteredRequests(filtered);
@@ -39,157 +41,160 @@ const AnalyticsDashboard = ({ requests }) => {
     r.approvals?.some((a) => a.status === "Rejected")
   ).length;
 
-  const pendingCount = totalRequests - approvedCount - rejectedCount;
+  const pendingCount =
+    totalRequests - approvedCount - rejectedCount;
 
-  // ================== ANALYTICS MAP ==================
+  // ================== MAPS ==================
   const requestTypesCount = {};
   const technicianCount = {};
   const statusCount = {};
 
   filteredRequests.forEach((r) => {
-    // ---------- REQUEST TYPE ----------
+    // TYPE
     const type = r.requestType || "Unknown";
     requestTypesCount[type] =
       (requestTypesCount[type] || 0) + 1;
 
-    // ---------- STATUS ----------
+    // STATUS
     const status = r.approvals?.some((a) => a.status === "Rejected")
       ? "Rejected"
       : r.approvals?.every((a) => a.status === "Approved")
       ? "Approved"
       : "Pending";
 
-    statusCount[status] = (statusCount[status] || 0) + 1;
+    statusCount[status] =
+      (statusCount[status] || 0) + 1;
 
-    // ---------- TECHNICIAN (FIXED) ----------
-filteredRequests.forEach((r) => {
-  // hanya maintenance sahaja
-  if (r.requestType?.toLowerCase() === "Maintenance") {
-    if (Array.isArray(r.assignedTechnician) && r.assignedTechnician.length > 0) {
-      r.assignedTechnician.forEach((tech) => {
-        const techName =
-          (tech?.name || tech?.username || tech?.email || "Unknown").trim();
+    // ================= TECHNICIAN (FIXED) =================
+    if (
+      r.requestType?.toLowerCase() === "Maintenance"
+    ) {
+      if (
+        Array.isArray(r.assignedTechnician) &&
+        r.assignedTechnician.length > 0
+      ) {
+        r.assignedTechnician.forEach((tech) => {
+          const name =
+            tech?.name ||
+            tech?.username ||
+            tech?.email ||
+            "Unknown";
 
-        technicianCount[techName] =
-          (technicianCount[techName] || 0) + 1;
-      });
-    } else {
-      technicianCount["Unassigned"] =
-        (technicianCount["Unassigned"] || 0) + 1;
+          technicianCount[name] =
+            (technicianCount[name] || 0) + 1;
+        });
+      } else {
+        technicianCount["Unassigned"] =
+          (technicianCount["Unassigned"] || 0) + 1;
+      }
     }
-  }
-});
+  });
 
-  // ================== CHART DATA ==================
-  const chartRequestTypes = Object.keys(requestTypesCount).map((key) => ({
+  // ================= CHART DATA =================
+  const chartRequestTypes = Object.keys(
+    requestTypesCount
+  ).map((key) => ({
     name: key,
     count: requestTypesCount[key],
   }));
 
-  const chartStatus = Object.keys(statusCount).map((key) => ({
-    name: key,
-    count: statusCount[key],
-  }));
+  const chartStatus = Object.keys(statusCount).map(
+    (key) => ({
+      name: key,
+      count: statusCount[key],
+    })
+  );
 
-  const chartTechnician = Object.keys(technicianCount).map((key) => ({
+  const chartTechnician = Object.keys(
+    technicianCount
+  ).map((key) => ({
     name: key,
     count: technicianCount[key],
   }));
 
-  // ================== EXPORT ==================
+  // ================= EXPORT =================
   const exportToExcel = () => {
-    if (!filteredRequests?.length)
-      return alert("Tiada data untuk dieksport");
+    if (!filteredRequests.length)
+      return alert("Tiada data");
 
     const data = filteredRequests.map((r, i) => ({
       No: i + 1,
       "Staff Name": r.staffName || "-",
-      Department: r.staffDepartment || "-",
       "Request Type": r.requestType || "-",
-
-      // ---------- FIXED ARRAY EXPORT ----------
       Technician: Array.isArray(r.assignedTechnician)
         ? r.assignedTechnician
-            .map((t) => t?.name || t?.username || t?.email || "Unknown")
+            .map(
+              (t) =>
+                t?.name || t?.username || t?.email || "Unknown"
+            )
             .join(", ")
         : "-",
-
       Status: r.approvals?.some((a) => a.status === "Rejected")
         ? "Rejected"
         : r.approvals?.every((a) => a.status === "Approved")
         ? "Approved"
         : "Pending",
-
       "Created At": r.createdAt
         ? new Date(r.createdAt).toLocaleString("ms-MY")
-        : "-",
-
-      "Updated At": r.updatedAt
-        ? new Date(r.updatedAt).toLocaleString("ms-MY")
         : "-",
     }));
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-
     XLSX.utils.book_append_sheet(wb, ws, "Analytics");
 
     XLSX.writeFile(
       wb,
-      `Analytics_${filterMonth || "all"}_${new Date()
-        .toISOString()
-        .slice(0, 10)}.xlsx`
+      `analytics_${Date.now()}.xlsx`
     );
   };
 
-  // ================== UI ==================
+  // ================= UI =================
   return (
     <div
       className={
         darkMode
-          ? "bg-gray-900 text-white p-3 sm:p-6 rounded-xl shadow mb-10 min-h-screen"
-          : "bg-gray-50 text-gray-900 p-3 sm:p-6 rounded-xl shadow mb-10 min-h-screen"
+          ? "bg-gray-900 text-white p-6 rounded-xl"
+          : "bg-gray-50 text-gray-900 p-6 rounded-xl"
       }
     >
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-        <h2 className="text-lg sm:text-xl font-bold">
+      <div className="flex justify-between mb-4">
+        <h2 className="text-xl font-bold">
           📊 Analytics Dashboard
         </h2>
 
         <div className="flex gap-2">
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="px-3 py-2 rounded-lg shadow bg-gray-200 text-black"
+            className="px-3 py-1 bg-gray-300 rounded"
           >
-            {darkMode ? "☀ Light" : "🌙 Dark"}
+            {darkMode ? "Light" : "Dark"}
           </button>
 
           <button
             onClick={exportToExcel}
-            className="px-3 py-2 bg-green-600 text-white rounded-lg shadow"
+            className="px-3 py-1 bg-green-600 text-white rounded"
           >
-            ⬇ Export
+            Export
           </button>
         </div>
       </div>
 
       {/* FILTER */}
-      <div className={darkMode ? "bg-gray-800 p-3 rounded-lg mb-4" : "bg-white p-3 rounded-lg mb-4"}>
-        <label className="font-medium block mb-2">
-          Filter Month:
-        </label>
-
+      <div className="mb-4">
         <input
           type="month"
           value={filterMonth}
-          onChange={(e) => setFilterMonth(e.target.value)}
-          className="border p-2 rounded w-full text-black"
+          onChange={(e) =>
+            setFilterMonth(e.target.value)
+          }
+          className="border p-2 rounded"
         />
       </div>
 
       {/* STATS */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-4 gap-3 mb-6">
         {[
           { label: "Total", value: totalRequests },
           { label: "Approved", value: approvedCount },
@@ -198,50 +203,57 @@ filteredRequests.forEach((r) => {
         ].map((item, i) => (
           <div
             key={i}
-            className={
-              darkMode
-                ? "bg-gray-800 p-3 rounded-xl text-center"
-                : "bg-blue-100 p-3 rounded-xl text-center"
-            }
+            className="bg-white p-3 rounded shadow text-center"
           >
-            <div className="text-xl font-bold">{item.value}</div>
-            <div className="text-xs">{item.label}</div>
+            <div className="text-xl font-bold">
+              {item.value}
+            </div>
+            <div>{item.label}</div>
           </div>
         ))}
       </div>
 
       {/* CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className={darkMode ? "bg-gray-800 p-3 rounded-xl" : "bg-white p-3 rounded-xl shadow"}>
-          <h3 className="font-semibold mb-2">By Type</h3>
-          <ResponsiveContainer width="100%" height={260}>
+        {/* TYPE */}
+        <div className="bg-white p-3 rounded shadow">
+          <h3 className="font-semibold mb-2">
+            By Type
+          </h3>
+          <ResponsiveContainer width="100%" height={250}>
             <BarChart data={chartRequestTypes}>
               <XAxis dataKey="name" />
-              <YAxis allowDecimals={false} />
+              <YAxis />
               <Tooltip />
               <Bar dataKey="count" fill="#3b82f6" />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        <div className={darkMode ? "bg-gray-800 p-3 rounded-xl" : "bg-white p-3 rounded-xl shadow"}>
-          <h3 className="font-semibold mb-2">By Status</h3>
-          <ResponsiveContainer width="100%" height={260}>
+        {/* STATUS */}
+        <div className="bg-white p-3 rounded shadow">
+          <h3 className="font-semibold mb-2">
+            By Status
+          </h3>
+          <ResponsiveContainer width="100%" height={250}>
             <BarChart data={chartStatus}>
               <XAxis dataKey="name" />
-              <YAxis allowDecimals={false} />
+              <YAxis />
               <Tooltip />
               <Bar dataKey="count" fill="#10b981" />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        <div className={darkMode ? "bg-gray-800 p-3 rounded-xl lg:col-span-2" : "bg-white p-3 rounded-xl lg:col-span-2 shadow"}>
-          <h3 className="font-semibold mb-2">By Technician</h3>
+        {/* TECHNICIAN */}
+        <div className="bg-white p-3 rounded shadow lg:col-span-2">
+          <h3 className="font-semibold mb-2">
+            By Technician
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartTechnician}>
               <XAxis dataKey="name" />
-              <YAxis allowDecimals={false} />
+              <YAxis />
               <Tooltip />
               <Bar dataKey="count" fill="#f59e0b" />
             </BarChart>
