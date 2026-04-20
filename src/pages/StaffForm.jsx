@@ -120,7 +120,7 @@ const StaffForm = ({ initialData = null, onClose = null }) => {
   const addItem = () => {
     setFormData({
       ...formData,
-      items: [...formData.items, { itemName: "", quantity: 1, estimatedCost: 0, supplier: "", reason: "" }],
+      items: [...formData.items, { itemName: "", quantity: 1, quantityBalance: 0, estimatedCost: 0, supplier: "", reason: "" }],
     });
   };
 
