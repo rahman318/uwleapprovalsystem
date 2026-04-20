@@ -44,6 +44,13 @@ const StaffForm = ({ initialData = null, onClose = null }) => {
 
   const token = localStorage.getItem("token");
 
+  // ================= FILTER APPROVER BY LEVEL (🔥 NEW FIX) =================
+  const getApproversByLevel = (level) => {
+    return approversList.filter(
+      (a) => Number(a.level) === Number(level)
+    );
+  };
+
   // ================= Default Form Data =================
   const defaultFormData = {
     staffId: "",
@@ -251,45 +258,124 @@ const StaffForm = ({ initialData = null, onClose = null }) => {
               )}
 
               {/* PEMBELIAN */}
-              {formData.requestType === "PEMBELIAN" && (
-                <tr>
-                  <td colSpan={2}>
-                    <div className="space-y-4 p-2">
-                      {formData.items.map((item, idx) => (
-                        <div key={idx} className="border p-3 rounded bg-gray-50">
-                          <div className="flex justify-between items-center mb-2">
-                            <h4 className="font-semibold">Item {idx + 1}</h4>
-                            <button type="button" onClick={() => removeItem(idx)} className="text-red-500 text-sm">Remove</button>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="block font-semibold text-gray-700">Nama Item</label>
-                              <input type="text" name="itemName" value={item.itemName} onChange={(e)=>handleItemChange(idx,e)} className="w-full border px-2 py-1 rounded"/>
-                            </div>
-                            <div>
-                              <label className="block font-semibold text-gray-700">Kuantiti</label>
-                              <input type="number" name="quantity" value={item.quantity} onChange={(e)=>handleItemChange(idx,e)} className="w-full border px-2 py-1 rounded"/>
-                            </div>
-                            <div>
-                              <label className="block font-semibold text-gray-700">Anggaran Harga (RM)</label>
-                              <input type="number" name="estimatedCost" value={item.estimatedCost} onChange={(e)=>handleItemChange(idx,e)} className="w-full border px-2 py-1 rounded"/>
-                            </div>
-                            <div>
-                              <label className="block font-semibold text-gray-700">Pembekal</label>
-                              <input type="text" name="supplier" value={item.supplier} onChange={(e)=>handleItemChange(idx,e)} className="w-full border px-2 py-1 rounded"/>
-                            </div>
-                            <div className="col-span-2">
-                              <label className="block font-semibold text-gray-700">Tujuan / Reason</label>
-                              <textarea name="reason" value={item.reason} onChange={(e)=>handleItemChange(idx,e)} className="w-full border px-2 py-1 rounded"/>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      <button type="button" onClick={addItem} className="mt-2 bg-green-500 text-white px-4 py-1 rounded hover:bg-green-600">+ Add Item</button>
-                    </div>
-                  </td>
-                </tr>
-              )}
+{formData.requestType === "PEMBELIAN" && (
+  <tr>
+    <td colSpan={2}>
+      <div className="space-y-4 p-2">
+        {formData.items.map((item, idx) => (
+          <div key={idx} className="border p-3 rounded bg-gray-50">
+
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="font-semibold">Item {idx + 1}</h4>
+              <button
+                type="button"
+                onClick={() => removeItem(idx)}
+                className="text-red-500 text-sm"
+              >
+                Remove
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+
+              {/* ITEM NAME */}
+              <div>
+                <label className="block font-semibold text-gray-700">
+                  Nama Item
+                </label>
+                <input
+                  type="text"
+                  name="itemName"
+                  value={item.itemName}
+                  onChange={(e) => handleItemChange(idx, e)}
+                  className="w-full border px-2 py-1 rounded"
+                />
+              </div>
+
+              {/* QUANTITY */}
+              <div>
+                <label className="block font-semibold text-gray-700">
+                  Kuantiti
+                </label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={item.quantity}
+                  onChange={(e) => handleItemChange(idx, e)}
+                  className="w-full border px-2 py-1 rounded"
+                />
+              </div>
+
+              {/* 🔥 NEW FIELD: QUANTITY BALANCE */}
+              <div>
+                <label className="block font-semibold text-gray-700">
+                  Quantity Balance
+                </label>
+                <input
+                  type="number"
+                  name="quantityBalance"
+                  value={item.quantityBalance || ""}
+                  onChange={(e) => handleItemChange(idx, e)}
+                  className="w-full border px-2 py-1 rounded"
+                />
+              </div>
+
+              {/* ESTIMATED COST */}
+              <div>
+                <label className="block font-semibold text-gray-700">
+                  Anggaran Harga (RM)
+                </label>
+                <input
+                  type="number"
+                  name="estimatedCost"
+                  value={item.estimatedCost}
+                  onChange={(e) => handleItemChange(idx, e)}
+                  className="w-full border px-2 py-1 rounded"
+                />
+              </div>
+
+              {/* SUPPLIER */}
+              <div>
+                <label className="block font-semibold text-gray-700">
+                  Pembekal
+                </label>
+                <input
+                  type="text"
+                  name="supplier"
+                  value={item.supplier}
+                  onChange={(e) => handleItemChange(idx, e)}
+                  className="w-full border px-2 py-1 rounded"
+                />
+              </div>
+
+              {/* REASON */}
+              <div className="col-span-2">
+                <label className="block font-semibold text-gray-700">
+                  Tujuan / Reason
+                </label>
+                <textarea
+                  name="reason"
+                  value={item.reason}
+                  onChange={(e) => handleItemChange(idx, e)}
+                  className="w-full border px-2 py-1 rounded"
+                />
+              </div>
+
+            </div>
+          </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={addItem}
+          className="mt-2 bg-green-500 text-white px-4 py-1 rounded hover:bg-green-600"
+        >
+          + Add Item
+        </button>
+      </div>
+    </td>
+  </tr>
+)}
 
               {/* IT_SUPPORT */}
               {formData.requestType === "IT_SUPPORT" && (
@@ -350,17 +436,30 @@ const StaffForm = ({ initialData = null, onClose = null }) => {
           {file && <p className="text-sm mt-1 text-gray-600">Selected: {file.name}</p>}
         </div>
 
-        {/* Approvers */}
-        <div>
-          <label className="block font-semibold text-gray-700 mb-2">Approvers</label>
-          <div className="grid grid-cols-2 gap-3">
-            {[1, 2, 3, 4].map(level => (
-              <select key={level} value={formData.approvals[level-1]?.approverId || ""} onChange={e => handleApproverChange(level,e.target.value)} className="w-full border px-2 py-1 rounded">
-                <option value="">-- Level {level} Approver --</option>
-                {approversList.map(a => <option key={a._id} value={a._id}>{a.name} ({a.department})</option>)}
-              </select>
-            ))}
-          </div>
+        {/* APPROVERS (🔥 FILTERED BY LEVEL) */}
+        <div className="grid grid-cols-2 gap-3">
+          {[1, 2, 3, 4].map((level) => (
+            <select
+              key={level}
+              value={
+                formData.approvals[level - 1]?.approverId || ""
+              }
+              onChange={(e) =>
+                handleApproverChange(level, e.target.value)
+              }
+              className="border p-2"
+            >
+              <option value="">
+                -- Level {level} Approver --
+              </option>
+
+              {getApproversByLevel(level).map((a) => (
+                <option key={a._id} value={a._id}>
+                  {a.name} ({a.department})
+                </option>
+              ))}
+            </select>
+          ))}
         </div>
 
         {/* Signature */}
