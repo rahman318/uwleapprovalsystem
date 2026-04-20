@@ -380,5 +380,8 @@ const ApproverDashboard = () => {
     </div>
   </div>
 )}
+</div>
+  );
+};
 
 export default ApproverDashboard;
