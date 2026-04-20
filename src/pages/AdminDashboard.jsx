@@ -67,7 +67,7 @@ const AnalyticsDashboard = ({ requests }) => {
 
     // ================= TECHNICIAN (FIXED) =================
     if (
-      r.requestType?.toLowerCase() === "maintenance"
+      r.requestType?.toLowerCase() === "Maintenance"
     ) {
       if (
         Array.isArray(r.assignedTechnician) &&
