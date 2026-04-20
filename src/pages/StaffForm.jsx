@@ -174,6 +174,9 @@ const StaffForm = ({ initialData = null, onClose = null }) => {
     payload.append("staffDepartment", staffDepartment);
     payload.append("problemDescription", formData.problemDescription);
 
+    console.log("🚀 FINAL ITEMS BEFORE SEND:", formData.items);
+console.log("🚀 STRINGIFIED ITEMS:", JSON.stringify(formData.items));
+
     if (file) payload.append("files", file);
 
     try {
