@@ -379,46 +379,4 @@ const ApproverDashboard = () => {
   </div>
 )}
 
-            <button
-              className="bg-blue-600 text-white px-3 py-1 mt-2 rounded"
-              onClick={() =>
-                handleAssignTechnician(selectedRequest._id)
-              }
-            >
-              Assign
-            </button>
-
-            <ApproverSignaturePad
-              onChange={(sig) => setSignatureApprover(sig)}
-            />
-
-            <div className="flex gap-2 mt-4">
-              <button
-                className="bg-green-600 text-white px-3 py-1 rounded"
-                onClick={handleApprove}
-              >
-                Approve
-              </button>
-
-              <button
-                className="bg-red-600 text-white px-3 py-1 rounded"
-                onClick={handleReject}
-              >
-                Reject
-              </button>
-
-              <button
-                className="bg-gray-500 text-white px-3 py-1 rounded"
-                onClick={() => setShowApproveModal(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
 export default ApproverDashboard;
