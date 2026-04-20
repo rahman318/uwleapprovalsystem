@@ -272,45 +272,120 @@ const ApproverDashboard = () => {
 
       {/* MODAL */}
       {showApproveModal && selectedRequest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-xl w-[500px]">
-            <h2 className="text-lg font-bold mb-3">Assign Technician</h2>
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="bg-white p-6 rounded-xl w-[520px] shadow-xl">
 
-            <div className="border p-3 rounded h-40 overflow-y-auto">
-  {technicians.map((t) => {
-    const selectedList = selectedTechnicians[selectedRequest._id] || [];
+      {/* TITLE */}
+      <h2 className="text-lg font-bold mb-3 text-blue-700">
+        {isMaintenance ? "Maintenance Request" : "Request Details"}
+      </h2>
 
-    return (
-      <label
-        key={t._id}
-        className={`flex items-center gap-2 p-2 rounded cursor-pointer transition 
-        ${selectedList.includes(t._id) ? "bg-blue-100" : "hover:bg-gray-100"}`}
-      >
-        <input
-          type="checkbox"
-          value={t._id}
-          checked={selectedList.includes(t._id)}
-          onChange={(e) => {
-            let updated = [...selectedList];
+      {/* ================= REQUEST DETAILS ================= */}
+      <div className="bg-gray-50 p-3 rounded mb-3 text-sm space-y-1">
+        <p><b>Staff:</b> {selectedRequest.staffName}</p>
+        <p><b>Type:</b> {selectedRequest.requestType}</p>
+        <p><b>Date:</b> {formatDateTime(selectedRequest.createdAt)}</p>
+        <p><b>Problem:</b> {selectedRequest.problemDescription || "-"}</p>
+      </div>
 
-            if (e.target.checked) {
-              updated.push(t._id);
-            } else {
-              updated = updated.filter((id) => id !== t._id);
+      {/* ================= MAINTENANCE ONLY ================= */}
+      {isMaintenance && (
+        <>
+          <h3 className="font-semibold mb-2">Assign Technician</h3>
+
+          <div className="border p-3 rounded h-40 overflow-y-auto mb-3">
+            {technicians.map((t) => {
+              const selectedList =
+                selectedTechnicians[selectedRequest._id] || [];
+
+              return (
+                <label
+                  key={t._id}
+                  className={`flex items-center gap-2 p-2 rounded cursor-pointer transition 
+                  ${selectedList.includes(t._id)
+                    ? "bg-blue-100"
+                    : "hover:bg-gray-100"}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedList.includes(t._id)}
+                    onChange={(e) => {
+                      let updated = [...selectedList];
+
+                      if (e.target.checked) {
+                        updated.push(t._id);
+                      } else {
+                        updated = updated.filter((id) => id !== t._id);
+                      }
+
+                      setSelectedTechnicians({
+                        ...selectedTechnicians,
+                        [selectedRequest._id]: updated,
+                      });
+                    }}
+                  />
+
+                  <span className="text-sm">{t.name}</span>
+                </label>
+              );
+            })}
+          </div>
+
+          <button
+            className="bg-blue-600 text-white px-3 py-1 rounded mb-3"
+            onClick={() =>
+              handleAssignTechnician(selectedRequest._id)
             }
+          >
+            Assign Technician
+          </button>
+        </>
+      )}
 
-            setSelectedTechnicians({
-              ...selectedTechnicians,
-              [selectedRequest._id]: updated,
-            });
-          }}
-        />
+      {/* ================= SIGNATURE ================= */}
+      <ApproverSignaturePad
+        onChange={(sig) => setSignatureApprover(sig)}
+      />
 
-        <span className="text-sm">{t.name}</span>
-      </label>
-    );
-  })}
-</div>
+      {/* ================= ACTION BUTTONS ================= */}
+      <div className="flex gap-2 mt-4">
+
+        <button
+          className="bg-green-600 text-white px-3 py-1 rounded"
+          onClick={handleApprove}
+        >
+          Approve
+        </button>
+
+        <button
+          className="bg-red-600 text-white px-3 py-1 rounded"
+          onClick={handleReject}
+        >
+          Reject
+        </button>
+
+        {!isMaintenance && (
+          <button
+            className="bg-gray-500 text-white px-3 py-1 rounded"
+            onClick={() => setShowApproveModal(false)}
+          >
+            Cancel
+          </button>
+        )}
+
+        {isMaintenance && (
+          <button
+            className="bg-gray-500 text-white px-3 py-1 rounded"
+            onClick={() => setShowApproveModal(false)}
+          >
+            Close
+          </button>
+        )}
+
+      </div>
+    </div>
+  </div>
+)}
 
             <button
               className="bg-blue-600 text-white px-3 py-1 mt-2 rounded"
