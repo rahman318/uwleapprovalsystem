@@ -292,7 +292,7 @@ const ApproverDashboard = () => {
       </div>
 
       {/* TECHNICIAN ONLY FOR MAINTENANCE */}
-      {selectedRequest?.requestType === "maintenance" && (
+      {selectedRequest?.requestType === "Maintenance" && (
         <>
           <h3 className="font-semibold mb-2">Assign Technician</h3>
 
