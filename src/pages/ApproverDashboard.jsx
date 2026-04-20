@@ -271,8 +271,9 @@ const ApproverDashboard = () => {
       </div>
 
       {/* MODAL */}
-      {showApproveModal && selectedRequest && (
+{showApproveModal && selectedRequest && (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+
     <div className="bg-white p-6 rounded-xl w-[520px] shadow-xl">
 
       {/* TITLE */}
@@ -280,7 +281,7 @@ const ApproverDashboard = () => {
         {isMaintenance ? "Maintenance Request" : "Request Details"}
       </h2>
 
-      {/* ================= REQUEST DETAILS ================= */}
+      {/* DETAILS */}
       <div className="bg-gray-50 p-3 rounded mb-3 text-sm space-y-1">
         <p><b>Staff:</b> {selectedRequest.staffName}</p>
         <p><b>Type:</b> {selectedRequest.requestType}</p>
@@ -288,7 +289,7 @@ const ApproverDashboard = () => {
         <p><b>Problem:</b> {selectedRequest.problemDescription || "-"}</p>
       </div>
 
-      {/* ================= MAINTENANCE ONLY ================= */}
+      {/* TECHNICIAN (ONLY MAINTENANCE) */}
       {isMaintenance && (
         <>
           <h3 className="font-semibold mb-2">Assign Technician</h3>
@@ -333,21 +334,19 @@ const ApproverDashboard = () => {
 
           <button
             className="bg-blue-600 text-white px-3 py-1 rounded mb-3"
-            onClick={() =>
-              handleAssignTechnician(selectedRequest._id)
-            }
+            onClick={() => handleAssignTechnician(selectedRequest._id)}
           >
             Assign Technician
           </button>
         </>
       )}
 
-      {/* ================= SIGNATURE ================= */}
+      {/* SIGNATURE */}
       <ApproverSignaturePad
         onChange={(sig) => setSignatureApprover(sig)}
       />
 
-      {/* ================= ACTION BUTTONS ================= */}
+      {/* ACTION BUTTONS */}
       <div className="flex gap-2 mt-4">
 
         <button
@@ -364,25 +363,18 @@ const ApproverDashboard = () => {
           Reject
         </button>
 
-        {!isMaintenance && (
-          <button
-            className="bg-gray-500 text-white px-3 py-1 rounded"
-            onClick={() => setShowApproveModal(false)}
-          >
-            Cancel
-          </button>
-        )}
-
-        {isMaintenance && (
-          <button
-            className="bg-gray-500 text-white px-3 py-1 rounded"
-            onClick={() => setShowApproveModal(false)}
-          >
-            Close
-          </button>
-        )}
+        <button
+          className="bg-gray-500 text-white px-3 py-1 rounded"
+          onClick={() => {
+            setShowApproveModal(false);
+            setSignatureApprover("");
+          }}
+        >
+          Close
+        </button>
 
       </div>
+
     </div>
   </div>
 )}
