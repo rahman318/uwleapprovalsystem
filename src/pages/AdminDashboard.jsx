@@ -62,17 +62,21 @@ const AnalyticsDashboard = ({ requests }) => {
     statusCount[status] = (statusCount[status] || 0) + 1;
 
     // ---------- TECHNICIAN (FIXED ARRAY SUPPORT) ----------
+    requests
+  .filter(r => r.requestType?.toLowerCase() === "Maintenance")
+  .forEach((r) => {
+
     if (Array.isArray(r.assignedTechnician) && r.assignedTechnician.length > 0) {
       r.assignedTechnician.forEach((tech) => {
+
         const techName =
-          tech?.name ||
-          tech?.username ||
-          tech?.email ||
-          "Unknown";
+          (tech?.name || tech?.username || tech?.email || "Unknown")
+            .trim();
 
         technicianCount[techName] =
           (technicianCount[techName] || 0) + 1;
       });
+
     } else {
       technicianCount["Unassigned"] =
         (technicianCount["Unassigned"] || 0) + 1;
