@@ -278,7 +278,7 @@ const ApproverDashboard = () => {
 
       {/* TITLE */}
       <h2 className="text-lg font-bold mb-3 text-blue-700">
-        {selectedRequest?.requestType === "maintenance"
+        {selectedRequest?.requestType === "Maintenance"
           ? "Maintenance Request"
           : "Request Details"}
       </h2>
