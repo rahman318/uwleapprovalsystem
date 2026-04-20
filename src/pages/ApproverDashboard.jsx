@@ -278,7 +278,9 @@ const ApproverDashboard = () => {
 
       {/* TITLE */}
       <h2 className="text-lg font-bold mb-3 text-blue-700">
-        {isMaintenance ? "Maintenance Request" : "Request Details"}
+        {selectedRequest?.requestType === "maintenance"
+          ? "Maintenance Request"
+          : "Request Details"}
       </h2>
 
       {/* DETAILS */}
@@ -289,8 +291,8 @@ const ApproverDashboard = () => {
         <p><b>Problem:</b> {selectedRequest.problemDescription || "-"}</p>
       </div>
 
-      {/* TECHNICIAN (ONLY MAINTENANCE) */}
-      {isMaintenance && (
+      {/* TECHNICIAN ONLY FOR MAINTENANCE */}
+      {selectedRequest?.requestType === "maintenance" && (
         <>
           <h3 className="font-semibold mb-2">Assign Technician</h3>
 
@@ -377,6 +379,6 @@ const ApproverDashboard = () => {
 
     </div>
   </div>
-)};
+)}
 
 export default ApproverDashboard;
