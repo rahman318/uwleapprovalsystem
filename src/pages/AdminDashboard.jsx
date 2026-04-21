@@ -623,40 +623,87 @@ const AdminDashboard = () => {
             </div>
 
             {/* USERS */}
-            <div className="bg-white p-6 rounded-xl shadow mb-10 overflow-x-auto">
-              <h2 className="font-semibold mb-4">Senarai Pengguna</h2>
-              <table className="w-full text-sm border border-gray-300 border-collapse">
-                <thead>
-                  <tr className="bg-blue-100">
-                    <th className="p-3 border border-gray-300">Nama</th>
-                    <th className="p-3 border border-gray-300">Email</th>
-                                        <th className="p-3 border border-gray-300">Role</th>
-                    <th className="p-3 border border-gray-300">Department</th>
-                    <th className="p-3 border border-gray-300">Level</th>
-                    <th className="p-3 border border-gray-300">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user, index) => (
-                    <tr key={user._id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                      <td className="p-2 border">{user.name}</td>
-                      <td className="p-2 border">{user.email}</td>
-                      <td className="p-2 border">{user.role}</td>
-                      <td className="p-2 border">{user.department || "-"}</td>
-                      <td className="p-2 border">{user.level || "-"}</td>
-                      <td className="p-2 border">
-                        <button
-                          onClick={() => handleDeleteUser(user._id)}
-                          className="bg-red-500 text-white px-2 py-1 rounded text-xs"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <div className="bg-white p-6 rounded-2xl shadow mb-10">
+  <div className="flex justify-between items-center mb-6">
+    <h2 className="font-semibold text-lg text-gray-800">
+      Senarai Pengguna
+    </h2>
+
+    <span className="text-sm text-gray-500">
+      Total: {users.length}
+    </span>
+  </div>
+
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    {users.map((user) => (
+      <div
+        key={user._id}
+        className="group bg-gradient-to-br from-white to-gray-50 border rounded-2xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300"
+      >
+        {/* Avatar + Name */}
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-bold shadow">
+            {user.name?.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <p className="font-semibold text-gray-800 group-hover:text-blue-600 transition">
+              {user.name}
+            </p>
+            <p className="text-xs text-gray-500">{user.email}</p>
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="text-sm text-gray-600 space-y-2">
+          <div className="flex justify-between">
+            <span>Role</span>
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                user.role === "admin"
+                  ? "bg-red-100 text-red-600"
+                  : user.role === "approver"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : user.role === "technician"
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              {user.role}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>Department</span>
+            <span className="font-medium text-gray-700">
+              {user.department || "-"}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>Level</span>
+            <span className="font-medium text-gray-700">
+              {user.level || "-"}
+            </span>
+          </div>
+        </div>
+
+        {/* Action */}
+        <div className="mt-5 flex justify-between items-center">
+          <button
+            onClick={() => handleDeleteUser(user._id)}
+            className="text-red-500 text-xs font-medium hover:underline"
+          >
+            🗑 Delete
+          </button>
+
+          <button className="text-blue-500 text-xs font-medium hover:underline">
+            👁 View
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
 
             {/* STAFF REQUESTS */}
             <div className="bg-white p-6 rounded-xl shadow mb-10 overflow-x-auto">
