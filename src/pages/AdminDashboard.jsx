@@ -267,6 +267,8 @@ const AnalyticsDashboard = ({ requests }) => {
 // ================== AdminDashboard ==================
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [staffRequests, setStaffRequests] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [filterLevel, setFilterLevel] = useState("");
@@ -324,7 +326,7 @@ const AdminDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // ================== REGISTER ==================
+  // ================== REGISTER USER ==================
   const handleRegister = async (e) => {
     e.preventDefault();
     if (formData.role === "admin" && currentUser?.role !== "admin") {
@@ -360,7 +362,37 @@ const AdminDashboard = () => {
     }
   };
 
-  // ================== DELETE ==================
+  const handleEditUser = (user) => {
+  setSelectedUser(user);
+  setIsEditOpen(true);
+};
+
+  // ================== UPDATE USER ==================
+const handleUpdateUser = async () => {
+  try {
+    await axios.put(
+      `https://backenduwleapprovalsystem.onrender.com/api/users/${selectedUser._id}`,
+      selectedUser,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    Swal.fire({
+      icon: "success",
+      title: "User berjaya dikemaskini",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+
+    setIsEditOpen(false);
+    fetchUsers();
+  } catch (err) {
+    Swal.fire({ icon: "error", title: "Gagal update user" });
+  }
+};
+
+  // ================== DELETE USER ==================
   const handleDeleteUser = async (id) => {
     const confirm = await Swal.fire({
       icon: "warning",
@@ -696,9 +728,12 @@ const AdminDashboard = () => {
             🗑 Delete
           </button>
 
-          <button className="text-blue-500 text-xs font-medium hover:underline">
-            👁 View
-          </button>
+          <button
+  onClick={() => handleEditUser(user)}
+  className="text-blue-500 text-xs font-medium hover:underline"
+>
+  ✏️ Edit
+</button>
         </div>
       </div>
     ))}
@@ -798,6 +833,112 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === "analytics" && <AnalyticsDashboard requests={staffRequests} />}
+
+        {/* ================= EDIT USER MODAL ================= */}
+{isEditOpen && selectedUser && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+
+      <h2 className="text-lg font-semibold mb-4">
+        Edit Pengguna
+      </h2>
+
+      <div className="space-y-3">
+
+        <input
+          className="w-full border p-2 rounded"
+          value={selectedUser.name}
+          onChange={(e) =>
+            setSelectedUser({
+              ...selectedUser,
+              name: e.target.value,
+            })
+          }
+        />
+
+        <input
+          className="w-full border p-2 rounded"
+          value={selectedUser.email}
+          onChange={(e) =>
+            setSelectedUser({
+              ...selectedUser,
+              email: e.target.value,
+            })
+          }
+        />
+
+        <input
+          className="w-full border p-2 rounded"
+          placeholder="Department"
+          value={selectedUser.department || ""}
+          onChange={(e) =>
+            setSelectedUser({
+              ...selectedUser,
+              department: e.target.value,
+            })
+          }
+        />
+
+        <select
+          className="w-full border p-2 rounded"
+          value={selectedUser.role}
+          onChange={(e) =>
+            setSelectedUser({
+              ...selectedUser,
+              role: e.target.value,
+            })
+          }
+        >
+          <option value="staff">Staff</option>
+          <option value="approver">Approver</option>
+          <option value="admin">Admin</option>
+          <option value="technician">Technician</option>
+        </select>
+
+        {selectedUser.role === "approver" && (
+          <select
+            className="w-full border p-2 rounded"
+            value={selectedUser.level || ""}
+            onChange={(e) =>
+              setSelectedUser({
+                ...selectedUser,
+                level: e.target.value,
+              })
+            }
+          >
+            <option value="">Pilih Level</option>
+            <option value="1">Level 1</option>
+            <option value="2">Level 2</option>
+            <option value="3">Level 3</option>
+            <option value="4">Level 4</option>
+          </select>
+        )}
+
+      </div>
+
+      {/* BUTTONS */}
+      <div className="flex justify-end mt-5 space-x-2">
+
+        <button
+          onClick={() => setIsEditOpen(false)}
+          className="px-4 py-2 rounded bg-gray-200"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={handleUpdateUser}
+          className="px-4 py-2 rounded bg-blue-600 text-white"
+        >
+          Save
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+)}
+        
       </div>
     </div>
   );
