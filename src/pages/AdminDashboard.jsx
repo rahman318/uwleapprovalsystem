@@ -539,11 +539,14 @@ const handleUpdateUser = async () => {
   };
 
   // ================== FILTER REQUESTS ==================
-  const filteredRequests = filterLevel
-    ? staffRequests.filter(
-        (r) => r.approvals?.some((a) => a.level === filterLevel) || r.level === filterLevel
-      )
-    : staffRequests;
+  const filteredRequests = staffRequests.filter((r) => {
+  if (!filterLevel) return true;
+
+  return (
+    r.approvals?.some((a) => String(a.level) === filterLevel) ||
+    String(r.level) === filterLevel
+  );
+});
 
   //================= FILTER USER BY ROLE ================
   const filteredUsers = filterRole
