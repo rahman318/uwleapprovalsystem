@@ -267,6 +267,7 @@ const AnalyticsDashboard = ({ requests }) => {
 // ================== AdminDashboard ==================
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
+  const [filterRole, setFilterRole] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [staffRequests, setStaffRequests] = useState([]);
@@ -544,6 +545,11 @@ const handleUpdateUser = async () => {
       )
     : staffRequests;
 
+  //================= FILTER USER BY ROLE ================
+  const filteredUsers = filterRole
+  ? users.filter((u) => u.role === filterRole)
+  : users;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-blue-50 p-8">
       <div className="max-w-7xl mx-auto">
@@ -657,6 +663,23 @@ const handleUpdateUser = async () => {
             {/* USERS */}
             <div className="bg-white p-6 rounded-2xl shadow mb-10">
   <div className="flex justify-between items-center mb-6">
+
+<div className="mb-4 flex items-center space-x-3">
+  <label className="font-medium">Filter Role:</label>
+
+  <select
+    value={filterRole}
+    onChange={(e) => setFilterRole(e.target.value)}
+    className="border p-2 rounded"
+  >
+    <option value="">Semua</option>
+    <option value="admin">Admin</option>
+    <option value="staff">Staff</option>
+    <option value="approver">Approver</option>
+    <option value="technician">Technician</option>
+  </select>
+</div>
+    
     <h2 className="font-semibold text-lg text-gray-800">
       Senarai Pengguna
     </h2>
@@ -667,7 +690,7 @@ const handleUpdateUser = async () => {
   </div>
 
   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-    {users.map((user) => (
+    {filteredUsers.map((user) => (
       <div
         key={user._id}
         className="group bg-gradient-to-br from-white to-gray-50 border rounded-2xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300"
