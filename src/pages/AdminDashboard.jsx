@@ -663,7 +663,6 @@ const handleUpdateUser = async () => {
             {/* USERS */}
             <div className="bg-white p-6 rounded-2xl shadow mb-10">
   <div className="flex justify-between items-center mb-6">
-
 <div className="mb-4 flex items-center space-x-3">
   <label className="font-medium">Filter Role:</label>
 
@@ -679,16 +678,13 @@ const handleUpdateUser = async () => {
     <option value="technician">Technician</option>
   </select>
 </div>
-    
     <h2 className="font-semibold text-lg text-gray-800">
       Senarai Pengguna
     </h2>
-
     <span className="text-sm text-gray-500">
       Total: {users.length}
     </span>
   </div>
-
   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
     {filteredUsers.map((user) => (
       <div
