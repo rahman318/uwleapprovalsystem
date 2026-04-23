@@ -273,6 +273,7 @@ const AdminDashboard = () => {
   const [staffRequests, setStaffRequests] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [filterLevel, setFilterLevel] = useState("");
+  const [auditLogs, setAuditLogs] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -319,10 +320,25 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchAuditLogs = async () => {
+  try {
+    const res = await axios.get(
+      "https://backenduwleapprovalsystem.onrender.com/api/auditlogs",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    setAuditLogs(res.data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
   useEffect(() => {
     fetchCurrentUser();
     fetchUsers();
     fetchRequests();
+    fetchAuditLogs();
     const interval = setInterval(fetchRequests, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -582,6 +598,16 @@ const handleUpdateUser = async () => {
             >
               Analytics
             </button>
+            <button
+  onClick={() => setActiveTab("audit")}
+  className={`px-4 py-2 rounded ${
+    activeTab === "audit"
+      ? "bg-purple-600 text-white"
+      : "bg-white border"
+  }`}
+>
+  Audit Logs
+</button>
           </div>
         </div>
 
@@ -856,6 +882,59 @@ const handleUpdateUser = async () => {
         )}
 
         {activeTab === "analytics" && <AnalyticsDashboard requests={staffRequests} />}
+
+        {activeTab === "audit" && (
+  <div className="bg-white p-6 rounded-2xl shadow">
+
+    <h2 className="text-xl font-bold mb-4">
+      🧾 Audit Log Activity
+    </h2>
+
+    <div className="grid gap-3 max-h-[600px] overflow-y-auto">
+
+      {auditLogs.length === 0 && (
+        <p className="text-gray-500">No audit logs found</p>
+      )}
+
+      {auditLogs.map((log, i) => (
+        <div
+          key={i}
+          className="p-4 rounded-xl border-l-4 border-purple-500 bg-gray-50"
+        >
+
+          {/* HEADER */}
+          <div className="flex justify-between items-center">
+            <span className="font-bold text-sm">
+              {log.action}
+            </span>
+
+            <span className="text-xs text-gray-500">
+              {new Date(log.createdAt).toLocaleString("ms-MY")}
+            </span>
+          </div>
+
+          {/* USER INFO */}
+          <div className="text-sm mt-1">
+            👤 {log.user} <span className="text-gray-500">({log.role})</span>
+          </div>
+
+          {/* DETAILS */}
+          <div className="text-sm text-gray-700 mt-1">
+            📝 {log.details}
+          </div>
+
+          {/* EXTRA INFO */}
+          <div className="text-xs text-gray-500 mt-1 flex gap-4">
+            <span>🆔 {log.requestId || "-"}</span>
+            <span>🌐 {log.ipAddress || "-"}</span>
+          </div>
+
+        </div>
+      ))}
+
+    </div>
+  </div>
+)}
 
         {/* ================= EDIT USER MODAL ================= */}
 {isEditOpen && selectedUser && (
