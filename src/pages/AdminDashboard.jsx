@@ -323,7 +323,7 @@ const AdminDashboard = () => {
   const fetchAuditLogs = async () => {
   try {
     const res = await axios.get(
-      "https://backenduwleapprovalsystem.onrender.com/api/auditlogs",
+      "https://backenduwleapprovalsystem.onrender.com/api/audit-logs",
       {
         headers: { Authorization: `Bearer ${token}` },
       }
