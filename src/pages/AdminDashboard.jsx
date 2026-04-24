@@ -906,10 +906,10 @@ const handleUpdateUser = async () => {
         const userEmail = log.performedBy?.email || "-";
 
         const actionColor =
-          log.action === "CREATE" ? "border-green-500" :
-          log.action === "DELETE" ? "border-red-500" :
-          log.action === "APPROVE" ? "border-blue-500" :
-          log.action === "REJECT" ? "border-orange-500" :
+          log.action === "CREATE BY" ? "border-green-500" :
+          log.action === "DELETE BY" ? "border-red-500" :
+          log.action === "APPROVE BY" ? "border-blue-500" :
+          log.action === "REJECT BY" ? "border-orange-500" :
           "border-purple-500";
 
         return (
