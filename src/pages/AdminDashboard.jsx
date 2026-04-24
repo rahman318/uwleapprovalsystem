@@ -923,7 +923,13 @@ const handleUpdateUser = async () => {
 
           {/* DETAILS */}
           <div className="text-sm text-gray-700 mt-1">
-            📝 {log.details}
+            📝   {log.details ? (
+    <>
+      {log.details.staffName && <div>👤 {log.details.staffName}</div>}
+      {log.details.department && <div>🏢 {log.details.department}</div>}
+      {log.details.requestType && <div>📌 {log.details.requestType}</div>}
+    </>
+  ) : "-"}
           </div>
 
           {/* EXTRA INFO */}
