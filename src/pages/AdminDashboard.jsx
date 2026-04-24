@@ -899,47 +899,73 @@ const handleUpdateUser = async () => {
         <p className="text-gray-500">No audit logs found</p>
       )}
 
-      {auditLogs.map((log, i) => (
-        <div
-          key={i}
-          className="p-4 rounded-xl border-l-4 border-purple-500 bg-gray-50"
-        >
+      {auditLogs.map((log, i) => {
 
-          {/* HEADER */}
-          <div className="flex justify-between items-center">
-            <span className="font-bold text-sm">
-              {log.action}
-            </span>
+        const userName = log.performedBy?.name || "Unknown";
+        const userRole = log.performedBy?.role || "-";
+        const userEmail = log.performedBy?.email || "-";
 
-            <span className="text-xs text-gray-500">
-              {new Date(log.createdAt).toLocaleString("ms-MY")}
-            </span>
+        const actionColor =
+          log.action === "CREATE" ? "border-green-500" :
+          log.action === "DELETE" ? "border-red-500" :
+          log.action === "APPROVE" ? "border-blue-500" :
+          log.action === "REJECT" ? "border-orange-500" :
+          "border-purple-500";
+
+        return (
+          <div
+            key={i}
+            className={`p-4 rounded-xl border-l-4 ${actionColor} bg-gray-50 hover:shadow-md transition`}
+          >
+
+            {/* HEADER */}
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-sm">
+                {log.action}
+              </span>
+
+              <span className="text-xs text-gray-500">
+                {new Date(log.createdAt).toLocaleString("ms-MY")}
+              </span>
+            </div>
+
+            {/* USER INFO */}
+            <div className="text-sm mt-1">
+              👤 <span className="font-semibold">{userName}</span>
+              <span className="text-gray-500 ml-2">
+                ({userRole})
+              </span>
+              <div className="text-xs text-gray-400">
+                {userEmail}
+              </div>
+            </div>
+
+            {/* DETAILS */}
+            <div className="text-sm text-gray-700 mt-2">
+              📝 {log.details ? (
+                <div className="ml-2">
+                  {typeof log.details === "object" ? (
+                    Object.entries(log.details).map(([key, val]) => (
+                      <div key={key}>
+                        <span className="capitalize font-medium">{key}:</span> {val?.toString()}
+                      </div>
+                    ))
+                  ) : (
+                    log.details
+                  )}
+                </div>
+              ) : "-"}
+            </div>
+
+            {/* EXTRA INFO */}
+            <div className="text-xs text-gray-500 mt-2 flex flex-wrap gap-4">
+              <span>🆔 {log.targetId || "-"}</span>
+              <span>🌐 {log.ipAddress || "-"}</span>
+            </div>
+
           </div>
-
-          {/* USER INFO */}
-          <div className="text-sm mt-1">
-            👤 {log.user} <span className="text-gray-500">({log.role})</span>
-          </div>
-
-          {/* DETAILS */}
-          <div className="text-sm text-gray-700 mt-1">
-            📝{log.details ? (
-    <>
-      {log.details.staffName && <div>👤 {log.details.staffName}</div>}
-      {log.details.department && <div>🏢 {log.details.department}</div>}
-      {log.details.requestType && <div>📌 {log.details.requestType}</div>}
-    </>
-  ) : "-"}
-          </div>
-
-          {/* EXTRA INFO */}
-          <div className="text-xs text-gray-500 mt-1 flex gap-4">
-            <span>🆔 {log.requestId || "-"}</span>
-            <span>🌐 {log.ipAddress || "-"}</span>
-          </div>
-
-        </div>
-      ))}
+        );
+      })}
 
     </div>
   </div>
