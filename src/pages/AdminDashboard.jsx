@@ -886,91 +886,174 @@ const handleUpdateUser = async () => {
 
         {activeTab === "analytics" && <AnalyticsDashboard requests={staffRequests} />}
 
-        {activeTab === "audit" && (
-  <div className="bg-white p-6 rounded-2xl shadow">
+          // ================= EXPORT CSV =================
+  const exportAuditCSV = () => {
+    if (!auditLogs.length) return;
 
-    <h2 className="text-xl font-bold mb-4">
-      🧾 Audit Log Activity
-    </h2>
+    const rows = auditLogs.map(log => ({
+      Action: log.action,
+      User: log.performedBy?.name || "Unknown",
+      Email: log.performedBy?.email || "-",
+      Role: log.performedBy?.role || "-",
+      Module: log.module || "-",
+      TargetId: log.targetId || "-",
+      Details: typeof log.details === "object"
+        ? JSON.stringify(log.details)
+        : log.details || "-",
+      IP: log.ipAddress || "-",
+      Date: new Date(log.createdAt).toLocaleString("ms-MY")
+    }));
 
-    <div className="grid gap-3 max-h-[600px] overflow-y-auto">
+    const headers = Object.keys(rows[0]);
 
-      {auditLogs.length === 0 && (
-        <p className="text-gray-500">No audit logs found</p>
-      )}
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(r => headers.map(h => `"${r[h]}"`).join(","))
+    ].join("\n");
 
-      {auditLogs.map((log, i) => {
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
 
-        const userName = log.performedBy?.name || "Unknown";
-        const userRole = log.performedBy?.role || "-";
-        const userEmail = log.performedBy?.email || "-";
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "audit_logs.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-        const actionColor =
-          log.action === "CREATE" ? "border-green-500" :
-          log.action === "DELETE" ? "border-red-500" :
-          log.action === "APPROVE" ? "border-blue-500" :
-          log.action === "REJECT" ? "border-orange-500" :
-          "border-purple-500";
+  // ================= EXPORT EXCEL =================
+  const exportAuditExcel = () => {
+    if (!auditLogs.length) return;
 
-        return (
-          <div
-            key={i}
-            className={`p-4 rounded-xl border-l-4 ${actionColor} bg-gray-50 hover:shadow-md transition`}
-          >
+    const data = auditLogs.map(log => ({
+      Action: log.action,
+      User: log.performedBy?.name || "Unknown",
+      Email: log.performedBy?.email || "-",
+      Role: log.performedBy?.role || "-",
+      Module: log.module || "-",
+      TargetId: log.targetId || "-",
+      Details: typeof log.details === "object"
+        ? JSON.stringify(log.details)
+        : log.details || "-",
+      IP: log.ipAddress || "-",
+      Date: new Date(log.createdAt).toLocaleString("ms-MY")
+    }));
 
-            {/* HEADER */}
-            <div className="flex justify-between items-center">
-              <span className="font-bold text-sm">
-                {log.action}
-              </span>
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
 
-              <span className="text-xs text-gray-500">
-                {new Date(log.createdAt).toLocaleString("ms-MY")}
-              </span>
-            </div>
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Audit Logs");
 
-            {/* USER INFO */}
-            <div className="text-sm mt-1">
-              👤 <span className="font-semibold">{userName}</span>
-              <span className="text-gray-500 ml-2">
-                ({userRole})
-              </span>
-              <div className="text-xs text-gray-400">
-                {userEmail}
-              </div>
-            </div>
+    XLSX.writeFile(workbook, "audit_logs.xlsx");
+  };
 
-            {/* DETAILS */}
-            <div className="text-sm text-gray-700 mt-2">
-              📝 {log.details ? (
-                <div className="ml-2">
-                  {typeof log.details === "object" ? (
-                    Object.entries(log.details).map(([key, val]) => (
-                      <div key={key}>
-                        <span className="capitalize font-medium">{key}:</span> {val?.toString()}
+  return (
+    <>
+      {activeTab === "audit" && (
+        <div className="bg-white p-6 rounded-2xl shadow">
+
+          {/* HEADER */}
+          <h2 className="text-xl font-bold mb-4">
+            🧾 Audit Log Activity
+          </h2>
+
+          {/* EXPORT BUTTONS */}
+          <div className="flex gap-3 mb-4">
+            <button
+              onClick={exportAuditCSV}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
+            >
+              📥 Export CSV
+            </button>
+
+            <button
+              onClick={exportAuditExcel}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+            >
+              📊 Export Excel
+            </button>
+          </div>
+
+          {/* LIST */}
+          <div className="grid gap-3 max-h-[600px] overflow-y-auto">
+
+            {auditLogs.length === 0 && (
+              <p className="text-gray-500">No audit logs found</p>
+            )}
+
+            {auditLogs.map((log, i) => {
+
+              const userName = log.performedBy?.name || "Unknown";
+              const userRole = log.performedBy?.role || "-";
+              const userEmail = log.performedBy?.email || "-";
+
+              const actionColor =
+                log.action === "CREATE" ? "border-green-500" :
+                log.action === "DELETE" ? "border-red-500" :
+                log.action === "APPROVE" ? "border-blue-500" :
+                log.action === "REJECT" ? "border-orange-500" :
+                "border-purple-500";
+
+              return (
+                <div
+                  key={i}
+                  className={`p-4 rounded-xl border-l-4 ${actionColor} bg-gray-50 hover:shadow-md transition`}
+                >
+
+                  {/* ACTION + TIME */}
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-sm">
+                      {log.action}
+                    </span>
+
+                    <span className="text-xs text-gray-500">
+                      {new Date(log.createdAt).toLocaleString("ms-MY")}
+                    </span>
+                  </div>
+
+                  {/* USER */}
+                  <div className="text-sm mt-1">
+                    👤 <span className="font-semibold">{userName}</span>
+                    <span className="text-gray-500 ml-2">
+                      ({userRole})
+                    </span>
+                    <div className="text-xs text-gray-400">
+                      {userEmail}
+                    </div>
+                  </div>
+
+                  {/* DETAILS */}
+                  <div className="text-sm text-gray-700 mt-2">
+                    📝 {log.details ? (
+                      <div className="ml-2">
+                        {typeof log.details === "object" ? (
+                          Object.entries(log.details).map(([key, val]) => (
+                            <div key={key}>
+                              <span className="capitalize font-medium">{key}:</span>{" "}
+                              {val?.toString()}
+                            </div>
+                          ))
+                        ) : (
+                          log.details
+                        )}
                       </div>
-                    ))
-                  ) : (
-                    log.details
-                  )}
-                </div>
-              ) : "-"}
-            </div>
+                    ) : "-"}
+                  </div>
 
-            {/* EXTRA INFO */}
-            <div className="text-xs text-gray-500 mt-2 flex flex-wrap gap-4">
-              <span>🆔 {log.targetId || "-"}</span>
-              <span>🌐 {log.ipAddress || "-"}</span>
-            </div>
+                  {/* EXTRA */}
+                  <div className="text-xs text-gray-500 mt-2 flex flex-wrap gap-4">
+                    <span>🆔 {log.targetId || "-"}</span>
+                    <span>🌐 {log.ipAddress || "-"}</span>
+                  </div>
+
+                </div>
+              );
+            })}
 
           </div>
-        );
-      })}
-
-    </div>
-  </div>
-)}
-
+        </div>
+      )}
         {/* ================= EDIT USER MODAL ================= */}
 {isEditOpen && selectedUser && (
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
