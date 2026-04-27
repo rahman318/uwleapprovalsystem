@@ -478,6 +478,66 @@ const handleUpdateUser = async () => {
     window.open(fileUrl, "_blank");
   };
 
+  
+  // =================== EXPORT FOR AUDIT LOG ===========
+  const exportAuditCSV = () => {
+    if (!auditLogs.length) return;
+
+    const rows = auditLogs.map(log => ({
+      Action: log.action,
+      User: log.performedBy?.name || "Unknown",
+      Email: log.performedBy?.email || "-",
+      Role: log.performedBy?.role || "-",
+      Module: log.module || "-",
+      TargetId: log.targetId || "-",
+      Details: typeof log.details === "object"
+        ? JSON.stringify(log.details)
+        : log.details || "-",
+      IP: log.ipAddress || "-",
+      Date: new Date(log.createdAt).toLocaleString("ms-MY")
+    }));
+
+    const headers = Object.keys(rows[0]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(r => headers.map(h => `"${r[h]}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "audit_logs.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportAuditExcel = () => {
+    if (!auditLogs.length) return;
+
+    const data = auditLogs.map(log => ({
+      Action: log.action,
+      User: log.performedBy?.name || "Unknown",
+      Email: log.performedBy?.email || "-",
+      Role: log.performedBy?.role || "-",
+      Module: log.module || "-",
+      TargetId: log.targetId || "-",
+      Details: typeof log.details === "object"
+        ? JSON.stringify(log.details)
+        : log.details || "-",
+      IP: log.ipAddress || "-",
+      Date: new Date(log.createdAt).toLocaleString("ms-MY")
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Audit Logs");
+    XLSX.writeFile(wb, "audit_logs.xlsx");
+  };
+
   // ================== EXPORT EXCEL ==================
   const exportRequestsToExcel = () => {
     if (!staffRequests || staffRequests.length === 0) {
@@ -930,68 +990,6 @@ const handleUpdateUser = async () => {
           log.action === "APPROVE" ? "border-blue-500" :
           log.action === "REJECT" ? "border-orange-500" :
           "border-purple-500";
-
-    // ================= EXPORT CSV =================
-const exportAuditCSV = () => {
-  if (!auditLogs.length) return;
-
-  const rows = auditLogs.map(log => ({
-    Action: log.action,
-    User: log.performedBy?.name || "Unknown",
-    Email: log.performedBy?.email || "-",
-    Role: log.performedBy?.role || "-",
-    Module: log.module || "-",
-    TargetId: log.targetId || "-",
-    Details: typeof log.details === "object"
-      ? JSON.stringify(log.details)
-      : log.details || "-",
-    IP: log.ipAddress || "-",
-    Date: new Date(log.createdAt).toLocaleString("ms-MY")
-  }));
-
-  const headers = Object.keys(rows[0]);
-
-  const csvContent = [
-    headers.join(","),
-    ...rows.map(r => headers.map(h => `"${r[h]}"`).join(","))
-  ].join("\n");
-
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement("a");
-  link.href = url;
-  link.setAttribute("download", "audit_logs.csv");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
-
-// ================= EXPORT EXCEL =================
-const exportAuditExcel = () => {
-  if (!auditLogs.length) return;
-
-  const data = auditLogs.map(log => ({
-    Action: log.action,
-    User: log.performedBy?.name || "Unknown",
-    Email: log.performedBy?.email || "-",
-    Role: log.performedBy?.role || "-",
-    Module: log.module || "-",
-    TargetId: log.targetId || "-",
-    Details: typeof log.details === "object"
-      ? JSON.stringify(log.details)
-      : log.details || "-",
-    IP: log.ipAddress || "-",
-    Date: new Date(log.createdAt).toLocaleString("ms-MY")
-  }));
-
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Audit Logs");
-
-  XLSX.writeFile(workbook, "audit_logs.xlsx");
-};
 
         return (
           <div
