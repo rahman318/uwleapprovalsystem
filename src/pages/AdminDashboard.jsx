@@ -886,174 +886,171 @@ const handleUpdateUser = async () => {
 
         {activeTab === "analytics" && <AnalyticsDashboard requests={staffRequests} />}
 
-          // ================= EXPORT CSV =================
-  const exportAuditCSV = () => {
-    if (!auditLogs.length) return;
+         {activeTab === "analytics" && <AnalyticsDashboard requests={staffRequests} />}
 
-    const rows = auditLogs.map(log => ({
-      Action: log.action,
-      User: log.performedBy?.name || "Unknown",
-      Email: log.performedBy?.email || "-",
-      Role: log.performedBy?.role || "-",
-      Module: log.module || "-",
-      TargetId: log.targetId || "-",
-      Details: typeof log.details === "object"
-        ? JSON.stringify(log.details)
-        : log.details || "-",
-      IP: log.ipAddress || "-",
-      Date: new Date(log.createdAt).toLocaleString("ms-MY")
-    }));
+{activeTab === "audit" && (
+  <div className="bg-white p-6 rounded-2xl shadow">
 
-    const headers = Object.keys(rows[0]);
+    {/* HEADER */}
+    <h2 className="text-xl font-bold mb-4">
+      🧾 Audit Log Activity
+    </h2>
 
-    const csvContent = [
-      headers.join(","),
-      ...rows.map(r => headers.map(h => `"${r[h]}"`).join(","))
-    ].join("\n");
+    {/* EXPORT BUTTONS */}
+    <div className="flex gap-3 mb-4">
+      <button
+        onClick={exportAuditCSV}
+        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
+      >
+        📥 Export CSV
+      </button>
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
+      <button
+        onClick={exportAuditExcel}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+      >
+        📊 Export Excel
+      </button>
+    </div>
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "audit_logs.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+    {/* LIST */}
+    <div className="grid gap-3 max-h-[600px] overflow-y-auto">
 
-  // ================= EXPORT EXCEL =================
-  const exportAuditExcel = () => {
-    if (!auditLogs.length) return;
-
-    const data = auditLogs.map(log => ({
-      Action: log.action,
-      User: log.performedBy?.name || "Unknown",
-      Email: log.performedBy?.email || "-",
-      Role: log.performedBy?.role || "-",
-      Module: log.module || "-",
-      TargetId: log.targetId || "-",
-      Details: typeof log.details === "object"
-        ? JSON.stringify(log.details)
-        : log.details || "-",
-      IP: log.ipAddress || "-",
-      Date: new Date(log.createdAt).toLocaleString("ms-MY")
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Audit Logs");
-
-    XLSX.writeFile(workbook, "audit_logs.xlsx");
-  };
-
-  return (
-    <>
-      {activeTab === "audit" && (
-        <div className="bg-white p-6 rounded-2xl shadow">
-
-          {/* HEADER */}
-          <h2 className="text-xl font-bold mb-4">
-            🧾 Audit Log Activity
-          </h2>
-
-          {/* EXPORT BUTTONS */}
-          <div className="flex gap-3 mb-4">
-            <button
-              onClick={exportAuditCSV}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
-            >
-              📥 Export CSV
-            </button>
-
-            <button
-              onClick={exportAuditExcel}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
-            >
-              📊 Export Excel
-            </button>
-          </div>
-
-          {/* LIST */}
-          <div className="grid gap-3 max-h-[600px] overflow-y-auto">
-
-            {auditLogs.length === 0 && (
-              <p className="text-gray-500">No audit logs found</p>
-            )}
-
-            {auditLogs.map((log, i) => {
-
-              const userName = log.performedBy?.name || "Unknown";
-              const userRole = log.performedBy?.role || "-";
-              const userEmail = log.performedBy?.email || "-";
-
-              const actionColor =
-                log.action === "CREATE" ? "border-green-500" :
-                log.action === "DELETE" ? "border-red-500" :
-                log.action === "APPROVE" ? "border-blue-500" :
-                log.action === "REJECT" ? "border-orange-500" :
-                "border-purple-500";
-
-              return (
-                <div
-                  key={i}
-                  className={`p-4 rounded-xl border-l-4 ${actionColor} bg-gray-50 hover:shadow-md transition`}
-                >
-
-                  {/* ACTION + TIME */}
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-sm">
-                      {log.action}
-                    </span>
-
-                    <span className="text-xs text-gray-500">
-                      {new Date(log.createdAt).toLocaleString("ms-MY")}
-                    </span>
-                  </div>
-
-                  {/* USER */}
-                  <div className="text-sm mt-1">
-                    👤 <span className="font-semibold">{userName}</span>
-                    <span className="text-gray-500 ml-2">
-                      ({userRole})
-                    </span>
-                    <div className="text-xs text-gray-400">
-                      {userEmail}
-                    </div>
-                  </div>
-
-                  {/* DETAILS */}
-                  <div className="text-sm text-gray-700 mt-2">
-                    📝 {log.details ? (
-                      <div className="ml-2">
-                        {typeof log.details === "object" ? (
-                          Object.entries(log.details).map(([key, val]) => (
-                            <div key={key}>
-                              <span className="capitalize font-medium">{key}:</span>{" "}
-                              {val?.toString()}
-                            </div>
-                          ))
-                        ) : (
-                          log.details
-                        )}
-                      </div>
-                    ) : "-"}
-                  </div>
-
-                  {/* EXTRA */}
-                  <div className="text-xs text-gray-500 mt-2 flex flex-wrap gap-4">
-                    <span>🆔 {log.targetId || "-"}</span>
-                    <span>🌐 {log.ipAddress || "-"}</span>
-                  </div>
-
-                </div>
-              );
-            })}
-
-          </div>
-        </div>
+      {auditLogs.length === 0 && (
+        <p className="text-gray-500">No audit logs found</p>
       )}
+
+      {auditLogs.map((log, i) => {
+
+        const userName = log.performedBy?.name || "Unknown";
+        const userRole = log.performedBy?.role || "-";
+        const userEmail = log.performedBy?.email || "-";
+
+        const actionColor =
+          log.action === "CREATE" ? "border-green-500" :
+          log.action === "DELETE" ? "border-red-500" :
+          log.action === "APPROVE" ? "border-blue-500" :
+          log.action === "REJECT" ? "border-orange-500" :
+          "border-purple-500";
+
+    // ================= EXPORT CSV =================
+const exportAuditCSV = () => {
+  if (!auditLogs.length) return;
+
+  const rows = auditLogs.map(log => ({
+    Action: log.action,
+    User: log.performedBy?.name || "Unknown",
+    Email: log.performedBy?.email || "-",
+    Role: log.performedBy?.role || "-",
+    Module: log.module || "-",
+    TargetId: log.targetId || "-",
+    Details: typeof log.details === "object"
+      ? JSON.stringify(log.details)
+      : log.details || "-",
+    IP: log.ipAddress || "-",
+    Date: new Date(log.createdAt).toLocaleString("ms-MY")
+  }));
+
+  const headers = Object.keys(rows[0]);
+
+  const csvContent = [
+    headers.join(","),
+    ...rows.map(r => headers.map(h => `"${r[h]}"`).join(","))
+  ].join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "audit_logs.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// ================= EXPORT EXCEL =================
+const exportAuditExcel = () => {
+  if (!auditLogs.length) return;
+
+  const data = auditLogs.map(log => ({
+    Action: log.action,
+    User: log.performedBy?.name || "Unknown",
+    Email: log.performedBy?.email || "-",
+    Role: log.performedBy?.role || "-",
+    Module: log.module || "-",
+    TargetId: log.targetId || "-",
+    Details: typeof log.details === "object"
+      ? JSON.stringify(log.details)
+      : log.details || "-",
+    IP: log.ipAddress || "-",
+    Date: new Date(log.createdAt).toLocaleString("ms-MY")
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Audit Logs");
+
+  XLSX.writeFile(workbook, "audit_logs.xlsx");
+};
+
+        return (
+          <div
+            key={i}
+            className={`p-4 rounded-xl border-l-4 ${actionColor} bg-gray-50 hover:shadow-md transition`}
+          >
+
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-sm">
+                {log.action}
+              </span>
+
+              <span className="text-xs text-gray-500">
+                {new Date(log.createdAt).toLocaleString("ms-MY")}
+              </span>
+            </div>
+
+            <div className="text-sm mt-1">
+              👤 <span className="font-semibold">{userName}</span>
+              <span className="text-gray-500 ml-2">
+                ({userRole})
+              </span>
+              <div className="text-xs text-gray-400">
+                {userEmail}
+              </div>
+            </div>
+
+            <div className="text-sm text-gray-700 mt-2">
+              📝 {log.details ? (
+                <div className="ml-2">
+                  {typeof log.details === "object" ? (
+                    Object.entries(log.details).map(([key, val]) => (
+                      <div key={key}>
+                        <span className="capitalize font-medium">{key}:</span>{" "}
+                        {val?.toString()}
+                      </div>
+                    ))
+                  ) : (
+                    log.details
+                  )}
+                </div>
+              ) : "-"}
+            </div>
+
+            <div className="text-xs text-gray-500 mt-2 flex flex-wrap gap-4">
+              <span>🆔 {log.targetId || "-"}</span>
+              <span>🌐 {log.ipAddress || "-"}</span>
+            </div>
+
+          </div>
+        );
+      })}
+
+    </div>
+  </div>
+)}
+        
         {/* ================= EDIT USER MODAL ================= */}
 {isEditOpen && selectedUser && (
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
