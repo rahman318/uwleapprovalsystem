@@ -249,21 +249,39 @@ const ApproverDashboard = () => {
                 </td>
 
                 <td className="border px-3 py-2">
-                  <button
-                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-                    onClick={() => {
-                      setSelectedRequest(r);
-                      setSelectedTechnicians({
-                        ...selectedTechnicians,
-                        [r._id]:
-                          r.assignedTechnician?.map((t) => t._id) || [],
-                      });
-                      setShowApproveModal(true);
-                    }}
-                  >
-                    Open
-                  </button>
-                </td>
+  {(!r.finalStatus || r.finalStatus === "Pending") && (
+    <button
+      className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+      onClick={() => {
+        setSelectedRequest(r);
+        setSelectedTechnicians({
+          ...selectedTechnicians,
+          [r._id]:
+            r.assignedTechnician?.map((t) => t._id) || [],
+        });
+        setShowApproveModal(true);
+      }}
+    >
+      Open
+    </button>
+  )}
+
+  {r.finalStatus === "Approved" && (
+    <span className="text-green-600 font-semibold">Approved</span>
+  )}
+
+  {r.finalStatus === "Rejected" && (
+    <span className="text-red-600 font-semibold">Rejected</span>
+  )}
+
+  {r.finalStatus === "In Progress" && (
+    <span className="text-yellow-600 font-semibold">In Progress</span>
+  )}
+
+  {r.finalStatus === "Completed" && (
+    <span className="text-gray-600 font-semibold">Completed</span>
+  )}
+</td>
               </tr>
             ))}
           </tbody>
