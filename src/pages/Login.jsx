@@ -103,7 +103,16 @@ export default function Login({ setUser }) {
         {/* semi-transparent overlay supaya form readable */}
         <div className="absolute inset-0 bg-black/40"></div>
 
-        <div className="relative z-10 flex flex-col items-center mb-6">
+        {/* 🔥 TICKER ANNOUNCEMENT */}
+<div className="absolute top-0 left-0 w-full bg-blue-700 text-white py-2 overflow-hidden z-20">
+  <div className="marquee text-sm font-medium">
+    📢 System maintenance malam ini jam 10PM &nbsp;&nbsp;&nbsp;
+    🚀 New e-Approval feature released &nbsp;&nbsp;&nbsp;
+    📌 Sila submit request sebelum 5PM
+  </div>
+</div>
+
+        <div className="relative z-10 flex flex-col items-center mb-6 mt-12">
           <img
             src="/company-logo.png"
             alt="Company Logo"
