@@ -18,6 +18,17 @@
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
+.marquee {
+  white-space: nowrap;
+  display: inline-block;
+  animation: marqueeMove 20s linear infinite;
+}
+
+@keyframes marqueeMove {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);
