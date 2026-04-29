@@ -38,7 +38,7 @@
 .ticker {
   display: flex;
   width: max-content;
-  animation: tickerMove 35s linear infinite;
+  animation: tickerMove 55s linear infinite;
 }
 
 @keyframes tickerMove {
