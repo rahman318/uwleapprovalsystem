@@ -105,10 +105,13 @@ export default function Login({ setUser }) {
 
         {/* 🔥 TICKER ANNOUNCEMENT */}
 <div className="w-full overflow-hidden bg-slate-900 text-white py-2">
-  <div className="inline-block whitespace-nowrap animate-ticker">
-    🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
-    🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
-    🚀 Welcome to e-Approval System
+  <div className="flex">
+    <div className="whitespace-nowrap animate-ticker">
+      🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
+    </div>
+    <div className="whitespace-nowrap animate-ticker">
+      🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
+    </div>
   </div>
 </div>
 
