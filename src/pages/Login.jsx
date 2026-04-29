@@ -124,17 +124,31 @@ return (
       {/* 🔥 TICKER (FULL WIDTH ATAS) */}
     <div className="w-full overflow-hidden bg-slate-900 text-white py-2">
   <div className="ticker flex">
-    
+
     {/* ORIGINAL */}
     {ticker.map((t) => (
-      <span key={"a-" + t._id} className="mr-10">
+      <span
+        key={"a-" + t._id}
+        className={`mr-10 ${
+          t.priority === "high"
+            ? "text-red-500 font-bold blink"
+            : "text-gray-200"
+        }`}
+      >
         {t.message}
       </span>
     ))}
 
     {/* DUPLICATE */}
     {ticker.map((t) => (
-      <span key={"b-" + t._id} className="mr-10">
+      <span
+        key={"b-" + t._id}
+        className={`mr-10 ${
+          t.priority === "high"
+            ? "text-red-500 font-bold blink"
+            : "text-gray-200"
+        }`}
+      >
         {t.message}
       </span>
     ))}
