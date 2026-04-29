@@ -35,6 +35,19 @@ export default function Login({ setUser }) {
     navigate("/analytics");
   };
 
+  // ================= TICKER MESSAGE ==========//
+  const [ticker, setTicker] = useState([]);
+
+const fetchTicker = async () => {
+  try {
+    const res = await fetch("http://localhost:3000/api/ticker");
+    const data = await res.json();
+    setTicker(data);
+  } catch (err) {
+    console.error("Error fetch ticker:", err);
+  }
+};
+
   // ================== LOGIN ==================
   const handleLogin = async (e) => {
     e.preventDefault();
