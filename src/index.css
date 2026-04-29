@@ -1,1 +1,16 @@
 @import "tailwindcss";
+
+@keyframes tickerMove {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.ticker {
+  display: inline-block;
+  white-space: nowrap;
+  animation: tickerMove 15s linear infinite;
+}
