@@ -18,29 +18,18 @@
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
-.ticker-container {
-  width: 100%;
-  overflow: hidden;
-  background: #0f172a;
-  color: #fff;
-  padding: 10px 0;
-  position: relative;
-}
-
-.ticker-text {
-  display: inline-block;
-  white-space: nowrap;
-  padding-left: 100%;
-  animation: tickerMove 15s linear infinite;
-}
-
 @keyframes tickerMove {
   0% {
-    transform: translateX(0%);
+    transform: translateX(100%);
   }
   100% {
     transform: translateX(-100%);
   }
+}
+
+.ticker {
+  white-space: nowrap;
+  animation: tickerMove 15s linear infinite;
 }
 
 @keyframes logo-spin {
