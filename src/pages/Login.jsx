@@ -104,8 +104,8 @@ return (
       <div className="absolute inset-0 bg-black/40"></div>
 
       {/* 🔥 TICKER (FULL WIDTH ATAS) */}
-      <div className="w-full overflow-hidden bg-slate-900 text-white py-2 z-10">
-  <div className="whitespace-nowrap inline-block animate-tickerMove">
+      <div className="w-full overflow-hidden bg-slate-900 text-white py-2">
+  <div className="ticker">
     🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
     🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
     🚀 Welcome to e-Approval System
