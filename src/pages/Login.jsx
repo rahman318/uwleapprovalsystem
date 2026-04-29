@@ -104,9 +104,9 @@ export default function Login({ setUser }) {
         <div className="absolute inset-0 bg-black/40"></div>
 
         {/* 🔥 TICKER ANNOUNCEMENT */}
-<div className="ticker-container">
-  <div className="ticker-text">
-    🚀 Welcome to e-Approval System | System Maintenance Sunday 2AM | Please update your request status
+<div className="w-full overflow-hidden bg-slate-900 text-white py-2">
+  <div className="ticker">
+    🚀 Welcome to e-Approval System | Maintenance Sunday 2AM | Please update your request status
   </div>
 </div>
 
