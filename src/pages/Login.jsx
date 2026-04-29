@@ -112,12 +112,12 @@ return (
         </div>
       </div>
 
-      <div className="animate-bounce text-white">
-  TEST
-</div>
-
       {/* 🔥 CONTENT CENTER AREA */}
       <div className="flex flex-col justify-center items-center flex-1 relative z-10">
+
+         <div className="animate-bounce text-white">
+  TEST
+</div>
         
         {/* Logo + Title */}
         <div className="flex flex-col items-center mb-6">
