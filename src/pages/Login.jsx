@@ -115,8 +115,8 @@ return (
       {/* 🔥 CONTENT CENTER AREA */}
       <div className="flex flex-col justify-center items-center flex-1 relative z-10">
 
-         <div className="animate-bounce text-white">
-  TEST
+<div className="animate-[tickerMove_5s_linear_infinite] whitespace-nowrap">
+  TEST TICKER DIRECT
 </div>
         
         {/* Logo + Title */}
