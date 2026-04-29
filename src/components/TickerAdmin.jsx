@@ -65,7 +65,7 @@ const TickerBar = () => {
   return (
     <div className="bg-white p-6 rounded-2xl shadow mt-4">
       <h2 className="text-xl font-bold mb-4 text-blue-700">
-        🚀 Ticker Management
+         Ticker Management
       </h2>
 
       {/* ================= FORM ================= */}
