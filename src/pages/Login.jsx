@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import axios from "axios";
@@ -34,6 +34,10 @@ export default function Login({ setUser }) {
 
     navigate("/analytics");
   };
+
+  useEffect(() => {
+  fetchTicker();
+}, []);
 
   // ================= TICKER MESSAGE ==========//
   const [ticker, setTicker] = useState([]);
@@ -117,12 +121,12 @@ return (
       <div className="absolute inset-0 bg-black/40"></div>
 
       {/* 🔥 TICKER (FULL WIDTH ATAS) */}
-      <div className="w-full overflow-hidden bg-slate-900 text-white py-2">
-  <div className="ticker">
-    🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
-    🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
-    🚀 Welcome to e-Approval System
-  </div>
+     <div className="ticker">
+  {ticker.map((t) => (
+    <span key={t._id}>
+      {t.message} &nbsp;&nbsp;&nbsp;
+    </span>
+  ))}
 </div>
 
       {/* 🔥 CONTENT CENTER AREA */}
