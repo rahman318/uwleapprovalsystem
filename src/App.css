@@ -18,15 +18,29 @@
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
-.marquee {
-  white-space: nowrap;
-  display: inline-block;
-  animation: marqueeMove 20s linear infinite;
+.ticker-container {
+  width: 100%;
+  overflow: hidden;
+  background: #0f172a;
+  color: #fff;
+  padding: 10px 0;
+  position: relative;
 }
 
-@keyframes marqueeMove {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+.ticker-text {
+  display: inline-block;
+  white-space: nowrap;
+  padding-left: 100%;
+  animation: tickerMove 15s linear infinite;
+}
+
+@keyframes tickerMove {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }
 
 @keyframes logo-spin {
