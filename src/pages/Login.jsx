@@ -105,12 +105,12 @@ return (
 
       {/* 🔥 TICKER (FULL WIDTH ATAS) */}
       <div className="w-full overflow-hidden bg-slate-900 text-white py-2 z-10">
-        <div className="whitespace-nowrap inline-block animate-tickerMove">
-          🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
-          🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
-          🚀 Welcome to e-Approval System
-        </div>
-      </div>
+  <div className="whitespace-nowrap inline-block animate-tickerMove">
+    🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
+    🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
+    🚀 Welcome to e-Approval System
+  </div>
+</div>
 
       {/* 🔥 CONTENT CENTER AREA */}
       <div className="flex flex-col justify-center items-center flex-1 relative z-10">
