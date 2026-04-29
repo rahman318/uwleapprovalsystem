@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import axios from "axios";
+import TickerBar from "../components/TickerAdmin";
 import packageJson from "../../package.json"; // 🔥 ambil version dari package.json
 
 export default function Login({ setUser }) {
