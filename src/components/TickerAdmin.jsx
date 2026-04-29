@@ -4,7 +4,7 @@ const TickerBar = () => {
   const [ticker, setTicker] = useState([]);
 
   const fetchTicker = async () => {
-    const res = await fetch("http://localhost:3000/api/ticker");
+    const res = await fetch("https://backenduwleapprovalsystem.onrender.com/api/ticker");
     const data = await res.json();
     setTicker(data);
   };
