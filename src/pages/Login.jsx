@@ -112,6 +112,10 @@ return (
         </div>
       </div>
 
+      <div className="animate-bounce text-white">
+  TEST
+</div>
+
       {/* 🔥 CONTENT CENTER AREA */}
       <div className="flex flex-col justify-center items-center flex-1 relative z-10">
         
