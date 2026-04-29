@@ -957,7 +957,7 @@ const handleUpdateUser = async () => {
 
         {activeTab === "analytics" && <AnalyticsDashboard requests={staffRequests} />}
 
-        {activeTab === "ticker" && <TickerAdmin />}
+        {activeTab === "ticker" && <TickerBar />}
 
 {activeTab === "audit" && (
   <div className="bg-white p-6 rounded-2xl shadow">
