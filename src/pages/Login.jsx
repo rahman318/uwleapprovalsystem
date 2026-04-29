@@ -44,7 +44,7 @@ export default function Login({ setUser }) {
 
 const fetchTicker = async () => {
   try {
-    const res = await fetch("http://localhost:3000/api/ticker");
+    const res = await fetch("https://backenduwleapprovalsystem.onrender.com/api/ticker");
     const data = await res.json();
     setTicker(data);
   } catch (err) {
