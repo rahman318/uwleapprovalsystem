@@ -12,6 +12,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import TickerAdmin from "../components/TickerAdmin";
 
 // ================== AnalyticsDashboard ==================
 const AnalyticsDashboard = ({ requests }) => {
@@ -671,6 +672,16 @@ const handleUpdateUser = async () => {
 >
   Audit Logs
 </button>
+    <button
+  onClick={() => setActiveTab("ticker")}
+  className={`px-4 py-2 rounded ${
+    activeTab === "ticker"
+      ? "bg-orange-600 text-white"
+      : "bg-white border"
+  }`}
+>
+  Ticker
+</button>
           </div>
         </div>
 
@@ -945,6 +956,8 @@ const handleUpdateUser = async () => {
         )}
 
         {activeTab === "analytics" && <AnalyticsDashboard requests={staffRequests} />}
+
+        {activeTab === "ticker" && <TickerAdmin />}
 
 {activeTab === "audit" && (
   <div className="bg-white p-6 rounded-2xl shadow">
