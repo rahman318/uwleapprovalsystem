@@ -35,17 +35,17 @@
   color: #888;
 }
 
+.ticker {
+  display: flex;
+  width: max-content;
+  animation: tickerMove 20s linear infinite;
+}
+
 @keyframes tickerMove {
   0% {
     transform: translateX(100%);
   }
   100% {
-    transform: translateX(-100%);
+    transform: translateX(-50%);
   }
-}
-
-.ticker {
-  display: inline-block;
-  white-space: nowrap;
-  animation: tickerMove 15s linear infinite;
 }
