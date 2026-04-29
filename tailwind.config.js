@@ -13,7 +13,7 @@ export default {
         },
       },
       animation: {
-        tickerMove: "ticker 20s linear infinite",
+        tickerMove: "tickerMove 20s linear infinite",
       },
     },
   },
