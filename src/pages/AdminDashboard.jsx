@@ -12,7 +12,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import TickerAdmin from "../components/TickerAdmin";
+import TickerBar from "../components/TickerAdmin";
 
 // ================== AnalyticsDashboard ==================
 const AnalyticsDashboard = ({ requests }) => {
