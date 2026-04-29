@@ -7,13 +7,13 @@ export default {
   theme: {
     extend: {
       keyframes: {
-        ticker: {
+        tickerMove: {
           "0%": { transform: "translateX(100%)" },
           "100%": { transform: "translateX(-100%)" },
         },
       },
       animation: {
-        ticker: "ticker 20s linear infinite",
+        tickerMove: "ticker 20s linear infinite",
       },
     },
   },
