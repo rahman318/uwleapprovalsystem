@@ -94,66 +94,60 @@ export default function Login({ setUser }) {
     }
   };
 
-  return (
-    <>
-      <div
-        className="min-h-screen flex flex-col justify-center items-center font-[Inter] bg-cover bg-center relative"
-        style={{ backgroundImage: "url('/images/system.jpg')" }}
-      >
-        {/* semi-transparent overlay supaya form readable */}
-        <div className="absolute inset-0 bg-black/40"></div>
+return (
+  <>
+    <div
+      className="min-h-screen flex flex-col font-[Inter] bg-cover bg-center relative"
+      style={{ backgroundImage: "url('/images/system.jpg')" }}
+    >
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black/40"></div>
 
-        {/* 🔥 TICKER ANNOUNCEMENT */}
-<div className="w-full overflow-hidden bg-slate-900 text-white py-2">
-  <div className="flex">
-    <div className="whitespace-nowrap animate-ticker">
-      🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
-    </div>
-    <div className="whitespace-nowrap animate-ticker">
-      🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
-    </div>
-  </div>
-</div>
+      {/* 🔥 TICKER (FULL WIDTH ATAS) */}
+      <div className="w-full overflow-hidden bg-slate-900 text-white py-2 z-10">
+        <div className="whitespace-nowrap inline-block animate-ticker">
+          🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
+          🚀 Welcome to e-Approval System &nbsp;&nbsp;&nbsp;
+          🚀 Welcome to e-Approval System
+        </div>
+      </div>
 
-        <div className="relative z-10 flex flex-col items-center mb-6 mt-12">
+      {/* 🔥 CONTENT CENTER AREA */}
+      <div className="flex flex-col justify-center items-center flex-1 relative z-10">
+        
+        {/* Logo + Title */}
+        <div className="flex flex-col items-center mb-6">
           <img
             src="/company-logo.png"
             alt="Company Logo"
-            className="h-16 w-auto mb-2 z-10"
+            className="h-16 w-auto mb-2"
           />
-          <h1 className="text-2xl font-bold text-white tracking-wide z-10">
+          <h1 className="text-2xl font-bold text-white tracking-wide">
             E-Approval & Maintenance Portal
           </h1>
 
-          {/* SMART Analytics Button */}
+          {/* Analytics Button */}
           <button
             onClick={handleAnalyticsClick}
-            className="mt-4 bg-purple-600 text-white rounded-lg px-4 py-2 hover:bg-purple-700 transition font-medium shadow-sm z-10"
+            className="mt-4 bg-purple-600 text-white rounded-lg px-4 py-2 hover:bg-purple-700 transition font-medium shadow-sm"
           >
             View Analytics
           </button>
         </div>
 
         {/* Login Card */}
-        <div className="relative z-10 w-full max-w-md bg-white/90 p-6 rounded-2xl shadow-lg border border-blue-100">
+        <div className="w-full max-w-md bg-white/90 p-6 rounded-2xl shadow-lg border border-blue-100">
           <h2 className="text-xl font-semibold text-center text-blue-700 mb-4">
             Log Masuk Akaun
           </h2>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
               <input
                 type="email"
-                id="email"
-                name="email"
-                autoComplete="email"
-                placeholder="Masukkan emel anda"
                 className="w-full border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 rounded-lg outline-none transition"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -162,18 +156,11 @@ export default function Login({ setUser }) {
             </div>
 
             <div className="relative">
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Kata Laluan
               </label>
               <input
                 type={showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                autoComplete="current-password"
-                placeholder="Masukkan kata laluan"
                 className="w-full border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 rounded-lg outline-none transition pr-10"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -182,7 +169,7 @@ export default function Login({ setUser }) {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-9 text-gray-500 hover:text-gray-700"
+                className="absolute right-2 top-9 text-gray-500"
               >
                 {showPassword ? "❌" : "👁️"}
               </button>
@@ -197,20 +184,16 @@ export default function Login({ setUser }) {
           </form>
 
           <p className="text-center mt-4 text-sm text-gray-600">
-            <Link
-              to="/forgot-password"
-              className="text-blue-600 hover:underline font-medium"
-            >
+            <Link to="/forgot-password" className="text-blue-600 hover:underline">
               Lupa kata laluan?
             </Link>
           </p>
 
-          {/* Version Info inside card */}
           <p className="text-center mt-4 text-xs text-gray-500">
             Version {packageJson.version}
           </p>
         </div>
       </div>
-    </>
-  );
-}
+    </div>
+  </>
+);
