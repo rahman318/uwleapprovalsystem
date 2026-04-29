@@ -104,11 +104,9 @@ export default function Login({ setUser }) {
         <div className="absolute inset-0 bg-black/40"></div>
 
         {/* 🔥 TICKER ANNOUNCEMENT */}
-<div className="absolute top-0 left-0 w-full bg-blue-700 text-white py-2 overflow-hidden z-20">
-  <div className="marquee text-sm font-medium">
-    📢 System maintenance malam ini jam 10PM &nbsp;&nbsp;&nbsp;
-    🚀 New e-Approval feature released &nbsp;&nbsp;&nbsp;
-    📌 Sila submit request sebelum 5PM
+<div className="ticker-container">
+  <div className="ticker-text">
+    🚀 Welcome to e-Approval System | System Maintenance Sunday 2AM | Please update your request status
   </div>
 </div>
 
