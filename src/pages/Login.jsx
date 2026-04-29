@@ -122,12 +122,14 @@ return (
       <div className="absolute inset-0 bg-black/40"></div>
 
       {/* 🔥 TICKER (FULL WIDTH ATAS) */}
-     <div className="ticker">
-  {ticker.map((t) => (
-    <span key={t._id}>
-      {t.message} &nbsp;&nbsp;&nbsp;
-    </span>
-  ))}
+    <div className="w-full overflow-hidden bg-slate-800 text-sm text-gray-200 py-2 border-b">
+  <div className="ticker">
+    {ticker.map((t) => (
+      <span key={t._id} className="mr-8">
+        • {t.message}
+      </span>
+    ))}
+  </div>
 </div>
 
       {/* 🔥 CONTENT CENTER AREA */}
