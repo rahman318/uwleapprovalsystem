@@ -22,7 +22,7 @@ const ItemsTab = () => {
     try {
       setLoading(true);
 
-      const res = await axios.get("/api/inventory");
+      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/inventory");
 
       console.log("🔥 INVENTORY API:", res.data);
 
@@ -43,7 +43,7 @@ const ItemsTab = () => {
     e.preventDefault();
 
     try {
-      await axios.post("/api/inventory", form);
+      await axios.post("https://backenduwleapprovalsystem.onrender.com/api/inventory", form);
 
       setForm({
         name: "",
@@ -62,7 +62,7 @@ const ItemsTab = () => {
   // ❌ DELETE ITEM
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`/api/inventory/${id}`);
+      await axios.delete(`https://backenduwleapprovalsystem.onrender.com/api/inventory/${id}`);
       fetchItems();
     } catch (error) {
       console.error("Delete error:", error);
