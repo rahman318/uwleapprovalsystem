@@ -966,7 +966,7 @@ const handleUpdateUser = async () => {
 
         {activeTab === "inventory" && (
   <div className="bg-white p-6 rounded-2xl shadow">
-    <InventoryPage />
+    <ItemsTab />
   </div>
 )}
 
