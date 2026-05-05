@@ -13,6 +13,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import TickerBar from "../components/TickerAdmin";
+import ItemsTab from "../components/ItemsTab";
 
 // ================== AnalyticsDashboard ==================
 const AnalyticsDashboard = ({ requests }) => {
@@ -682,6 +683,12 @@ const handleUpdateUser = async () => {
 >
   Ticker
 </button>
+            <button onClick={() => setActiveTab("inventory")}
+  className={activeTab === "inventory"
+    ? "bg-blue-500 text-white px-4 py-2 rounded"
+    : "bg-gray-200 px-4 py-2 rounded"}>
+  Inventory
+</button>
           </div>
         </div>
 
@@ -956,6 +963,12 @@ const handleUpdateUser = async () => {
         )}
 
         {activeTab === "analytics" && <AnalyticsDashboard requests={staffRequests} />}
+
+        {activeTab === "inventory" && (
+  <div className="bg-white p-6 rounded-2xl shadow">
+    <InventoryPage />
+  </div>
+)}
 
         {activeTab === "ticker" && <TickerBar />}
 
