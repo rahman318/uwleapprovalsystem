@@ -683,11 +683,15 @@ const handleUpdateUser = async () => {
 >
   Ticker
 </button>
-            <button onClick={() => setActiveTab("inventory")}
-  className={activeTab === "inventory"
-    ? "bg-black-500 text-white px-4 py-2 rounded"
-    : "bg-white border-200 px-4 py-2 rounded"}>
-  Inventory
+            <button 
+              onClick={() => setActiveTab("inventory")}
+  className={`px-4 py-2 rounded ${
+    activeTab === "inventory"
+      ? "bg-orange-600 text-white"
+      : "bg-white border"
+  }`}
+>
+  inventory
 </button>
           </div>
         </div>
