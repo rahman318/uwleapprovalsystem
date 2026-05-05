@@ -687,7 +687,7 @@ const handleUpdateUser = async () => {
               onClick={() => setActiveTab("inventory")}
   className={`px-4 py-2 rounded ${
     activeTab === "inventory"
-      ? "bg-black-600 text-white"
+      ? "bg-red-600 text-white"
       : "bg-white border"
   }`}
 >
