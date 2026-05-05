@@ -17,170 +17,189 @@ const ItemsTab = () => {
     fetchItems();
   }, []);
 
-  // 🔥 SAFE FETCH (FIX MAP ERROR)
   const fetchItems = async () => {
     try {
       setLoading(true);
 
-      const res = await axios.get("https://backenduwleapprovalsystem.onrender.com/api/inventory");
+      const res = await axios.get(
+        "https://backenduwleapprovalsystem.onrender.com/api/inventory"
+      );
 
-      console.log("🔥 INVENTORY API:", res.data);
-
-      // 🔥 HANDLE DIFFERENT API STRUCTURE SAFELY
       const data = res.data?.data || res.data || [];
-
       setItems(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Inventory fetch error:", error);
       setItems([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // ➕ ADD ITEM
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    try {
-      await axios.post("https://backenduwleapprovalsystem.onrender.com/api/inventory", form);
+    await axios.post(
+      "https://backenduwleapprovalsystem.onrender.com/api/inventory",
+      form
+    );
 
-      setForm({
-        name: "",
-        category: "",
-        quantity: 0,
-        unit: "pcs",
-        minStock: 5,
-      });
+    setForm({
+      name: "",
+      category: "",
+      quantity: 0,
+      unit: "pcs",
+      minStock: 5,
+    });
 
-      fetchItems();
-    } catch (error) {
-      console.error("Add item error:", error);
-    }
+    fetchItems();
   };
 
-  // ❌ DELETE ITEM
   const handleDelete = async (id) => {
-    try {
-      await axios.delete(`https://backenduwleapprovalsystem.onrender.com/api/inventory/${id}`);
-      fetchItems();
-    } catch (error) {
-      console.error("Delete error:", error);
-    }
+    await axios.delete(
+      `https://backenduwleapprovalsystem.onrender.com/api/inventory/${id}`
+    );
+    fetchItems();
   };
 
   return (
-    <div>
-      {/* FORM */}
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-5 gap-2 mb-6"
-      >
-        <input
-          placeholder="Item Name"
-          className="border p-2 rounded"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
+    <div className="space-y-6">
 
-        <input
-          placeholder="Category"
-          className="border p-2 rounded"
-          value={form.category}
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
-        />
+      {/* FORM CARD */}
+      <div className="bg-white p-4 rounded-2xl shadow border">
+        <h2 className="font-bold mb-3">➕ Add Inventory Item</h2>
 
-        <input
-          type="number"
-          placeholder="Qty"
-          className="border p-2 rounded"
-          value={form.quantity}
-          onChange={(e) =>
-            setForm({ ...form, quantity: Number(e.target.value) })
-          }
-        />
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-5 gap-2"
+        >
+          <input
+            placeholder="Item Name"
+            className="border p-2 rounded-lg focus:outline-blue-400"
+            value={form.name}
+            onChange={(e) =>
+              setForm({ ...form, name: e.target.value })
+            }
+          />
 
-        <input
-          placeholder="Unit"
-          className="border p-2 rounded"
-          value={form.unit}
-          onChange={(e) => setForm({ ...form, unit: e.target.value })}
-        />
+          <input
+            placeholder="Category"
+            className="border p-2 rounded-lg"
+            value={form.category}
+            onChange={(e) =>
+              setForm({ ...form, category: e.target.value })
+            }
+          />
 
-        <input
-          type="number"
-          placeholder="Min Stock"
-          className="border p-2 rounded"
-          value={form.minStock}
-          onChange={(e) =>
-            setForm({ ...form, minStock: Number(e.target.value) })
-          }
-        />
+          <input
+            type="number"
+            placeholder="Qty"
+            className="border p-2 rounded-lg"
+            value={form.quantity}
+            onChange={(e) =>
+              setForm({ ...form, quantity: Number(e.target.value) })
+            }
+          />
 
-        <button className="bg-blue-500 text-white rounded">
-          + Add
-        </button>
-      </form>
+          <input
+            placeholder="Unit"
+            className="border p-2 rounded-lg"
+            value={form.unit}
+            onChange={(e) =>
+              setForm({ ...form, unit: e.target.value })
+            }
+          />
+
+          <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
+            + Add
+          </button>
+        </form>
+      </div>
 
       {/* LOADING */}
       {loading && (
-        <p className="text-gray-500 mb-4">Loading inventory...</p>
+        <p className="text-gray-500">Loading inventory...</p>
       )}
 
-      {/* TABLE */}
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left border-b">
-            <th>Name</th>
-            <th>Category</th>
-            <th>Stock</th>
-            <th>Min</th>
-            <th>Action</th>
-          </tr>
-        </thead>
+      {/* TABLE CARD */}
+      <div className="bg-white rounded-2xl shadow border overflow-hidden">
 
-        <tbody>
-          {/* 🔥 SAFE MAP (NO CRASH) */}
-          {Array.isArray(items) &&
-            items.map((item) => (
-              <tr
-                key={item._id}
-                className="border-b hover:bg-gray-50"
-              >
-                <td>{item.name}</td>
-                <td>{item.category}</td>
+        {/* HEADER */}
+        <div className="p-4 border-b bg-gray-50 flex justify-between">
+          <h2 className="font-bold">📦 Inventory List</h2>
+          <span className="text-sm text-gray-500">
+            Total: {items.length}
+          </span>
+        </div>
 
-                <td
-                  className={
-                    item.quantity < item.minStock
-                      ? "text-red-500 font-bold"
-                      : ""
-                  }
-                >
-                  {item.quantity} {item.unit}
-                </td>
+        {/* TABLE */}
+        <table className="w-full text-sm">
+          <thead className="bg-gray-100 text-gray-600">
+            <tr>
+              <th className="p-3 text-left">Name</th>
+              <th className="p-3 text-left">Category</th>
+              <th className="p-3 text-left">Stock</th>
+              <th className="p-3 text-left">Status</th>
+              <th className="p-3 text-left">Action</th>
+            </tr>
+          </thead>
 
-                <td>{item.minStock}</td>
+          <tbody>
+            {Array.isArray(items) &&
+              items.map((item) => {
+                const lowStock =
+                  item.quantity < item.minStock;
 
-                <td>
-                  <button
-                    onClick={() => handleDelete(item._id)}
-                    className="text-red-500"
+                return (
+                  <tr
+                    key={item._id}
+                    className="border-b hover:bg-gray-50 transition"
                   >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-        </tbody>
-      </table>
+                    <td className="p-3 font-medium">
+                      {item.name}
+                    </td>
 
-      {/* EMPTY STATE */}
-      {!loading && items.length === 0 && (
-        <p className="text-gray-400 mt-4">
-          No inventory items found 📦
-        </p>
-      )}
+                    <td className="p-3 text-gray-600">
+                      {item.category}
+                    </td>
+
+                    <td className="p-3">
+                      {item.quantity} {item.unit}
+                    </td>
+
+                    {/* STATUS BADGE */}
+                    <td className="p-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          lowStock
+                            ? "bg-red-100 text-red-600"
+                            : "bg-green-100 text-green-600"
+                        }`}
+                      >
+                        {lowStock ? "LOW STOCK" : "OK"}
+                      </span>
+                    </td>
+
+                    {/* ACTION */}
+                    <td className="p-3">
+                      <button
+                        onClick={() => handleDelete(item._id)}
+                        className="text-red-500 hover:text-red-700 font-semibold"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
+
+        {/* EMPTY STATE */}
+        {!loading && items.length === 0 && (
+          <div className="p-6 text-center text-gray-400">
+            📦 No inventory items found
+          </div>
+        )}
+      </div>
     </div>
   );
 };
